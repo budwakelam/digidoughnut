@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<!--
+  PROFIT COACH — one-page Etsy product (proof of concept)
+  Buyer: free Gemini key (their own) + auto model discovery + helper bot.
+  SHIPPED VERSION: minify/obfuscate this file before listing. Keep this readable source private.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profit Coach — know what you really made</title>
+<style>
+  :root{ --bg:#f6f8fc; --card:#fff; --ink:#1e2430; --muted:#6b7280; --brand:#2563eb;
+         --brand-d:#1d4ed8; --ok:#15803d; --okbg:#f0fdf4; --bad:#b91c1c; --badbg:#fef2f2;
+         --warn:#b45309; --warnbg:#fffbeb; --line:#e5e7eb; --in:#2e8653; --out:#b86b45; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+       background:var(--bg);color:var(--ink);line-height:1.55;padding:0 0 120px}
+  header.top{position:sticky;top:0;z-index:20;background:var(--card);border-bottom:1px solid var(--line);
+             padding:12px 18px;display:flex;align-items:center;gap:12px}
+  header.top h1{font-size:1.15rem;margin:0}
+  header.top .tag{font-size:.8rem;color:var(--muted)}
+  .dot{width:11px;height:11px;border-radius:50%;background:#d1d5db;display:inline-block}
+  .dot.on{background:var(--ok)} .dot.off{background:var(--bad)}
+  .spacer{flex:1}
+  .linkbtn{background:none;border:none;color:var(--brand);font-size:.88rem;cursor:pointer;padding:6px 8px}
+  .wrap{max-width:760px;margin:0 auto;padding:20px 16px}
+  .card{background:var(--card);border-radius:14px;padding:18px;margin:0 0 14px;box-shadow:0 1px 3px rgba(16,24,40,.08)}
+  .card h2{font-size:1.02rem;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+  .sdot{width:10px;height:10px;border-radius:50%}
+  .sdot.in{background:var(--in)} .sdot.out{background:var(--out)}
+  .total{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+  .line{display:grid;grid-template-columns:1fr 130px 34px;gap:8px;margin:8px 0;align-items:center}
+  .line input{padding:9px 10px;font-size:.95rem;border:2px solid var(--line);border-radius:9px;width:100%}
+  .line input:focus{outline:none;border-color:var(--brand)}
+  .line input.amt{text-align:right;font-variant-numeric:tabular-nums}
+  .x{background:#f3f4f6;border:none;border-radius:8px;width:34px;height:38px;cursor:pointer;font-size:1rem;color:var(--muted)}
+  .x:hover{background:#fee2e2;color:var(--bad)}
+  .add{background:none;border:2px dashed #c7d2fe;color:var(--brand);border-radius:10px;width:100%;
+       padding:10px;font-size:.95rem;font-weight:600;cursor:pointer;margin-top:6px}
+  .add:hover{background:#eef2ff}
+  .btn{background:var(--brand);color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:.95rem;
+       font-weight:600;cursor:pointer}
+  .btn:hover{background:var(--brand-d)} .btn:disabled{opacity:.55;cursor:default}
+  .btn.ghost{background:#eef2ff;color:var(--brand)} .btn.ghost:hover{background:#e0e7ff}
+  .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .big{font-size:2.6rem;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin:4px 0}
+  .big.profit{color:var(--ok)} .big.loss{color:var(--bad)}
+  .verdict{font-size:1rem}
+  .bar{height:12px;border-radius:99px;background:#eef0f4;overflow:hidden;display:flex;margin:10px 0 4px}
+  .bar i{display:block;height:100%}
+  .legend{display:flex;justify-content:space-between;font-size:.8rem;color:var(--muted)}
+  .note{font-size:.85rem;color:var(--muted)}
+  input[type=range]{width:100%}
+  /* overlay */
+  #overlay{position:fixed;inset:0;background:rgba(17,24,39,.55);z-index:50;display:flex;align-items:center;
+           justify-content:center;padding:18px}
+  #overlay.hide{display:none}
+  .sheet{background:#fff;border-radius:18px;max-width:520px;width:100%;padding:26px;max-height:92vh;overflow:auto}
+  .sheet h2{margin:0 0 6px;font-size:1.3rem}
+  ol.steps{padding-left:22px;margin:10px 0} ol.steps li{margin:8px 0}
+  /* bot */
+  #bubble{position:fixed;right:18px;bottom:18px;width:60px;height:60px;border-radius:50%;background:var(--brand);
+          color:#fff;font-size:1.7rem;border:none;cursor:pointer;box-shadow:0 6px 18px rgba(37,99,235,.4);z-index:40}
+  #bubble:hover{background:var(--brand-d)}
+  #panel{position:fixed;right:18px;bottom:90px;width:min(360px,calc(100vw - 36px));height:480px;max-height:70vh;
+         background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(16,24,40,.25);z-index:40;display:none;
+         flex-direction:column;overflow:hidden}
+  #panel.open{display:flex}
+  #panel header{background:var(--brand);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px}
+  #panel header b{font-size:1rem} #panel header span{font-size:.78rem;opacity:.85}
+  #msgs{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#f8fafc}
+  .msg{max-width:85%;padding:10px 13px;border-radius:14px;font-size:.92rem;line-height:1.45}
+  .msg.bot{background:#fff;border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px}
+  .msg.me{background:var(--brand);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+  .msg.typing{color:var(--muted);font-style:italic}
+  #composer{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line);background:#fff}
+  #composer input{flex:1;padding:10px 12px;font-size:.92rem;border:2px solid var(--line);border-radius:10px}
+  #composer input:focus{outline:none;border-color:var(--brand)}
+  #composer button{padding:10px 14px}
+  .status{margin-top:12px;padding:12px 14px;border-radius:10px;display:none;font-size:.92rem}
+  .status.show{display:block}
+  .status.ok{background:var(--okbg);color:var(--ok);border:1px solid #bbf7d0}
+  .status.err{background:var(--badbg);color:var(--bad);border:1px solid #fecaca}
+  .status.warn{background:var(--warnbg);color:var(--warn);border:1px solid #fde68a}
+  textarea.ta{width:100%;min-height:110px;padding:10px;font-size:.9rem;border:2px solid var(--line);border-radius:10px;font-family:inherit}
+  footer{max-width:760px;margin:26px auto 0;padding:0 16px;text-align:center;color:var(--muted);font-size:.8rem}
+  details.faq{margin-top:8px;font-size:.88rem} details.faq summary{cursor:pointer;color:var(--brand);font-weight:600}
+</style>
+</head>
+<body>
+
+<div id="overlay"><div class="sheet" id="sheetBox"></div></div>
+
+<header class="top">
+  <span class="dot" id="connDot" title="connection"></span>
+  <div><h1>Profit Coach</h1><div class="tag">Know what you really made</div></div>
+  <div class="spacer"></div>
+  <button class="linkbtn" id="keyBtn">Access code</button>
+</header>
+
+<div class="wrap">
+  <div class="card">
+    <h2><span class="sdot in"></span>Money in <span class="total" id="totIn">$0.00</span></h2>
+    <div id="linesIn"></div>
+    <button class="add" id="addIn">+ Add money in</button>
+  </div>
+
+  <div class="card">
+    <h2><span class="sdot out"></span>Money out <span class="total" id="totOut">$0.00</span></h2>
+    <div id="linesOut"></div>
+    <button class="add" id="addOut">+ Add money out</button>
+  </div>
+
+  <div class="card">
+    <h2>✨ Sort a messy list with AI</h2>
+    <p class="note" style="margin:0 0 8px">Paste a jumble — receipts, bank lines, notes — and Penny sorts each one into <b>money in</b> or <b>money out</b> for you.</p>
+    <textarea class="ta" id="messy" placeholder="e.g.&#10;Sold 3 mugs at market 84&#10;Yarn order -32.50&#10;Etsy payout 121.10&#10;Table fee market -25"></textarea>
+    <div class="btnrow"><button class="btn" id="sortBtn">Sort it for me</button></div>
+    <div class="status" id="sortStatus"></div>
+  </div>
+
+  <div class="card">
+    <h2>🧾 Put some aside for taxes</h2>
+    <p class="note" style="margin:0 0 6px">A rough share of profit to set aside. Your accountant knows your real number.</p>
+    <input type="range" id="taxRange" min="0" max="50" value="20">
+    <div class="note"><b id="taxPct">20%</b> → set aside <b id="taxAmt">$0.00</b></div>
+  </div>
+
+  <div class="card">
+    <h2>📊 Your result</h2>
+    <div class="big" id="bigNum">$0.00</div>
+    <div class="verdict" id="verdict">Add some money in and money out to see your result.</div>
+    <div class="bar"><i id="barIn" style="background:var(--in)"></i><i id="barOut" style="background:var(--out)"></i></div>
+    <div class="legend"><span>Money in <b id="legIn">$0</b></span><span>Money out <b id="legOut">$0</b></span></div>
+    <div class="btnrow">
+      <button class="btn ghost" id="exampleBtn">Load an example</button>
+      <button class="btn ghost" id="clearBtn">Start fresh</button>
+    </div>
+    <details class="faq"><summary>How does the smart stuff work?</summary>
+      <p class="note">The AI features use <b>your own free Google code</b> — the one you pasted during setup. Your code and your numbers never leave your computer except to talk to Google's servers. No subscription, no card, free allowance resets daily.</p>
+    </details>
+  </div>
+</div>
+
+<button id="bubble" title="Ask Penny">💬</button>
+<div id="panel" role="dialog" aria-label="Chat with Penny">
+  <header><div style="font-size:1.6rem">🪙</div><div><b>Penny</b><br><span>your profit coach helper</span></div></header>
+  <div id="msgs"></div>
+  <div id="composer"><input id="chatIn" placeholder="Ask me anything…" autocomplete="off"><button class="btn" id="chatSend">Send</button></div>
+</div>
+
+<footer>Made with care by DigiDoughnut · Your numbers stay on your computer</footer>
+
+<script>
+(function(){
+"use strict";
+/* ---------- tiny helpers ---------- */
+var $ = function(id){ return document.getElementById(id); };
+var LS_KEY="dd_gemini_key_v1", LS_MODEL="dd_gemini_model_v1", LS_DATA="dd_profitcoach_data_v1";
+var MODELS_URL="https://generativelanguage.googleapis.com/v1beta/models";
+var MODEL_PREFS=["gemini-3.8-flash","gemini-2.5-flash","gemini-2.0-flash"];
+var modelCache=null; // per page-load
+function mask(k){ return (k&&k.length>4)?"\u2026"+k.slice(-4):""; }
+function savedKey(){ try{return localStorage.getItem(LS_KEY)||"";}catch(e){return "";} }
+function fmt(n){ return (n<0?"-$":"$")+Math.abs(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,","); }
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+
+/* ---------- friendly errors (never raw) ---------- */
+function friendly(status,detail){
+  if(status===0)   return ["Couldn't reach Google.","Check your internet and try again."];
+  if(status===400) return ["That code didn't work.","It may have a typo — copy it fresh from Google AI Studio and paste it again."];
+  if(status===403) return ["That code isn't allowed to do this.","Make sure it was created in Google AI Studio."];
+  if(status===429) return ["You've used today's free share.","It resets at midnight — come back tomorrow!"];
+  if(status===500||status===502||status===503) return ["Google's servers are having a busy moment.","Wait a minute and try again — this usually clears on its own."];
+  return ["Something unexpected happened.","Wait a moment and try again."];
+  // NOTE: never append raw API text here. Buyers never see Google's words.
+}
+
+/* ---------- Google plumbing: discover, pick, call ---------- */
+function isTextModel(id){ return !/image|tts|omni|embed|video|audio/i.test(id); }
+function scoreModel(id){
+  var i=MODEL_PREFS.indexOf(id); if(i>=0) return 100-i;
+  if(/flash/i.test(id)) return 10; if(/pro/i.test(id)) return 5; return 0;
+}
+async function discover(key){
+  var r=await fetch(MODELS_URL+"?key="+encodeURIComponent(key));
+  var t=await r.text(), d=null; try{d=JSON.parse(t);}catch(e){}
+  if(!r.ok) throw {status:r.status, detail:(d&&d.error&&d.error.message)||t};
+  var ms=((d&&d.models)||[]).filter(function(m){
+    return (m.supportedGenerationMethods||[]).indexOf("generateContent")>=0 && isTextModel(String(m.name||"").replace(/^models\//,""));
+  }).map(function(m){return String(m.name).replace(/^models\//,"");});
+  ms.sort(function(a,b){return scoreModel(b)-scoreModel(a);});
+  if(!ms.length) throw {status:-1,detail:"no text models"};
+  return ms;
+}
+async function pickModel(key){
+  if(modelCache) return modelCache;
+  try{ var c=localStorage.getItem(LS_MODEL); if(c){ modelCache=c; return c; } }catch(e){}
+  var ms=await discover(key);
+  modelCache=ms[0];
+  try{ localStorage.setItem(LS_MODEL,modelCache); }catch(e){}
+  return modelCache;
+}
+function dropModelCache(){ modelCache=null; try{localStorage.removeItem(LS_MODEL);}catch(e){} }
+async function gCall(key,prompt,system){
+  var model=await pickModel(key);
+  for(var attempt=0;attempt<3;attempt++){
+    var url="https://generativelanguage.googleapis.com/v1beta/models/"+model+":generateContent?key="+encodeURIComponent(key);
+    var body={contents:[{parts:[{text:prompt}]}]};
+    if(system) body.systemInstruction={parts:[{text:system}]};
+    var res=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    var txt=await res.text(), data=null; try{data=JSON.parse(txt);}catch(e){}
+    if(res.ok){
+      var out=""; try{out=data.candidates[0].content.parts.map(function(p){return p.text||"";}).join("");}catch(e){}
+      return out.trim();
+    }
+    var det=(data&&data.error&&data.error.message)||txt;
+    noteRaw("call",res.status,det);
+    if(/no longer available|not found/i.test(det||"")){ dropModelCache(); model=await pickModel(key); continue; }
+    // Google-side hiccup: wait a beat and try once more before giving up.
+    if((res.status===500||res.status===502||res.status===503)&&attempt<2){
+      await new Promise(function(r){setTimeout(r,2500);});
+      continue;
+    }
+    throw {status:res.status,detail:det};
+  }
+  throw {status:-1,detail:"models kept failing"};
+}
+
+/* Support diagnostic: triple-click the footer to see the last raw technical error.
+   Buyers never see this on their own; it's for support calls. */
+var lastRaw=null;
+function noteRaw(where,status,detail){
+  lastRaw={where:where,status:status,detail:String(detail==null?"":detail).slice(0,600),when:new Date().toLocaleTimeString()};
+  window.__ddLastError=lastRaw;
+}
+
+/* ---------- P&L state ---------- */
+var S={lines:[],tax:20};
+function load(){ try{var d=JSON.parse(localStorage.getItem(LS_DATA)||"null"); if(d&&d.lines) S=d;}catch(e){} }
+function save(){ try{localStorage.setItem(LS_DATA,JSON.stringify(S));}catch(e){} }
+function uid(){ return "l"+Date.now().toString(36)+Math.floor(Math.random()*1e4); }
+function totals(){
+  var tin=0,tout=0;
+  S.lines.forEach(function(l){ var a=parseFloat(l.amount)||0; if(l.type==="in")tin+=a; else tout+=a; });
+  var profit=tin-tout, tax=profit>0?profit*(S.tax/100):0;
+  return {tin:tin,tout:tout,profit:profit,tax:tax,keep:profit-tax};
+}
+function render(){
+  ["in","out"].forEach(function(t){
+    var box=$("lines"+(t==="in"?"In":"Out")); box.innerHTML="";
+    S.lines.filter(function(l){return l.type===t;}).forEach(function(l){
+      var row=document.createElement("div"); row.className="line";
+      row.innerHTML='<input data-k="label" placeholder="'+(t==="in"?"What came in?":"What went out?")+'" value="'+esc(l.label||"")+'">'+
+                    '<input class="amt" data-k="amount" inputmode="decimal" placeholder="0.00" value="'+esc(l.amount||"")+'">'+
+                    '<button class="x" title="Remove">×</button>';
+      row.querySelector('[data-k=label]').addEventListener("input",function(e){l.label=e.target.value;save();});
+      row.querySelector('[data-k=amount]').addEventListener("input",function(e){l.amount=e.target.value;save();paintTotals();});
+      row.querySelector(".x").addEventListener("click",function(){S.lines=S.lines.filter(function(x){return x.id!==l.id;});save();render();});
+      box.appendChild(row);
+    });
+  });
+  paintTotals();
+}
+function paintTotals(){
+  var t=totals();
+  $("totIn").textContent=fmt(t.tin); $("totOut").textContent=fmt(t.tout);
+  $("legIn").textContent=fmt(t.tin); $("legOut").textContent=fmt(t.tout);
+  var b=$("bigNum"); b.textContent=fmt(t.keep);
+  b.className="big "+(t.keep>=0?"profit":"loss");
+  var v=$("verdict");
+  if(!S.lines.length){ v.textContent="Add some money in and money out to see your result."; }
+  else if(t.keep>=0){
+    var m=t.tin>0?Math.round(t.keep/t.tin*100):0;
+    v.innerHTML="You kept <b>"+fmt(t.keep)+"</b>"+(t.tax>0?" after setting "+fmt(t.tax)+" aside for taxes":"")+". That's a "+m+"% margin — "+(m>=20?"lovely work! 🎉":m>=10?"solid.":"tight — Penny can help you find room.");
+  } else {
+    v.innerHTML="You're <b>"+fmt(-t.keep)+" short</b> right now. Don't panic — ask Penny below and we'll look at where it's going.";
+  }
+  var max=Math.max(t.tin,t.tout,1);
+  $("barIn").style.width=(t.tin/max*100)+"%"; $("barOut").style.width=(t.tout/max*100)+"%";
+  $("taxPct").textContent=S.tax+"%"; $("taxAmt").textContent=fmt(t.tax);
+}
+$("addIn").addEventListener("click",function(){S.lines.push({id:uid(),label:"",amount:"",type:"in"});save();render();});
+$("addOut").addEventListener("click",function(){S.lines.push({id:uid(),label:"",amount:"",type:"out"});save();render();});
+$("taxRange").addEventListener("input",function(e){S.tax=parseInt(e.target.value,10)||0;save();paintTotals();});
+function loadExample(){
+  S.lines=[
+    {id:uid(),label:"Saturday market sales",amount:"486.00",type:"in"},
+    {id:uid(),label:"Etsy payout",amount:"212.40",type:"in"},
+    {id:uid(),label:"Flour & sugar",amount:"58.20",type:"out"},
+    {id:uid(),label:"Market table fee",amount:"25.00",type:"out"},
+    {id:uid(),label:"Packaging",amount:"31.75",type:"out"}
+  ]; save(); render();
+}
+$("exampleBtn").addEventListener("click",function(){
+  loadExample();
+  botSay("I loaded a little bakery example so you can poke around. Try the ✨ Sort button or ask me anything!");
+  togglePanel(true);
+});
+$("clearBtn").addEventListener("click",function(){ if(confirm("Clear everything and start fresh?")){S.lines=[];save();render();} });
+
+/* ---------- setup overlay ---------- */
+function needsKey(){ return !savedKey(); }
+function showSetup(){
+  var sh=$("sheetBox");
+  sh.innerHTML='<h2>👋 Welcome to Profit Coach!</h2>'+
+    '<p>The smart features (Penny + AI sorting) run on a <b>free code from Google</b>. It takes about a minute, once — then it just works.</p>'+
+    '<ol class="steps"><li><a href="https://aistudio.google.com/" target="_blank" rel="noopener">Open Google AI Studio</a> and sign in.</li>'+
+    '<li>Click <b>Get API key</b> → <b>Create API key</b>.</li>'+
+    '<li>Click Google\'s <b>Copy</b> button, paste below, hit Connect.</li></ol>'+
+    '<input type="text" id="kIn" placeholder="Paste your free code here" autocomplete="off" spellcheck="false" style="width:100%;padding:12px;font-size:1rem;border:2px solid #d1d5db;border-radius:10px;">'+
+    '<div class="btnrow"><button class="btn" id="kGo">Connect</button></div>'+
+    '<div class="status" id="kStatus"></div>'+
+    '<p class="note" style="margin-top:10px">No credit card. No subscription. Your code only ever goes to Google\'s own servers.</p>';
+  $("overlay").classList.remove("hide");
+  var go=function(){
+    var k=$("kIn").value.trim();
+    var st=$("kStatus"); st.className="status show warn"; st.textContent="Talking to Google…";
+    if(!k){ st.className="status show err"; st.textContent="Paste your code first."; return; }
+    dropModelCache();
+    pickModel(k).then(function(m){
+      return fetch("https://generativelanguage.googleapis.com/v1beta/models/"+m+":generateContent?key="+encodeURIComponent(k),
+        {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:"Reply with only: ok"}]}]})});
+    }).then(function(r){ return r.text().then(function(t){ return {ok:r.ok,st:r.status,body:t}; }); })
+    .then(function(x){
+      if(!x.ok){ var f=friendly(x.st,x.body); st.className="status show err"; st.innerHTML="<b>"+esc(f[0])+"</b><br>"+esc(f[1]); return; }
+      try{localStorage.setItem(LS_KEY,$("kIn").value.trim());}catch(e){}
+      paintConn(); $("overlay").classList.add("hide");
+      botSay("You're all connected! 🎉 I'm Penny — ask me anything about Profit Coach, or try the ✨ Sort button with a messy list.");
+      togglePanel(true);
+    }).catch(function(){ st.className="status show err"; st.textContent="Couldn't reach Google — check your internet and try again."; });
+  };
+  $("kGo").addEventListener("click",go);
+  $("kIn").addEventListener("keydown",function(e){ if(e.key==="Enter") go(); });
+}
+function paintConn(){
+  var on=!!savedKey(), d=$("connDot");
+  d.className="dot "+(on?"on":"off"); d.title=on?("Connected "+mask(savedKey())):"Not connected";
+}
+$("keyBtn").addEventListener("click",function(){
+  var k=savedKey();
+  var sh=$("sheetBox");
+  sh.innerHTML='<h2>Your access code</h2>'+
+    (k?'<p>Connected as <b>'+esc(mask(k))+'</b>. Your code lives only in this browser.</p><div class="btnrow"><button class="btn ghost" id="kForget">Forget my code</button> <button class="btn" id="kClose">Done</button></div>'
+       :'<p>Not connected yet.</p><div class="btnrow"><button class="btn" id="kSetup">Set it up</button> <button class="btn ghost" id="kClose">Close</button></div>');
+  $("overlay").classList.remove("hide");
+  $("kClose").addEventListener("click",function(){$("overlay").classList.add("hide");});
+  var f=$("kForget"); if(f) f.addEventListener("click",function(){
+    try{localStorage.removeItem(LS_KEY);localStorage.removeItem(LS_MODEL);}catch(e){}
+    modelCache=null; paintConn(); $("overlay").classList.add("hide"); showSetup();
+  });
+  var s=$("kSetup"); if(s) s.addEventListener("click",showSetup);
+});
+
+/* ---------- AI sort ---------- */
+$("sortBtn").addEventListener("click",async function(){
+  var raw=$("messy").value.trim(), st=$("sortStatus"), btn=$("sortBtn");
+  if(!raw){ st.className="status show warn"; st.textContent="Paste your messy list in the box first."; return; }
+  var key=savedKey();
+  if(!key){ showSetup(); return; }
+  btn.disabled=true; st.className="status show warn"; st.textContent="Penny is reading your list…";
+  try{
+    var out=await gCall(key,
+      "Categorize each line below as money IN or money OUT for a small business. "+
+      "Return ONLY a JSON array like [{\"label\":\"...\",\"amount\":12.34,\"type\":\"in\"}]. "+
+      "Amounts as numbers, no dollar signs. Best guess for unclear lines. Lines:\n"+raw,
+      "You are a bookkeeping helper. Reply with ONLY the JSON array, no other text.");
+    var clean=out.replace(/^```[a-z]*\n?/i,"").replace(/\n?```$/,"").trim();
+    var arr=JSON.parse(clean);
+    if(!Array.isArray(arr)||!arr.length) throw {status:-1,detail:"empty"};
+    var n=0;
+    arr.forEach(function(r){
+      var amt=parseFloat(r.amount); if(isNaN(amt)) return;
+      S.lines.push({id:uid(),label:String(r.label||"Item").slice(0,60),amount:amt.toFixed(2),type:r.type==="in"?"in":"out"}); n++;
+    });
+    save(); render(); $("messy").value="";
+    st.className="status show ok"; st.textContent="Sorted "+n+" line"+(n===1?"":"s")+" into your books. ✨";
+  }catch(err){
+    var f=err&&typeof err.status==="number"?friendly(err.status,err.detail):friendly(0);
+    st.className="status show err"; st.innerHTML="<b>"+esc(f[0])+"</b><br>"+esc(f[1]);
+  }
+  btn.disabled=false;
+});
+
+/* ---------- Penny the bot ---------- */
+var hist=[];
+var PENNY_SYS="You are Penny, the friendly helper inside Profit Coach, a simple profit-and-loss tool for small business owners who are not tech-savvy. "+
+"The program: the user enters 'money in' lines (label + amount) and 'money out' lines; it totals them, subtracts a tax-aside percent, and shows profit or loss with a plain-words verdict. "+
+"YOU HAVE TOOLS — USE THEM: add_line (add a money in/out line), remove_line (remove by label), set_tax_rate (0-50), load_example. "+
+"When the user asks you to add, record, log, or remove something, decide in-vs-out yourself and CALL THE TOOL — never describe button steps. Confirm briefly afterwards ('Done — added Apples $10.00 to money out.'). "+
+"If in-vs-out is genuinely unclear, ask one quick question first. You act directly on their books — never say you can't click buttons. "+
+"Other features you can explain: Load example, Start fresh, the ✨ Sort button (paste a messy list, AI sorts it into in/out), the tax-aside slider. "+
+"Rules: plain everyday words, never jargon (say 'free access code' not 'API key', 'daily free share' not 'quota'). Short answers. Never show raw errors. "+
+"If they ask about their numbers, use any figures given and coach gently (biggest expense, margin). Never give tax or legal advice beyond 'ask your accountant'. "+
+"If their code isn't working, walk them through: Google AI Studio → Get API key → copy → paste into Profit Coach's key box (top-right 'Access code').";
+
+/* Penny's hands: tools she can call, executed locally in the page. */
+var PENNY_TOOLS=[{functionDeclarations:[
+  {name:"add_line",
+   description:"Add a line to the user's books. Sales, payouts, income = in; purchases, fees, supplies, costs = out.",
+   parameters:{type:"object",
+     properties:{
+       type:{type:"string",enum:["in","out"]},
+       label:{type:"string",description:"Short label"},
+       amount:{type:"string",description:"Amount in dollars, e.g. 10 or 10.50"}},
+     required:["type","label","amount"]}},
+  {name:"remove_line",
+   description:"Remove a book line whose label contains the given text.",
+   parameters:{type:"object",
+     properties:{
+       label:{type:"string",description:"Text to match in the label"},
+       type:{type:"string",enum:["in","out"],description:"Optional: only match this side"}},
+     required:["label"]}},
+  {name:"set_tax_rate",
+   description:"Set the tax-aside percentage.",
+   parameters:{type:"object",
+     properties:{percent:{type:"number",description:"0 to 50"}},
+     required:["percent"]}},
+  {name:"load_example",
+   description:"Load the bakery example data into the books.",
+   parameters:{type:"object",properties:{}}}
+]}];
+
+function execTool(name,a){
+  a=a||{};
+  if(name==="add_line"){
+    var t=(a.type==="in")?"in":"out";
+    var amt=parseFloat(String(a.amount==null?"":a.amount).replace(/[^0-9.\-]/g,""));
+    if(isNaN(amt)) amt=0; amt=Math.abs(amt);
+    var label=String(a.label||"Item").slice(0,60)||"Item";
+    S.lines.push({id:uid(),label:label,amount:amt.toFixed(2),type:t});
+    save(); render();
+    return {ok:true,message:"Added '"+label+"' ("+fmt(amt)+") to money "+t+". Totals now: in "+fmt(totals().tin)+", out "+fmt(totals().tout)+"."};
+  }
+  if(name==="remove_line"){
+    var q=String(a.label||"").toLowerCase(), ix=-1;
+    for(var i=0;i<S.lines.length;i++){
+      if(S.lines[i].label.toLowerCase().indexOf(q)>=0&&(!a.type||S.lines[i].type===a.type)){ ix=i; break; }
+    }
+    if(ix<0||!q) return {ok:false,message:"Couldn't find a line matching '"+a.label+"'."};
+    var gone=S.lines.splice(ix,1)[0]; save(); render();
+    return {ok:true,message:"Removed '"+gone.label+"' ("+fmt(parseFloat(gone.amount)||0)+")."};
+  }
+  if(name==="set_tax_rate"){
+    var p=Math.max(0,Math.min(50,parseFloat(a.percent)||0));
+    S.tax=p; $("taxRange").value=p; save(); paintTotals();
+    return {ok:true,message:"Tax-aside set to "+p+"%."};
+  }
+  if(name==="load_example"){ loadExample(); return {ok:true,message:"Loaded the bakery example."}; }
+  return {ok:false,message:"Unknown tool '"+name+"'."};
+}
+
+/* Chat with tool loop: model may call functions; we run them locally and feed results back. */
+async function gChat(key,contents,system){
+  var model=await pickModel(key);
+  var useTools=true; // if the tools call is rejected, retry once as plain chat
+  for(var iter=0;iter<5;iter++){
+    var url="https://generativelanguage.googleapis.com/v1beta/models/"+model+":generateContent?key="+encodeURIComponent(key);
+    var body={contents:contents};
+    if(useTools) body.tools=PENNY_TOOLS;
+    if(system) body.systemInstruction={parts:[{text:system}]};
+    var res=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    var txt=await res.text(), data=null; try{data=JSON.parse(txt);}catch(e){}
+    if(!res.ok){
+      var det=(data&&data.error&&data.error.message)||txt;
+      noteRaw("chat",res.status,det);
+      if(/no longer available|not found/i.test(det||"")){ dropModelCache(); model=await pickModel(key); continue; }
+      if((res.status===500||res.status===502||res.status===503)&&iter<4){
+        await new Promise(function(r){setTimeout(r,2500);}); continue;
+      }
+      if(res.status===400&&useTools){ useTools=false; continue; } // tools rejected: degrade to plain chat
+      throw {status:res.status,detail:det};
+    }
+    var parts=[]; try{parts=data.candidates[0].content.parts||[];}catch(e){}
+    var fc=null, text="";
+    parts.forEach(function(p){ if(p.functionCall) fc=p.functionCall; if(p.text) text+=p.text; });
+    contents.push({role:"model",parts:parts.length?parts:[{text:""}]});
+    if(!fc) return text.trim();
+    var result;
+    try{ result=execTool(fc.name,fc.args||{}); }
+    catch(e){ result={ok:false,message:String((e&&e.message)||e)}; }
+    contents.push({role:"user",parts:[{functionResponse:{name:fc.name,response:result}}]});
+  }
+  return "";
+}
+function togglePanel(force){
+  var p=$("panel"), open=typeof force==="boolean"?force:!p.classList.contains("open");
+  p.classList.toggle("open",open);
+  if(open && !hist.length) botSay("Hi, I'm Penny! 🪙 Ask me anything about Profit Coach — or tell me about your business and I'll help you think it through.");
+}
+$("bubble").addEventListener("click",function(){togglePanel();});
+function addMsg(who,text){
+  var d=document.createElement("div"); d.className="msg "+who; d.textContent=text;
+  $("msgs").appendChild(d); $("msgs").scrollTop=$("msgs").scrollHeight; return d;
+}
+function botSay(t){ addMsg("bot",t); }
+async function sendChat(){
+  var inp=$("chatIn"), v=inp.value.trim(); if(!v) return;
+  var key=savedKey();
+  if(!key){ botSay("I need your free Google code before I can think! Tap 'Access code' up top and paste it in — takes a minute."); togglePanel(true); return; }
+  addMsg("me",v); inp.value="";
+  hist.push({role:"user",text:v});
+  var typing=addMsg("bot","Penny is thinking…"); typing.classList.add("typing");
+  try{
+    var t=totals();
+    var ctx="Their current numbers: money in "+fmt(t.tin)+", money out "+fmt(t.tout)+", keeping "+fmt(t.keep)+" after "+S.tax+"% tax aside. "+S.lines.length+" lines entered.";
+    var convo=hist.slice(-8).map(function(h){return (h.role==="user"?"Them: ":"Penny: ")+h.text;}).join("\n");
+    var contents=[{role:"user",parts:[{text:
+      ctx+"\n\nConversation so far:\n"+convo+"\n\nReply as Penny to their last message. If they asked you to change their books, use a tool."}]}];
+    var out=await gChat(key,contents,PENNY_SYS);
+    typing.remove(); addMsg("bot",out||"Hmm, I lost my train of thought — ask me again?");
+    hist.push({role:"bot",text:out});
+  }catch(err){
+    typing.remove();
+    var f=err&&typeof err.status==="number"?friendly(err.status,err.detail):friendly(0);
+    addMsg("bot","Ouch — "+f[0]+" "+f[1]);
+  }
+}
+$("chatSend").addEventListener("click",sendChat);
+$("chatIn").addEventListener("keydown",function(e){ if(e.key==="Enter") sendChat(); });
+
+/* ---------- boot ---------- */
+(function(){
+  var n=0,t=null,foot=document.querySelector("footer");
+  if(foot) foot.addEventListener("click",function(){
+    n++; clearTimeout(t); t=setTimeout(function(){n=0;},600);
+    if(n>=3){ n=0;
+      alert(lastRaw?("Last technical detail ("+lastRaw.when+" · "+lastRaw.where+"):\nHTTP "+lastRaw.status+"\n"+lastRaw.detail)
+                   :"No errors recorded yet — everything's talking fine.");
+    }
+  });
+})();
+load();
+$("taxRange").value=S.tax;
+render(); paintConn();
+if(needsKey()) showSetup(); else $("overlay").classList.add("hide");
+})();
+</script>
+</body>
+</html>
