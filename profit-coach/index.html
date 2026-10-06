@@ -137,6 +137,14 @@
       <button class="btn ghost" id="exampleBtn">Load an example</button>
       <button class="btn ghost" id="clearBtn">Start fresh</button>
     </div>
+    <div class="btnrow">
+      <button class="btn ghost" id="phoneBtn">📲 Send to my phone</button>
+    </div>
+    <div class="status" id="phoneStatus"></div>
+    <div id="phoneLinkWrap" style="display:none;margin-top:8px;">
+      <input id="phoneLink" readonly onclick="this.select()" style="width:100%;padding:10px;font-size:.85rem;border:2px solid var(--line);border-radius:10px;">
+      <p class="note">Text or email this link to yourself, then open it on your phone — your numbers will be there waiting. (You'll paste your free code once on the phone too — that's per browser.)</p>
+    </div>
     <details class="faq"><summary>How does the smart stuff work?</summary>
       <p class="note">The AI features use <b>your own free Google code</b> — the one you pasted during setup. Your code and your numbers never leave your computer except to talk to Google's servers. No subscription, no card, free allowance resets daily.</p>
     </details>
@@ -520,6 +528,35 @@ async function sendChat(){
 $("chatSend").addEventListener("click",sendChat);
 $("chatIn").addEventListener("keydown",function(e){ if(e.key==="Enter") sendChat(); });
 
+/* ---------- magic link: desktop -> phone with zero backend ---------- */
+function dataToB64(){ return btoa(unescape(encodeURIComponent(JSON.stringify(S)))); }
+function b64ToData(b){ return JSON.parse(decodeURIComponent(escape(atob(b)))); }
+$("phoneBtn").addEventListener("click",function(){
+  var st=$("phoneStatus");
+  if(location.protocol==="file:"){
+    st.className="status show warn";
+    st.textContent="This trick needs the hosted link version (the file on your computer can't reach your phone). Open your program link instead.";
+    return;
+  }
+  var url=location.href.split("#")[0]+"#d="+dataToB64();
+  $("phoneLink").value=url; $("phoneLinkWrap").style.display="block";
+  $("phoneLink").select();
+  try{ if(navigator.clipboard) navigator.clipboard.writeText(url); }catch(e){}
+  st.className="status show ok"; st.textContent="Link copied! Text or email it to yourself.";
+});
+function checkMagicLink(){
+  if(location.hash.indexOf("#d=")!==0) return;
+  try{
+    var d=b64ToData(location.hash.slice(3));
+    if(d&&Array.isArray(d.lines)){
+      S=d; if(typeof S.tax!=="number") S.tax=20;
+      save();
+      setTimeout(function(){ botSay("Welcome! I loaded your numbers from the link. 📲"); togglePanel(true); },800);
+    }
+  }catch(e){}
+  try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){}
+}
+
 /* ---------- boot ---------- */
 (function(){
   var n=0,t=null,foot=document.querySelector("footer");
@@ -532,6 +569,7 @@ $("chatIn").addEventListener("keydown",function(e){ if(e.key==="Enter") sendChat
   });
 })();
 load();
+checkMagicLink();
 $("taxRange").value=S.tax;
 render(); paintConn();
 if(needsKey()) showSetup(); else $("overlay").classList.add("hide");
