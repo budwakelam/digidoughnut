@@ -151,6 +151,10 @@
       <p class="note" style="margin-top:10px">No camera handy? Copy this link instead (numbers only — you'll paste your code once on the phone):</p>
       <input id="phoneLink" readonly onclick="this.select()" style="width:100%;padding:10px;font-size:.85rem;border:2px solid var(--line);border-radius:10px;">
     </div>
+    <div class="btnrow">
+      <button class="btn ghost" id="syncBtn" style="display:none;">&#x1F504; Live sync: off</button>
+    </div>
+    <p class="note" id="syncNote" style="display:none;"></p>
     <details class="faq"><summary>How does the smart stuff work?</summary>
       <p class="note">The AI features use <b>your own free Google code</b> — the one you pasted during setup. Your code and your numbers never leave your computer except to talk to Google's servers. No subscription, no card, free allowance resets daily.</p>
     </details>
@@ -258,7 +262,7 @@ function noteRaw(where,status,detail){
 /* ---------- P&L state ---------- */
 var S={lines:[],tax:20};
 function load(){ try{var d=JSON.parse(localStorage.getItem(LS_DATA)||"null"); if(d&&d.lines) S=d;}catch(e){} }
-function save(){ try{localStorage.setItem(LS_DATA,JSON.stringify(S));}catch(e){} }
+function save(){ try{localStorage.setItem(LS_DATA,JSON.stringify(S));}catch(e){} if(typeof syncAfterSave==="function") syncAfterSave(); }
 function uid(){ return "l"+Date.now().toString(36)+Math.floor(Math.random()*1e4); }
 function totals(){
   var tin=0,tout=0;
@@ -584,7 +588,10 @@ $("phoneBtn").addEventListener("click",function(){
   var base=location.href.split("#")[0];
   var dataPart="d="+encodeURIComponent(dataToB64());
   var linkUrl=base+"#"+dataPart;                       // numbers only
-  var qrUrl=key? base+"#"+dataPart+"&k="+encodeURIComponent(key) : linkUrl;  // numbers + code
+  var qrParts=[dataPart];
+  if(key) qrParts.push("k="+encodeURIComponent(key));
+  if(syncOn&&syncId) qrParts.push("s="+encodeURIComponent(syncId));
+  var qrUrl=base+"#"+qrParts.join("&");  // numbers + code + sync secret
   $("phoneLink").value=linkUrl;
   try{
     var qr=qrcode(0,"M");
@@ -612,6 +619,9 @@ function checkMagicLink(){
     }
     var k=h.get("k");
     if(k){ try{ localStorage.setItem(LS_KEY,k); }catch(e){} modelCache=null; paintConn(); gotKey=true; }
+    var sid=h.get("s");
+    if(sid){ try{ localStorage.setItem(SYNC_LS,sid); }catch(e){}
+      setTimeout(function(){ if(FIREBASE_CONFIG&&!syncOn) syncEnable(); },2000); }
   }catch(e){}
   if(changed){
     save();
@@ -624,7 +634,156 @@ function checkMagicLink(){
   try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){}
 }
 
+/* ---------- live sync (opt-in, Firebase Realtime Database) ---------- */
+var FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBLgQV0ElaYnB-c7uv-xx1Ywsw4etdA1DU",
+  authDomain: "digidoughnut-sync.firebaseapp.com",
+  databaseURL: "https://digidoughnut-sync-default-rtdb.firebaseio.com",
+  projectId: "digidoughnut-sync",
+  storageBucket: "digidoughnut-sync.firebasestorage.app",
+  messagingSenderId: "258011744011",
+  appId: "1:258011744011:web:a653a986107acd14ca840e"
+};
+var FB_SDK = "https://www.gstatic.com/firebasejs/12.19.0/";
+var SYNC_LS = "dd_sync_id_v1";
+var syncOn = false, syncRef = null, syncId = null, fb = null;
+var lastRemoteTs = 0, pushTimer = null, lastPushed = null;
+
+function loadFb(){
+  if(fb) return Promise.resolve(fb);
+  return Promise.all([import(FB_SDK+"firebase-app.js"), import(FB_SDK+"firebase-database.js")]).then(function(m){
+    var A=m[0], D=m[1];
+    var app=A.getApps().length? A.getApps()[0] : A.initializeApp(FIREBASE_CONFIG);
+    fb={D:D, database:D.getDatabase(app)};
+    return fb;
+  });
+}
+function syncIdGet(){
+  try{
+    var id = localStorage.getItem(SYNC_LS);
+    if(!id){
+      var b = new Uint8Array(16);
+      if(window.crypto && crypto.getRandomValues) crypto.getRandomValues(b);
+      else for(var i=0;i<16;i++) b[i]=Math.floor(Math.random()*256);
+      id = Array.prototype.map.call(b,function(x){ return ("0"+x.toString(16)).slice(-2); }).join("");
+      localStorage.setItem(SYNC_LS,id);
+    }
+    return id;
+  }catch(e){ return null; }
+}
+function syncMsg(msg){
+  var n=$("syncNote"); n.style.display="block"; n.innerHTML=msg;
+}
+function paintSync(){
+  var b=$("syncBtn");
+  if(!FIREBASE_CONFIG){ b.style.display="none"; return; }
+  b.style.display="";
+  b.textContent = syncOn? "\uD83D\uDD04 Live sync: on" : "\uD83D\uDD04 Live sync: off";
+}
+function snapBaseline(){
+  var m={};
+  S.lines.forEach(function(l){ m[l.id]={label:l.label,amount:String(l.amount||"0"),type:l.type}; });
+  lastPushed = JSON.stringify({lines:m, tax:S.tax});
+}
+function sameAsRemote(v){
+  try{
+    var lm=v.lines||{}, ids=Object.keys(lm).sort();
+    var mine=S.lines.map(function(l){return l.id;}).sort();
+    if(ids.join(",")!==mine.join(",")) return false;
+    for(var i=0;i<S.lines.length;i++){
+      var l=S.lines[i], r=lm[l.id];
+      if(!r||r.label!==l.label||String(r.amount)!==String(l.amount||"")||r.type!==l.type) return false;
+    }
+    return (typeof v.tax==="number"?v.tax:20)===S.tax;
+  }catch(e){ return false; }
+}
+function applyRemote(v, force){
+  if(!v||typeof v!=="object") return;
+  var ts=v.updatedAt||0;
+  if(!force&&ts<=lastRemoteTs) return;
+  if(sameAsRemote(v)){ lastRemoteTs=Math.max(lastRemoteTs,ts); return; }
+  var lines=[], lm=v.lines||{};
+  Object.keys(lm).forEach(function(id){
+    var l=lm[id];
+    if(l&&typeof l.label==="string")
+      lines.push({id:id,label:l.label.slice(0,80),amount:String(l.amount==null?"":l.amount),type:(l.type==="in"?"in":"out")});
+  });
+  S={lines:lines, tax:(typeof v.tax==="number"?v.tax:20)};
+  lastRemoteTs=ts;
+  save(); $("taxRange").value=S.tax; render(); snapBaseline();
+}
+function syncDiffPush(){
+  if(!syncOn||!syncRef||!fb) return;
+  var prev={lines:{},tax:20};
+  try{ prev=JSON.parse(lastPushed||'{"lines":{},"tax":20}'); }catch(e){}
+  var cur={};
+  S.lines.forEach(function(l){ cur[l.id]={label:l.label,amount:String(l.amount||"0"),type:l.type}; });
+  var u={}, changed=false;
+  Object.keys(cur).forEach(function(id){
+    var p=prev.lines[id], c=cur[id];
+    if(!p||p.label!==c.label||p.amount!==c.amount||p.type!==c.type){ u["lines/"+id]=c; changed=true; }
+  });
+  Object.keys(prev.lines).forEach(function(id){ if(!cur[id]){ u["lines/"+id]=null; changed=true; } });
+  if(prev.tax!==S.tax){ u["tax"]=S.tax; changed=true; }
+  if(changed){
+    u["updatedAt"]=fb.D.serverTimestamp();
+    try{ fb.D.update(syncRef,u); }catch(e){}
+  }
+  snapBaseline();
+}
+function syncAfterSave(){
+  if(!syncOn||!syncRef) return;
+  clearTimeout(pushTimer);
+  pushTimer=setTimeout(syncDiffPush,700);
+}
+function pushFull(){
+  if(!syncOn||!syncRef||!fb) return;
+  var m={};
+  S.lines.forEach(function(l){ m[l.id]={label:l.label,amount:String(l.amount||"0"),type:l.type}; });
+  try{ fb.D.set(syncRef,{lines:m, tax:S.tax, updatedAt: fb.D.serverTimestamp()}); }catch(e){}
+  snapBaseline();
+}
+function syncEnable(){
+  if(syncOn) return;
+  var id=syncIdGet();
+  if(!id){ syncMsg("\u26A0\uFE0F This browser blocked the sync ID — sync unavailable here."); return; }
+  syncId=id;
+  syncMsg("Connecting to live sync\u2026");
+  loadFb().then(function(){
+    var dref=fb.D.ref(fb.database,"sync/"+id);
+    fb.D.get(dref).then(function(snap){
+      var v=snap.val();
+      if(v&&v.lines&&Object.keys(v.lines).length){
+        if(S.lines.length&&!sameAsRemote(v)){
+          var merged={};
+          S.lines.forEach(function(l){ merged[l.id]={label:l.label,amount:String(l.amount||"0"),type:l.type}; });
+          Object.keys(v.lines).forEach(function(lid){
+            var r=v.lines[lid];
+            if(r&&typeof r.label==="string")
+              merged[lid]={label:r.label.slice(0,80),amount:String(r.amount==null?"":r.amount),type:(r.type==="in"?"in":"out")};
+          });
+          S.lines=Object.keys(merged).map(function(lid){ return {id:lid,label:merged[lid].label,amount:merged[lid].amount,type:merged[lid].type}; });
+          if(typeof v.tax==="number") S.tax=v.tax;
+          save(); $("taxRange").value=S.tax; render();
+        } else {
+          applyRemote(v,true);
+        }
+      }
+      syncRef=dref;
+      fb.D.onValue(dref,function(sn){ applyRemote(sn.val()); });
+      syncOn=true; paintSync(); snapBaseline(); pushFull();
+      syncMsg("Live sync is <b>on</b>. Scan the \uD83D\uDCF2 QR code on your other device to join these same books — changes appear on both, instantly.");
+    }).catch(function(){ syncMsg("\u26A0\uFE0F Couldn't reach the sync service — check your internet and try again."); });
+  }).catch(function(){ syncMsg("\u26A0\uFE0F Couldn't load the sync service — check your internet and try again."); });
+}
+function syncDisable(){
+  try{ if(syncRef&&fb) fb.D.off(syncRef); }catch(e){}
+  syncOn=false; syncRef=null; paintSync();
+  syncMsg("Live sync is off. Your numbers stay on this device.");
+}
+
 /* ---------- boot ---------- */
+$("syncBtn").addEventListener("click",function(){ if(syncOn) syncDisable(); else syncEnable(); });
 (function(){
   var n=0,t=null,foot=document.querySelector("footer");
   if(foot) foot.addEventListener("click",function(){
@@ -638,7 +797,7 @@ function checkMagicLink(){
 load();
 checkMagicLink();
 $("taxRange").value=S.tax;
-render(); paintConn();
+render(); paintConn(); paintSync();
 if(needsKey()) showSetup(); else $("overlay").classList.add("hide");
 })();
 </script>
