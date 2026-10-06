@@ -140,6 +140,9 @@
     </div>
     <div class="btnrow">
       <button class="btn ghost" id="phoneBtn">📲 Send to my phone</button>
+      <button class="btn ghost" id="backupBtn">💾 Backup</button>
+      <button class="btn ghost" id="restoreBtn">📂 Restore</button>
+      <input type="file" id="restoreFile" accept=".json,application/json" style="display:none;">
     </div>
     <div class="status" id="phoneStatus"></div>
     <div id="phonePairWrap" style="display:none;margin-top:12px;text-align:center;">
@@ -535,6 +538,37 @@ async function sendChat(){
 }
 $("chatSend").addEventListener("click",sendChat);
 $("chatIn").addEventListener("keydown",function(e){ if(e.key==="Enter") sendChat(); });
+
+/* ---------- backup & restore: the humble save file ---------- */
+function backupStatus(ok,msg){
+  var st=$("phoneStatus"); st.className="status show "+(ok?"ok":"err"); st.textContent=msg;
+}
+$("backupBtn").addEventListener("click",function(){
+  var blob=new Blob([JSON.stringify(S)],{type:"application/json"});
+  var a=document.createElement("a");
+  var d=new Date(), pad=function(n){return (n<10?"0":"")+n;};
+  a.href=URL.createObjectURL(blob);
+  a.download="profit-coach-backup-"+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+".json";
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ try{URL.revokeObjectURL(a.href);}catch(e){} a.remove(); },800);
+  backupStatus(true,"Backup downloaded — keep it somewhere safe. It holds all your numbers.");
+});
+$("restoreBtn").addEventListener("click",function(){ $("restoreFile").click(); });
+$("restoreFile").addEventListener("change",function(e){
+  var f=e.target.files&&e.target.files[0]; if(!f) return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{
+      var d=JSON.parse(r.result);
+      if(!d||!Array.isArray(d.lines)) throw 0;
+      S=d; if(typeof S.tax!=="number") S.tax=20;
+      save(); $("taxRange").value=S.tax; render();
+      backupStatus(true,"Backup restored — "+S.lines.length+" lines loaded.");
+    }catch(err){ backupStatus(false,"That file didn't look like a Profit Coach backup."); }
+    e.target.value="";
+  };
+  r.readAsText(f);
+});
 
 /* ---------- magic link: desktop -> phone with zero backend ---------- */
 function dataToB64(){ return btoa(unescape(encodeURIComponent(JSON.stringify(S)))); }
