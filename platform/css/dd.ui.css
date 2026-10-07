@@ -217,7 +217,6 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
   .dd-pic-hand{opacity:1 !important;animation:none !important}
 }
 /* the always-open helper chat at the bottom of every setup screen */
-.dd-wiz .dd-wiz-ask{margin-top:14px;background:linear-gradient(135deg,#eef2ff,#f5f3ff);border:2px solid #c7d2fe;border-radius:14px;padding:10px 12px}
 .dd-chat-head{margin:0 0 6px;font-size:.95rem}.dd-chat-head .dd-note{display:block;font-size:.78rem}
 .dd-ask-msgs:empty{display:none}
 .dd-wiz-more{margin:4px 0 0}.dd-wiz-more summary{cursor:pointer;color:var(--dd-brand);font-size:.92rem;padding:4px 0}
@@ -225,12 +224,26 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
 .dd-bars{display:inline-flex;align-items:center;gap:6px}
 .dd-bars-label{font-size:.78rem !important;color:var(--dd-ink) !important;font-weight:600}
 .dd-bars-cells{display:inline-flex;gap:3px}.dd-bars-cells i{width:14px;height:8px;border-radius:3px;background:#e5e7eb}.dd-bars-cells i.on{background:#16a34a}
-/* keep the helper chat in view: it sticks to the bottom of the setup window while the screen scrolls */
-.dd-wiz .dd-wiz-ask{position:sticky;bottom:-24px;z-index:2;box-shadow:0 -6px 18px rgba(30,27,75,.12)}
-.dd-wiz .dd-ask-msgs{max-height:140px}
-@media (max-width:520px){ .dd-wiz .dd-wiz-ask{bottom:calc(-24px - env(safe-area-inset-bottom))} .dd-chat-head .dd-note{display:none} }
-@media (max-width:520px){
-  .dd-wiz .dd-wiz-ask{padding:8px 10px} .dd-chat-head{font-size:.88rem;margin-bottom:4px}
-  .dd-wiz .dd-ask-chips{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
-  .dd-wiz .dd-chip{white-space:nowrap;flex:0 0 auto;min-height:32px;padding:4px 10px}
+
+/* ===== helper chat: beside the steps on computers, behind a 💬 Ask button on phones ===== */
+.dd-wiz .dd-wiz-ask{background:linear-gradient(160deg,#eef2ff,#f5f3ff);border:2px solid #c7d2fe;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.dd-wiz .dd-ask-msgs{flex:1;min-height:0;overflow:auto;max-height:none;margin:0}
+.dd-chat-hide{display:none;align-self:flex-end;background:none;border:none;color:var(--dd-brand);font:inherit;font-size:.85rem;cursor:pointer;padding:2px 4px}
+.dd-ask-fab{display:none}
+@media (min-width:880px){
+  .dd-sheet.dd-wiz{max-width:900px;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start}
+  .dd-wiz .dd-wiz-ask{position:sticky;top:0;height:calc(92vh - 52px);max-height:720px}
+}
+@media (max-width:879px){
+  .dd-wiz .dd-wiz-ask{display:none;position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));max-height:60vh;z-index:5;
+                      box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .dd-wiz .dd-wiz-ask.open{display:flex}
+  .dd-chat-hide{display:block;margin-bottom:-6px}
+  .dd-ask-fab{display:inline-flex;align-items:center;gap:6px;position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:4;
+              background:#4f46e5;color:#fff;border:none;border-radius:99px;padding:10px 16px;font:inherit;font-weight:700;font-size:.95rem;
+              box-shadow:0 6px 18px rgba(79,70,229,.45);cursor:pointer;min-height:44px}
+  .dd-wiz .dd-wiz-ask.open ~ .dd-ask-fab{display:none}
+  .dd-wiz .dd-wiz-main{padding-bottom:56px}
+  .dd-wiz .dd-ask-chips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}
+  .dd-wiz .dd-chip{white-space:nowrap;flex:0 0 auto}
 }

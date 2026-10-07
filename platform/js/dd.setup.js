@@ -100,6 +100,7 @@
     var canBack = cur.at > 0 || !!parent;
     var body = typeof sc.body === "function" ? sc.body() : sc.body;
     var html =
+      '<div class="dd-wiz-main">' +
       '<button class="dd-wiz-x" data-later aria-label="Close. Your place is saved.">✕</button>' +
       '<div class="dd-wiz-top"><span class="dd-wiz-name">' + esc(wiz.title) + '</span><span class="dd-wiz-progress">' + (shownTotal > 1 ? 'Step ' + (shownAt + 1) + ' of ' + shownTotal : '') + '</span></div>' +
       '<div class="dd-wiz-dots">' + dots + '</div>' +
@@ -120,7 +121,10 @@
         '<button class="dd-linkbtn" data-later>Finish later</button>' +
       '</div>' +
       '<div class="dd-wiz-stuck" id="dd-wiz-stuck" hidden></div>' +
-      '<div class="dd-wiz-ask" id="dd-wiz-ask"></div>';
+      '</div>' +
+      // The helper chat: a column beside the steps on computers; on phones a 💬 Ask button opens it.
+      '<aside class="dd-wiz-ask' + (chatOpen ? " open" : "") + '" id="dd-wiz-ask" aria-label="Helper chat"></aside>' +
+      '<button class="dd-ask-fab" data-askfab aria-label="Ask the helper a question"><span aria-hidden="true">💬</span> Ask</button>';
     var later = function () { dd.ui.closeSheet(); dd.ui.toast("Saved. Tap Continue in the setup card to pick up here."); };
     var sh = dd.ui.sheet(html, { sticky: true, onClose: function () { setup.paint(); }, onEscape: later,
       onOutside: function () { dd.ui.toast("To close this, tap Finish later or ✕. Your place is saved."); } });
@@ -134,6 +138,11 @@
     if (q("[data-next]")) q("[data-next]").addEventListener("click", function () { next(sh); });
     q("[data-stuck]").addEventListener("click", function () { toggleStuck(sh, sc); });
     mountChat(sh);
+    var fab = sh.querySelector("[data-askfab]"), aside = sh.querySelector("#dd-wiz-ask");
+    fab.addEventListener("click", function () {
+      chatOpen = !aside.classList.contains("open"); aside.classList.toggle("open", chatOpen);
+      if (chatOpen) { var i = aside.querySelector("#dd-ask-in"); if (i) i.focus(); }
+    });
     if (sc.mount) sc.mount(ctxFor(sh));
   }
 
@@ -177,15 +186,17 @@
   /* The helper chat sits at the bottom of every setup screen, always open (Oran, 2026-10-07):
      ready-made answers before the code works, the live AI after. The conversation carries on
      from screen to screen while the page is open. */
-  var chatLog = [];
+  var chatLog = [], chatOpen = false;
   function mountChat(sh) {
     var box = sh.querySelector("#dd-wiz-ask"), live = dd.ai && dd.ai.hasCode();
-    box.innerHTML = '<div class="dd-chat-head"><span aria-hidden="true">💬</span> <b>' + (live ? "Ask the helper" : "Questions? Ask the setup guide") + '</b>' +
+    box.innerHTML = '<button class="dd-chat-hide" data-chathide aria-label="Hide the chat">Hide</button>' +
+      '<div class="dd-chat-head"><span aria-hidden="true">💬</span> <b>' + (live ? "Ask the helper" : "Questions? Ask the setup guide") + '</b>' +
         '<span class="dd-note">' + (live ? " The AI helper answers." : " Ready-made answers; the AI helper takes over once your code is connected.") + '</span></div>' +
       '<div class="dd-ask-msgs" id="dd-ask-msgs"></div>' +
       '<div class="dd-ask-row"><input class="dd-input" id="dd-ask-in" placeholder="' + (live ? "Ask anything about this step…" : "e.g. Is it really free?") + '" autocomplete="off"><button class="dd-btn small" id="dd-ask-go">Ask</button></div>' +
       (chatLog.length ? "" : '<div class="dd-ask-chips">' + setup.suggestQuestions(cur.id).map(function (t) { return '<button class="dd-chip">' + esc(t) + '</button>'; }).join("") + '</div>');
     chatLog.slice(-6).forEach(function (m) { say(box, m.who, m.text, true); });
+    box.querySelector("[data-chathide]").addEventListener("click", function () { chatOpen = false; box.classList.remove("open"); });
     var input = box.querySelector("#dd-ask-in"), go = box.querySelector("#dd-ask-go");
     var send = function (text) {
       text = (text || input.value).trim(); if (!text || go.disabled) return;
