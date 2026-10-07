@@ -144,3 +144,49 @@ Collected as decisions come up; folded into handoff.md later.
   3 at once); the first answer wins, the rest are cancelled (`inflight` list; Stop aborts all).
   The winner is remembered and asked first next time. Logged as "also asking <model>".
   connect() is still sequential (12 s per model). helper_test: 79 checks.
+
+## Phase 5: keep devices in step (2026-10-07, late afternoon) — engine built, wizard provisional
+
+- Oran's calls: **anonymous sign-in** (not open rules: Google emails buyers an "insecure rules"
+  warning for open rules); **backup/restore in this phase** (safety net if sync mangles data).
+- New `platform/js/dd.sync.js` (after dd.helper). Firebase Realtime Database + Authentication
+  (Anonymous), SDK 12.19.0 by `import()` from gstatic (13.0.0 shipped 2026-10-07; wait).
+  Setup code shared per web address `dd_firebase_config_v1`; per program `dd_<id>_sync_id_v1`
+  (32 hex), `dd_<id>_sync_on_v1`, `dd_<id>_sync_base_v1` (base + unconfirmed paths).
+  Ledger `/sync/<program>/<ledger>`: `meta/{v,schema}`, `lists/<name>/order` ("o:" + ids),
+  `lists/<name>/items/<id>` = the item's JSON TEXT (Firebase drops nulls/empties and mangles
+  arrays; sealed text comes back exactly), `fields/<key>` = JSON text. Default split: top-level
+  arrays whose items all have a string id are lists; programs can give `sync:{toParts,fromParts}`
+  or `sync:false`. Keys escaped (. # $ [ ] / % ,).
+- Three-way merge per path (base / this device / database): untouched here -> take theirs;
+  changed here -> keep ours and push. First join: union by id, database wins the same id, this
+  device's extras go last. Paths sent but not yet confirmed are kept on the device ("pend"), so a
+  change made offline survives a reload (the SDK forgets unsent writes on close). Echoes are
+  no-ops by content. Example data never travels; an empty database never replaces example data.
+  Schema: a newer `meta/schema` stops this device ("Update needed"); an older one is migrated.
+- QR: pieces `s` (ledger) and `f` (setup code, hidden from the "came across" toast). With sync
+  on, the `d` piece is left out and the sheet says the list comes through live sync. A pairing
+  link in the address delays the resume so the phone joins the scanned ledger.
+- Header chip: In step / Offline / Connecting… / Not in step / Update needed; tap = sheet
+  (Add my phone, Try again, Turn off on this device). Setup step 4: wizard, then "Settings".
+- Rules (`dd.sync.rules`, shown in the wizard): signed-in only, 32-char ledgers, only the
+  shapes above. RTDB regex has no {n}: use `$ledger.length == 32`.
+- Wizard `setup.wizards.sync` is PROVISIONAL: 8 screens written from Firebase docs, not yet
+  checked against Oran's screenshots (rule 3). Database is made BEFORE the web app is
+  registered so the config includes databaseURL; parseConfig guesses
+  `https://<projectId>-default-rtdb.firebaseio.com` when it's missing ("address guessed" in the
+  report). Labels go through L() keys `fb_*`.
+- New `platform/js/dd.backup.js`: footer "Backup" -> "Your <dataLabel>" sheet. Download
+  `<program-name>-backup-YYYY-MM-DD.json` ({dd:1, kind:"backup", program, schemaVersion, data});
+  restore checks program, version (older migrated, newer refused), validateData, asks first,
+  offers Undo; it's a replaceData so sync carries it. Example data can't be backed up.
+- New error types: sync_config, sync_auth, sync_rules, sync_offline, sync_newer, sync_file,
+  backup_bad. Privacy sheet updated (own Google account, secret address, signs in; backups).
+- Tests: `tests/fakefirebase.py` (HTTP + server-sent events fake RTDB with the same rules,
+  anonymous sign-in, pending-write behaviour like the SDK, `window.__fakeNet(false)` = offline)
+  and `tests/sync_test.py` → 78 checks, two contexts (computer + iPhone 13): phone->computer
+  (the POC's unsolved bug), both ways, offline both sides, offline change + reload, undo/clear,
+  backup/restore through sync, newer version, friendly errors, file://.
+- STILL TO DO: Oran's screenshots -> verify/fix the wizard + pictures; Oran's PC + iPhone run on
+  github.io with his real Firebase project; watch his inbox a few days for any Firebase rules
+  email (we expect none with auth != null, but it's unverified).

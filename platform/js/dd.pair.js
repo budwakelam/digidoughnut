@@ -152,10 +152,13 @@
   pair.whatTravels = function (made) {
     var p = dd.getProgram && dd.getProgram(), thing = (p && p.dataLabel) || "numbers";
     var parts = [], code = made.included.indexOf("k") >= 0, data = made.included.indexOf("d") >= 0;
+    var synced = made.included.indexOf("s") >= 0;
     if (code) parts.push("your access code");
     if (data) parts.push("your " + thing);
+    if (synced) parts.push("live sync");
     var says = parts.length ? "This brings " + parts.join(" and ") + " to your phone. " : "";
-    if (!data && dd.isExample && dd.isExample()) says += "Example data doesn't travel: once you start your own " + thing + ", it will come along too.";
+    if (synced && !(dd.isExample && dd.isExample())) says += "Your " + thing + " comes across through live sync, and stays in step from then on.";
+    else if (!data && dd.isExample && dd.isExample()) says += "Example data doesn't travel: once you start your own " + thing + ", it will come along too.";
     else if (made.left.length) says += "Your " + thing + " can't fit in one square, so it will stay on this computer for now. Keeping devices in step (setup step 4) will move it.";
     else if (!data) says += "Your " + thing + " will stay on this computer.";
     return says.trim();
@@ -189,7 +192,7 @@
     var got = [];
     pieces.forEach(function (p) {
       if (!(p.key in payload)) return;
-      try { if (p.take(payload[p.key]) !== false) got.push(p.label); } catch (e) { dd.errors.record("pair.take:" + p.key, e); }
+      try { if (p.take(payload[p.key]) !== false && !p.hidden) got.push(p.label); } catch (e) { dd.errors.record("pair.take:" + p.key, e); }
     });
     last.received = { at: new Date().toLocaleTimeString(), result: got.length ? "got " + got.join(", ") : "nothing new" };
     dd.ui.clearNotice("pair");

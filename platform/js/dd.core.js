@@ -111,11 +111,14 @@
       if (loaded.notice) dd.ui.notice("load", loaded.notice, "warn");
       if (program.mount) program.mount(ctx());
       render();
+      // Sync listens for changes and for pairing links, so it starts before the link is read.
+      if (dd.sync) dd.sync.attach(program);
       if (dd.pair) {
         // The program's numbers can ride along in the QR while they're small. Example numbers don't.
         dd.pair.register({
           key: "d", label: "numbers", optional: true,
-          give: function () { return (program.pairData === false || meta.example) ? undefined : [program.schemaVersion, data]; },
+          // With live sync on, the phone gets the numbers from the database instead.
+          give: function () { return (program.pairData === false || meta.example || (dd.sync && dd.sync.isOn())) ? undefined : [program.schemaVersion, data]; },
           take: function (v) {
             if (!Array.isArray(v) || v.length !== 2) return false;
             var body = v[1];

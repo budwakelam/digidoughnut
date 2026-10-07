@@ -99,7 +99,7 @@ with sync_playwright() as p:
     check("card shows on first visit", page.locator(".dd-setup-card").is_visible())
     check("four steps", page.locator(".dd-step").count() == 4)
     check("opened as a file: 1 of 4 done (Try it)", "1 of 4" in page.inner_text(".dd-setup-count"), page.inner_text(".dd-setup-count"))
-    check("only sync says Coming soon (Phase 5)", page.locator(".dd-step >> text=Coming soon").count() == 1)
+    check("no step says Coming soon (sync is ready in Phase 5)", page.locator(".dd-step >> text=Coming soon").count() == 0)
     check("phone step can be started from the file", page.locator("[data-start=host]").inner_text() == "Start")
     ctx.close()
     ctx, page, errs = fresh(HOSTED)

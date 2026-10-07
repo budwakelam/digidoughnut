@@ -22,9 +22,13 @@
       '<div class="dd-spacer"></div><div class="dd-slot" id="dd-top-slot"></div>';
     ui.$("dd-footer").innerHTML =
       '<p>Made with care by DigiDoughnut · ' + ui.esc(program.name) + ' ' + ui.esc(program.version) + '</p>' +
-      '<p>Your numbers are stored on this device. <button class="dd-linkbtn dd-foot-link" id="dd-privacy-link">Privacy</button></p>';
+      '<p>Your ' + ui.esc(program.dataLabel || "numbers") + ' ' + (program.dataLabel && !/s$/.test(program.dataLabel) ? "is" : "are") + ' stored on this device. ' +
+      (dd.backup ? '<button class="dd-linkbtn dd-foot-link" id="dd-data-link">Backup</button> · ' : "") +
+      '<button class="dd-linkbtn dd-foot-link" id="dd-privacy-link">Privacy</button></p>';
     var link = ui.$("dd-privacy-link");
     link.addEventListener("click", function (e) { e.stopPropagation(); ui.privacy(); });
+    var data = ui.$("dd-data-link");
+    if (data) data.addEventListener("click", function (e) { e.stopPropagation(); dd.backup.open(); });
   };
 
   /* "What this program connects to": every outside connection, in plain words.
@@ -37,7 +41,9 @@
       '<p><b>The helper.</b> When you use an AI feature, your question and the numbers it needs go to Google, using your own free access code. ' +
         (ai ? ui.esc(ai.privacyNote) : "") + '</p>' +
       (dd.helper && dd.helper.enabled() ? '<p><b>Your chats with ' + ui.esc(dd.helper.name()) + '</b> are kept in this browser, on this device, so you can pick up where you left off. "New chat" clears them. They are never sent to your phone or synced.</p>' : "") +
-      '<p><b>Live sync</b> (only if you turn it on) keeps a copy in your own private Firebase database that only you can open.</p>' +
+      '<p><b>Live sync</b> (only if you turn it on) keeps a copy in your own Firebase database, in your own Google account. DigiDoughnut never sees it. ' +
+        'Each program\'s copy sits at a long secret address that only your devices know, and the program signs in to your database before it reads or writes.</p>' +
+      '<p><b>Backups</b> are files you download and keep yourself. Nothing is sent anywhere.</p>' +
       '<p><b>The DigiDoughnut noticeboard.</b> Once a week, ' + ui.esc(name) + ' checks the DigiDoughnut noticeboard for updated help links and notices. ' +
         'It only downloads a small file. Your numbers, your code and anything you type are never sent.</p>' +
       '<div class="dd-btnrow"><button class="dd-btn" data-close>Close</button></div>');

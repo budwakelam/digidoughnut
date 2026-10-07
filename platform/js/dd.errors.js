@@ -21,7 +21,15 @@
     unexpected:    ["Something unexpected happened.", "Wait a moment and try again."],
     // platform types
     storage_full:    ["This browser's storage is full, so your last change wasn't saved.", "Make a backup, then clear some space or old data."],
-    storage_blocked: ["This browser isn't letting the program save.", "Private or incognito windows often block saving. Open the program in a normal window."]
+    storage_blocked: ["This browser isn't letting the program save.", "Private or incognito windows often block saving. Open the program in a normal window."],
+    // live sync (Phase 5): the buyer's own Firebase project
+    sync_config:   ["That Firebase setup code didn't work.", "Copy the whole firebaseConfig box again from Firebase (Project settings, Your apps) and paste it in."],
+    sync_auth:     ["Firebase didn't let this program sign in.", "In Firebase, open Authentication, then Sign-in method, and switch on Anonymous. Then try again."],
+    sync_rules:    ["Your Firebase database said no.", "Open the sync setup again and redo the step where you paste the rules, then tap Publish."],
+    sync_offline:  ["Can't reach your Firebase database right now.", "Check your internet. Your changes are kept on this device and go across when it's back."],
+    sync_newer:    ["Your other device has a newer version of this program.", "Put the newer file on this device too, then open it from the same address."],
+    sync_file:     ["Live sync needs the program to be online.", "Put it online first (setup step 3), then open it from its web address and turn on sync there."],
+    backup_bad:    ["That file didn't look like a backup from this program.", "Choose a file that ends in .json and was made with the Download a backup button."]
   };
 
   errors.types = Object.keys(TYPES);

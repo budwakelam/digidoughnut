@@ -44,8 +44,11 @@ Buyers never run this.
 ```
 pip install playwright && python3 -m playwright install chromium
 python3 tests/platform_test.py     # platform basics (110 checks)
-python3 tests/ai_test.py           # AI layer + noticeboard against a fake Google (59 checks)
+python3 tests/ai_test.py           # AI layer + noticeboard against a fake Google (61 checks)
 QR_DECODER=path/to/decode.js python3 tests/pair_test.py   # QR made, read back, opened on an emulated iPhone (22 checks)
+python3 tests/setup_test.py        # Setup Center and wizards (200 checks)
+python3 tests/helper_test.py       # Penny, the helper with hands (79 checks)
+python3 tests/sync_test.py         # live sync on two devices against a fake Firebase, backup/restore (78 checks)
 ```
 
 `programs/aitest` is an internal page for testing a real Google code (never sold).

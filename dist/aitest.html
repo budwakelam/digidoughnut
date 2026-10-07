@@ -322,6 +322,16 @@ body.dd-has-side{padding-right:360px}
                min-height:48px;box-shadow:0 6px 18px rgba(0,0,0,.25)}
 .dd-helper-fab[hidden]{display:none}
 
+/* ===== live sync chip (dd.sync) + "Your data" sheet (dd.backup) ===== */
+.dd-sync-chip{display:inline-flex;align-items:center;gap:6px;background:var(--dd-card);border:1px solid var(--dd-line);border-radius:99px;padding:5px 11px;
+              font:inherit;font-size:.8rem;font-weight:600;color:var(--dd-ink);cursor:pointer;min-height:34px;white-space:nowrap}
+.dd-sync-chip i{width:9px;height:9px;border-radius:50%;background:#9ca3af;flex:0 0 auto}
+.dd-sync-chip.ok i{background:var(--dd-ok)} .dd-sync-chip.wait i{background:#f59e0b} .dd-sync-chip.bad i{background:var(--dd-bad)}
+.dd-sync-chip.bad{color:var(--dd-bad);border-color:var(--dd-badline)}
+.dd-sync-chip.busy i{animation:dd-breathe 1s ease-in-out infinite}
+.dd-sheet h3.dd-sub{font-size:1rem;margin:16px 0 4px}
+.dd-rules{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.75rem;white-space:pre;overflow:auto;background:#fff;border:1px solid var(--dd-line);border-radius:8px;padding:8px;max-height:180px;margin:6px 0}
+
 /* ===== PROGRAM-SPECIFIC styles ===== */
 .t-row{display:flex;gap:8px}
 .t-speed{white-space:pre-wrap;font-size:.85rem;margin:10px 0 0;background:#f8fafc;border-radius:10px;padding:0}
@@ -406,7 +416,7 @@ body.dd-has-side{padding-right:360px}
 <div id="dd-layer"></div>     <!-- sheets and toasts render here -->
 
 <script>
-window.DD_BUILD = {"built":"2026-10-07","commit":"5a0ced0","platform":"0.1.0"};
+window.DD_BUILD = {"built":"2026-10-07","commit":"196e6db","platform":"0.1.0"};
 /* qrcode-generator 1.4.4 by Kazuhiko Arase, MIT License — vendored so the page stays
    fully self-contained. QR codes are generated on-device; your access code never leaves the browser for this. */
 var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=new Array(t),e=0;e<t;e+=1){r[e]=new Array(t);for(var n=0;n<t;n+=1)r[e][n]=null}return r}(l=4*u+17),e(0,0),e(l-7,0),e(0,l-7),i(),o(),v(t,r),7<=u&&h(t),null==n&&(n=w(u,f,c)),d(n,r)}var u=t,f=y[r],g=null,l=0,n=null,c=[],s={},e=function(t,r){for(var e=-1;e<=7;e+=1)if(!(t+e<=-1||l<=t+e))for(var n=-1;n<=7;n+=1)r+n<=-1||l<=r+n||(g[t+e][r+n]=0<=e&&e<=6&&(0==n||6==n)||0<=n&&n<=6&&(0==e||6==e)||2<=e&&e<=4&&2<=n&&n<=4)},o=function(){for(var t=8;t<l-8;t+=1)null==g[t][6]&&(g[t][6]=t%2==0);for(var r=8;r<l-8;r+=1)null==g[6][r]&&(g[6][r]=r%2==0)},i=function(){for(var t=B.getPatternPosition(u),r=0;r<t.length;r+=1)for(var e=0;e<t.length;e+=1){var n=t[r],o=t[e];if(null==g[n][o])for(var i=-2;i<=2;i+=1)for(var a=-2;a<=2;a+=1)g[n+i][o+a]=-2==i||2==i||-2==a||2==a||0==i&&0==a}},h=function(t){for(var r=B.getBCHTypeNumber(u),e=0;e<18;e+=1){var n=!t&&1==(r>>e&1);g[Math.floor(e/3)][e%3+l-8-3]=n}for(e=0;e<18;e+=1){n=!t&&1==(r>>e&1);g[e%3+l-8-3][Math.floor(e/3)]=n}},v=function(t,r){for(var e=f<<3|r,n=B.getBCHTypeInfo(e),o=0;o<15;o+=1){var i=!t&&1==(n>>o&1);o<6?g[o][8]=i:o<8?g[o+1][8]=i:g[l-15+o][8]=i}for(o=0;o<15;o+=1){i=!t&&1==(n>>o&1);o<8?g[8][l-o-1]=i:o<9?g[8][15-o-1+1]=i:g[8][15-o-1]=i}g[l-8][8]=!t},d=function(t,r){for(var e=-1,n=l-1,o=7,i=0,a=B.getMaskFunction(r),u=l-1;0<u;u-=2)for(6==u&&(u-=1);;){for(var f=0;f<2;f+=1)if(null==g[n][u-f]){var c=!1;i<t.length&&(c=1==(t[i]>>>o&1)),a(n,u-f)&&(c=!c),g[n][u-f]=c,-1==(o-=1)&&(i+=1,o=7)}if((n+=e)<0||l<=n){n-=e,e=-e;break}}},w=function(t,r,e){for(var n=b.getRSBlocks(t,r),o=M(),i=0;i<e.length;i+=1){var a=e[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var u=0;for(i=0;i<n.length;i+=1)u+=n[i].dataCount;if(o.getLengthInBits()>8*u)throw"code length overflow. ("+o.getLengthInBits()+">"+8*u+")";for(o.getLengthInBits()+4<=8*u&&o.put(0,4);o.getLengthInBits()%8!=0;)o.putBit(!1);for(;!(o.getLengthInBits()>=8*u||(o.put(236,8),o.getLengthInBits()>=8*u));)o.put(17,8);return function(t,r){for(var e=0,n=0,o=0,i=new Array(r.length),a=new Array(r.length),u=0;u<r.length;u+=1){var f=r[u].dataCount,c=r[u].totalCount-f;n=Math.max(n,f),o=Math.max(o,c),i[u]=new Array(f);for(var g=0;g<i[u].length;g+=1)i[u][g]=255&t.getBuffer()[g+e];e+=f;var l=B.getErrorCorrectPolynomial(c),h=C(i[u],l.getLength()-1).mod(l);a[u]=new Array(l.getLength()-1);for(g=0;g<a[u].length;g+=1){var s=g+h.getLength()-a[u].length;a[u][g]=0<=s?h.getAt(s):0}}var v=0;for(g=0;g<r.length;g+=1)v+=r[g].totalCount;var d=new Array(v),w=0;for(g=0;g<n;g+=1)for(u=0;u<r.length;u+=1)g<i[u].length&&(d[w]=i[u][g],w+=1);for(g=0;g<o;g+=1)for(u=0;u<r.length;u+=1)g<a[u].length&&(d[w]=a[u][g],w+=1);return d}(o,n)};s.addData=function(t,r){var e=null;switch(r=r||"Byte"){case"Numeric":e=x(t);break;case"Alphanumeric":e=m(t);break;case"Byte":e=L(t);break;case"Kanji":e=D(t);break;default:throw"mode:"+r}c.push(e),n=null},s.isDark=function(t,r){if(t<0||l<=t||r<0||l<=r)throw t+","+r;return g[t][r]},s.getModuleCount=function(){return l},s.make=function(){if(u<1){for(var t=1;t<40;t++){for(var r=b.getRSBlocks(t,f),e=M(),n=0;n<c.length;n++){var o=c[n];e.put(o.getMode(),4),e.put(o.getLength(),B.getLengthInBits(o.getMode(),t)),o.write(e)}var i=0;for(n=0;n<r.length;n++)i+=r[n].dataCount;if(e.getLengthInBits()<=8*i)break}u=t}a(!1,function(){for(var t=0,r=0,e=0;e<8;e+=1){a(!0,e);var n=B.getLostPoint(s);(0==e||n<t)&&(t=n,r=e)}return r}())},s.createTableTag=function(t,r){t=t||2;var e="";e+='<table style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: "+(r=void 0===r?4*t:r)+"px;",e+='">',e+="<tbody>";for(var n=0;n<s.getModuleCount();n+=1){e+="<tr>";for(var o=0;o<s.getModuleCount();o+=1)e+='<td style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: 0px;",e+=" width: "+t+"px;",e+=" height: "+t+"px;",e+=" background-color: ",e+=s.isDark(n,o)?"#000000":"#ffffff",e+=";",e+='"/>';e+="</tr>"}return e+="</tbody>",e+="</table>"},s.createSvgTag=function(t,r,e,n){var o={};"object"==typeof t&&(t=(o=t).cellSize,r=o.margin,e=o.alt,n=o.title),t=t||2,r=void 0===r?4*t:r,(e="string"==typeof e?{text:e}:e||{}).text=e.text||null,e.id=e.text?e.id||"qrcode-description":null,(n="string"==typeof n?{text:n}:n||{}).text=n.text||null,n.id=n.text?n.id||"qrcode-title":null;var i,a,u,f,c=s.getModuleCount()*t+2*r,g="";for(f="l"+t+",0 0,"+t+" -"+t+",0 0,-"+t+"z ",g+='<svg version="1.1" xmlns="http://www.w3.org/2000/svg"',g+=o.scalable?"":' width="'+c+'px" height="'+c+'px"',g+=' viewBox="0 0 '+c+" "+c+'" ',g+=' preserveAspectRatio="xMinYMin meet"',g+=n.text||e.text?' role="img" aria-labelledby="'+p([n.id,e.id].join(" ").trim())+'"':"",g+=">",g+=n.text?'<title id="'+p(n.id)+'">'+p(n.text)+"</title>":"",g+=e.text?'<description id="'+p(e.id)+'">'+p(e.text)+"</description>":"",g+='<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>',g+='<path d="',a=0;a<s.getModuleCount();a+=1)for(u=a*t+r,i=0;i<s.getModuleCount();i+=1)s.isDark(a,i)&&(g+="M"+(i*t+r)+","+u+f);return g+='" stroke="transparent" fill="black"/>',g+="</svg>"},s.createDataURL=function(o,t){o=o||2,t=void 0===t?4*o:t;var r=s.getModuleCount()*o+2*t,i=t,a=r-t;return I(r,r,function(t,r){if(i<=t&&t<a&&i<=r&&r<a){var e=Math.floor((t-i)/o),n=Math.floor((r-i)/o);return s.isDark(n,e)?0:1}return 1})},s.createImgTag=function(t,r,e){t=t||2,r=void 0===r?4*t:r;var n=s.getModuleCount()*t+2*r,o="";return o+="<img",o+=' src="',o+=s.createDataURL(t,r),o+='"',o+=' width="',o+=n,o+='"',o+=' height="',o+=n,o+='"',e&&(o+=' alt="',o+=p(e),o+='"'),o+="/>"};var p=function(t){for(var r="",e=0;e<t.length;e+=1){var n=t.charAt(e);switch(n){case"<":r+="&lt;";break;case">":r+="&gt;";break;case"&":r+="&amp;";break;case'"':r+="&quot;";break;default:r+=n}}return r};return s.createASCII=function(t,r){if((t=t||1)<2)return function(t){t=void 0===t?2:t;var r,e,n,o,i,a=1*s.getModuleCount()+2*t,u=t,f=a-t,c={"██":"█","█ ":"▀"," █":"▄","  ":" "},g={"██":"▀","█ ":"▀"," █":" ","  ":" "},l="";for(r=0;r<a;r+=2){for(n=Math.floor((r-u)/1),o=Math.floor((r+1-u)/1),e=0;e<a;e+=1)i="█",u<=e&&e<f&&u<=r&&r<f&&s.isDark(n,Math.floor((e-u)/1))&&(i=" "),u<=e&&e<f&&u<=r+1&&r+1<f&&s.isDark(o,Math.floor((e-u)/1))?i+=" ":i+="█",l+=t<1&&f<=r+1?g[i]:c[i];l+="\n"}return a%2&&0<t?l.substring(0,l.length-a-1)+Array(1+a).join("▀"):l.substring(0,l.length-1)}(r);t-=1,r=void 0===r?2*t:r;var e,n,o,i,a=s.getModuleCount()*t+2*r,u=r,f=a-r,c=Array(t+1).join("██"),g=Array(t+1).join("  "),l="",h="";for(e=0;e<a;e+=1){for(o=Math.floor((e-u)/t),h="",n=0;n<a;n+=1)i=1,u<=n&&n<f&&u<=e&&e<f&&s.isDark(o,Math.floor((n-u)/t))&&(i=0),h+=i?c:g;for(o=0;o<t;o+=1)l+=h+"\n"}return l.substring(0,l.length-1)},s.renderTo2dContext=function(t,r){r=r||2;for(var e=s.getModuleCount(),n=0;n<e;n++)for(var o=0;o<e;o++)t.fillStyle=s.isDark(n,o)?"black":"white",t.fillRect(n*r,o*r,r,r)},s}i.stringToBytes=(i.stringToBytesFuncs={default:function(t){for(var r=[],e=0;e<t.length;e+=1){var n=t.charCodeAt(e);r.push(255&n)}return r}}).default,i.createStringToBytes=function(u,f){var i=function(){function t(){var t=r.read();if(-1==t)throw"eof";return t}for(var r=S(u),e=0,n={};;){var o=r.read();if(-1==o)break;var i=t(),a=t()<<8|t();n[String.fromCharCode(o<<8|i)]=a,e+=1}if(e!=f)throw e+" != "+f;return n}(),a="?".charCodeAt(0);return function(t){for(var r=[],e=0;e<t.length;e+=1){var n=t.charCodeAt(e);if(n<128)r.push(n);else{var o=i[t.charAt(e)];"number"==typeof o?(255&o)==o?r.push(o):(r.push(o>>>8),r.push(255&o)):r.push(a)}}return r}};var r,t,a=1,u=2,o=4,f=8,y={L:1,M:0,Q:3,H:2},e=0,n=1,c=2,g=3,l=4,h=5,s=6,v=7,B=(r=[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],(t={}).getBCHTypeInfo=function(t){for(var r=t<<10;0<=d(r)-d(1335);)r^=1335<<d(r)-d(1335);return 21522^(t<<10|r)},t.getBCHTypeNumber=function(t){for(var r=t<<12;0<=d(r)-d(7973);)r^=7973<<d(r)-d(7973);return t<<12|r},t.getPatternPosition=function(t){return r[t-1]},t.getMaskFunction=function(t){switch(t){case e:return function(t,r){return(t+r)%2==0};case n:return function(t,r){return t%2==0};case c:return function(t,r){return r%3==0};case g:return function(t,r){return(t+r)%3==0};case l:return function(t,r){return(Math.floor(t/2)+Math.floor(r/3))%2==0};case h:return function(t,r){return t*r%2+t*r%3==0};case s:return function(t,r){return(t*r%2+t*r%3)%2==0};case v:return function(t,r){return(t*r%3+(t+r)%2)%2==0};default:throw"bad maskPattern:"+t}},t.getErrorCorrectPolynomial=function(t){for(var r=C([1],0),e=0;e<t;e+=1)r=r.multiply(C([1,w.gexp(e)],0));return r},t.getLengthInBits=function(t,r){if(1<=r&&r<10)switch(t){case a:return 10;case u:return 9;case o:case f:return 8;default:throw"mode:"+t}else if(r<27)switch(t){case a:return 12;case u:return 11;case o:return 16;case f:return 10;default:throw"mode:"+t}else{if(!(r<41))throw"type:"+r;switch(t){case a:return 14;case u:return 13;case o:return 16;case f:return 12;default:throw"mode:"+t}}},t.getLostPoint=function(t){for(var r=t.getModuleCount(),e=0,n=0;n<r;n+=1)for(var o=0;o<r;o+=1){for(var i=0,a=t.isDark(n,o),u=-1;u<=1;u+=1)if(!(n+u<0||r<=n+u))for(var f=-1;f<=1;f+=1)o+f<0||r<=o+f||0==u&&0==f||a==t.isDark(n+u,o+f)&&(i+=1);5<i&&(e+=3+i-5)}for(n=0;n<r-1;n+=1)for(o=0;o<r-1;o+=1){var c=0;t.isDark(n,o)&&(c+=1),t.isDark(n+1,o)&&(c+=1),t.isDark(n,o+1)&&(c+=1),t.isDark(n+1,o+1)&&(c+=1),0!=c&&4!=c||(e+=3)}for(n=0;n<r;n+=1)for(o=0;o<r-6;o+=1)t.isDark(n,o)&&!t.isDark(n,o+1)&&t.isDark(n,o+2)&&t.isDark(n,o+3)&&t.isDark(n,o+4)&&!t.isDark(n,o+5)&&t.isDark(n,o+6)&&(e+=40);for(o=0;o<r;o+=1)for(n=0;n<r-6;n+=1)t.isDark(n,o)&&!t.isDark(n+1,o)&&t.isDark(n+2,o)&&t.isDark(n+3,o)&&t.isDark(n+4,o)&&!t.isDark(n+5,o)&&t.isDark(n+6,o)&&(e+=40);var g=0;for(o=0;o<r;o+=1)for(n=0;n<r;n+=1)t.isDark(n,o)&&(g+=1);return e+=Math.abs(100*g/r/r-50)/5*10},t);function d(t){for(var r=0;0!=t;)r+=1,t>>>=1;return r}var w=function(){for(var r=new Array(256),e=new Array(256),t=0;t<8;t+=1)r[t]=1<<t;for(t=8;t<256;t+=1)r[t]=r[t-4]^r[t-5]^r[t-6]^r[t-8];for(t=0;t<255;t+=1)e[r[t]]=t;var n={glog:function(t){if(t<1)throw"glog("+t+")";return e[t]},gexp:function(t){for(;t<0;)t+=255;for(;256<=t;)t-=255;return r[t]}};return n}();function C(n,o){if(void 0===n.length)throw n.length+"/"+o;var r=function(){for(var t=0;t<n.length&&0==n[t];)t+=1;for(var r=new Array(n.length-t+o),e=0;e<n.length-t;e+=1)r[e]=n[e+t];return r}(),i={getAt:function(t){return r[t]},getLength:function(){return r.length},multiply:function(t){for(var r=new Array(i.getLength()+t.getLength()-1),e=0;e<i.getLength();e+=1)for(var n=0;n<t.getLength();n+=1)r[e+n]^=w.gexp(w.glog(i.getAt(e))+w.glog(t.getAt(n)));return C(r,0)},mod:function(t){if(i.getLength()-t.getLength()<0)return i;for(var r=w.glog(i.getAt(0))-w.glog(t.getAt(0)),e=new Array(i.getLength()),n=0;n<i.getLength();n+=1)e[n]=i.getAt(n);for(n=0;n<t.getLength();n+=1)e[n]^=w.gexp(w.glog(t.getAt(n))+r);return C(e,0).mod(t)}};return i}function p(){var e=[],o={writeByte:function(t){e.push(255&t)},writeShort:function(t){o.writeByte(t),o.writeByte(t>>>8)},writeBytes:function(t,r,e){r=r||0,e=e||t.length;for(var n=0;n<e;n+=1)o.writeByte(t[n+r])},writeString:function(t){for(var r=0;r<t.length;r+=1)o.writeByte(t.charCodeAt(r))},toByteArray:function(){return e},toString:function(){var t="";t+="[";for(var r=0;r<e.length;r+=1)0<r&&(t+=","),t+=e[r];return t+="]"}};return o}var k,A,b=(k=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],(A={}).getRSBlocks=function(t,r){var e=function(t,r){switch(r){case y.L:return k[4*(t-1)+0];case y.M:return k[4*(t-1)+1];case y.Q:return k[4*(t-1)+2];case y.H:return k[4*(t-1)+3];default:return}}(t,r);if(void 0===e)throw"bad rs block @ typeNumber:"+t+"/errorCorrectionLevel:"+r;for(var n,o,i=e.length/3,a=[],u=0;u<i;u+=1)for(var f=e[3*u+0],c=e[3*u+1],g=e[3*u+2],l=0;l<f;l+=1)a.push((n=g,o=void 0,(o={}).totalCount=c,o.dataCount=n,o));return a},A),M=function(){var e=[],n=0,o={getBuffer:function(){return e},getAt:function(t){var r=Math.floor(t/8);return 1==(e[r]>>>7-t%8&1)},put:function(t,r){for(var e=0;e<r;e+=1)o.putBit(1==(t>>>r-e-1&1))},getLengthInBits:function(){return n},putBit:function(t){var r=Math.floor(n/8);e.length<=r&&e.push(0),t&&(e[r]|=128>>>n%8),n+=1}};return o},x=function(t){var r=a,n=t,e={getMode:function(){return r},getLength:function(t){return n.length},write:function(t){for(var r=n,e=0;e+2<r.length;)t.put(o(r.substring(e,e+3)),10),e+=3;e<r.length&&(r.length-e==1?t.put(o(r.substring(e,e+1)),4):r.length-e==2&&t.put(o(r.substring(e,e+2)),7))}},o=function(t){for(var r=0,e=0;e<t.length;e+=1)r=10*r+i(t.charAt(e));return r},i=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);throw"illegal char :"+t};return e},m=function(t){var r=u,n=t,e={getMode:function(){return r},getLength:function(t){return n.length},write:function(t){for(var r=n,e=0;e+1<r.length;)t.put(45*o(r.charAt(e))+o(r.charAt(e+1)),11),e+=2;e<r.length&&t.put(o(r.charAt(e)),6)}},o=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);if("A"<=t&&t<="Z")return t.charCodeAt(0)-"A".charCodeAt(0)+10;switch(t){case" ":return 36;case"$":return 37;case"%":return 38;case"*":return 39;case"+":return 40;case"-":return 41;case".":return 42;case"/":return 43;case":":return 44;default:throw"illegal char :"+t}};return e},L=function(t){var r=o,e=i.stringToBytes(t),n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=0;r<e.length;r+=1)t.put(e[r],8)}};return n},D=function(t){var r=f,e=i.stringToBytesFuncs.SJIS;if(!e)throw"sjis not supported.";!function(){var t=e("友");if(2!=t.length||38726!=(t[0]<<8|t[1]))throw"sjis not supported."}();var o=e(t),n={getMode:function(){return r},getLength:function(t){return~~(o.length/2)},write:function(t){for(var r=o,e=0;e+1<r.length;){var n=(255&r[e])<<8|255&r[e+1];if(33088<=n&&n<=40956)n-=33088;else{if(!(57408<=n&&n<=60351))throw"illegal char at "+(e+1)+"/"+n;n-=49472}n=192*(n>>>8&255)+(255&n),t.put(n,13),e+=2}if(e<r.length)throw"illegal char at "+(e+1)}};return n},S=function(t){var e=t,n=0,o=0,i=0,r={read:function(){for(;i<8;){if(n>=e.length){if(0==i)return-1;throw"unexpected end of file./"+i}var t=e.charAt(n);if(n+=1,"="==t)return i=0,-1;t.match(/^\s$/)||(o=o<<6|a(t.charCodeAt(0)),i+=6)}var r=o>>>i-8&255;return i-=8,r}},a=function(t){if(65<=t&&t<=90)return t-65;if(97<=t&&t<=122)return t-97+26;if(48<=t&&t<=57)return t-48+52;if(43==t)return 62;if(47==t)return 63;throw"c:"+t};return r},I=function(t,r,e){for(var n=function(t,r){var n=t,o=r,l=new Array(t*r),e={setPixel:function(t,r,e){l[r*n+t]=e},write:function(t){t.writeString("GIF87a"),t.writeShort(n),t.writeShort(o),t.writeByte(128),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(255),t.writeByte(255),t.writeByte(255),t.writeString(","),t.writeShort(0),t.writeShort(0),t.writeShort(n),t.writeShort(o),t.writeByte(0);var r=i(2);t.writeByte(2);for(var e=0;255<r.length-e;)t.writeByte(255),t.writeBytes(r,e,255),e+=255;t.writeByte(r.length-e),t.writeBytes(r,e,r.length-e),t.writeByte(0),t.writeString(";")}},i=function(t){for(var r=1<<t,e=1+(1<<t),n=t+1,o=h(),i=0;i<r;i+=1)o.add(String.fromCharCode(i));o.add(String.fromCharCode(r)),o.add(String.fromCharCode(e));var a=p(),u=function(t){var e=t,n=0,o=0,r={write:function(t,r){if(t>>>r!=0)throw"length over";for(;8<=n+r;)e.writeByte(255&(t<<n|o)),r-=8-n,t>>>=8-n,n=o=0;o|=t<<n,n+=r},flush:function(){0<n&&e.writeByte(o)}};return r}(a);u.write(r,n);var f=0,c=String.fromCharCode(l[f]);for(f+=1;f<l.length;){var g=String.fromCharCode(l[f]);f+=1,o.contains(c+g)?c+=g:(u.write(o.indexOf(c),n),o.size()<4095&&(o.size()==1<<n&&(n+=1),o.add(c+g)),c=g)}return u.write(o.indexOf(c),n),u.write(e,n),u.flush(),a.toByteArray()},h=function(){var r={},e=0,n={add:function(t){if(n.contains(t))throw"dup key:"+t;r[t]=e,e+=1},size:function(){return e},indexOf:function(t){return r[t]},contains:function(t){return void 0!==r[t]}};return n};return e}(t,r),o=0;o<r;o+=1)for(var i=0;i<t;i+=1)n.setPixel(i,o,e(i,o));var a=p();n.write(a);for(var u=function(){function e(t){a+=String.fromCharCode(r(63&t))}var n=0,o=0,i=0,a="",t={},r=function(t){if(t<0);else{if(t<26)return 65+t;if(t<52)return t-26+97;if(t<62)return t-52+48;if(62==t)return 43;if(63==t)return 47}throw"n:"+t};return t.writeByte=function(t){for(n=n<<8|255&t,o+=8,i+=1;6<=o;)e(n>>>o-6),o-=6},t.flush=function(){if(0<o&&(e(n<<6-o),o=n=0),i%3!=0)for(var t=3-i%3,r=0;r<t;r+=1)a+="="},t.toString=function(){return a},t}(),f=a.toByteArray(),c=0;c<f.length;c+=1)u.writeByte(f[c]);return u.flush(),"data:image/gif;base64,"+u};return i}();qrcode.stringToBytesFuncs["UTF-8"]=function(t){return function(t){for(var r=[],e=0;e<t.length;e++){var n=t.charCodeAt(e);n<128?r.push(n):n<2048?r.push(192|n>>6,128|63&n):n<55296||57344<=n?r.push(224|n>>12,128|n>>6&63,128|63&n):(e++,n=65536+((1023&n)<<10|1023&t.charCodeAt(e)),r.push(240|n>>18,128|n>>12&63,128|n>>6&63,128|63&n))}return r}(t)},function(t){"function"==typeof define&&define.amd?define([],t):"object"==typeof exports&&(module.exports=t())}(function(){return qrcode});
@@ -525,11 +535,14 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
       if (loaded.notice) dd.ui.notice("load", loaded.notice, "warn");
       if (program.mount) program.mount(ctx());
       render();
+      // Sync listens for changes and for pairing links, so it starts before the link is read.
+      if (dd.sync) dd.sync.attach(program);
       if (dd.pair) {
         // The program's numbers can ride along in the QR while they're small. Example numbers don't.
         dd.pair.register({
           key: "d", label: "numbers", optional: true,
-          give: function () { return (program.pairData === false || meta.example) ? undefined : [program.schemaVersion, data]; },
+          // With live sync on, the phone gets the numbers from the database instead.
+          give: function () { return (program.pairData === false || meta.example || (dd.sync && dd.sync.isOn())) ? undefined : [program.schemaVersion, data]; },
           take: function (v) {
             if (!Array.isArray(v) || v.length !== 2) return false;
             var body = v[1];
@@ -710,7 +723,15 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     unexpected:    ["Something unexpected happened.", "Wait a moment and try again."],
     // platform types
     storage_full:    ["This browser's storage is full, so your last change wasn't saved.", "Make a backup, then clear some space or old data."],
-    storage_blocked: ["This browser isn't letting the program save.", "Private or incognito windows often block saving. Open the program in a normal window."]
+    storage_blocked: ["This browser isn't letting the program save.", "Private or incognito windows often block saving. Open the program in a normal window."],
+    // live sync (Phase 5): the buyer's own Firebase project
+    sync_config:   ["That Firebase setup code didn't work.", "Copy the whole firebaseConfig box again from Firebase (Project settings, Your apps) and paste it in."],
+    sync_auth:     ["Firebase didn't let this program sign in.", "In Firebase, open Authentication, then Sign-in method, and switch on Anonymous. Then try again."],
+    sync_rules:    ["Your Firebase database said no.", "Open the sync setup again and redo the step where you paste the rules, then tap Publish."],
+    sync_offline:  ["Can't reach your Firebase database right now.", "Check your internet. Your changes are kept on this device and go across when it's back."],
+    sync_newer:    ["Your other device has a newer version of this program.", "Put the newer file on this device too, then open it from the same address."],
+    sync_file:     ["Live sync needs the program to be online.", "Put it online first (setup step 3), then open it from its web address and turn on sync there."],
+    backup_bad:    ["That file didn't look like a backup from this program.", "Choose a file that ends in .json and was made with the Download a backup button."]
   };
 
   errors.types = Object.keys(TYPES);
@@ -836,9 +857,13 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
       '<div class="dd-spacer"></div><div class="dd-slot" id="dd-top-slot"></div>';
     ui.$("dd-footer").innerHTML =
       '<p>Made with care by DigiDoughnut · ' + ui.esc(program.name) + ' ' + ui.esc(program.version) + '</p>' +
-      '<p>Your numbers are stored on this device. <button class="dd-linkbtn dd-foot-link" id="dd-privacy-link">Privacy</button></p>';
+      '<p>Your ' + ui.esc(program.dataLabel || "numbers") + ' ' + (program.dataLabel && !/s$/.test(program.dataLabel) ? "is" : "are") + ' stored on this device. ' +
+      (dd.backup ? '<button class="dd-linkbtn dd-foot-link" id="dd-data-link">Backup</button> · ' : "") +
+      '<button class="dd-linkbtn dd-foot-link" id="dd-privacy-link">Privacy</button></p>';
     var link = ui.$("dd-privacy-link");
     link.addEventListener("click", function (e) { e.stopPropagation(); ui.privacy(); });
+    var data = ui.$("dd-data-link");
+    if (data) data.addEventListener("click", function (e) { e.stopPropagation(); dd.backup.open(); });
   };
 
   /* "What this program connects to": every outside connection, in plain words.
@@ -851,7 +876,9 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
       '<p><b>The helper.</b> When you use an AI feature, your question and the numbers it needs go to Google, using your own free access code. ' +
         (ai ? ui.esc(ai.privacyNote) : "") + '</p>' +
       (dd.helper && dd.helper.enabled() ? '<p><b>Your chats with ' + ui.esc(dd.helper.name()) + '</b> are kept in this browser, on this device, so you can pick up where you left off. "New chat" clears them. They are never sent to your phone or synced.</p>' : "") +
-      '<p><b>Live sync</b> (only if you turn it on) keeps a copy in your own private Firebase database that only you can open.</p>' +
+      '<p><b>Live sync</b> (only if you turn it on) keeps a copy in your own Firebase database, in your own Google account. DigiDoughnut never sees it. ' +
+        'Each program\'s copy sits at a long secret address that only your devices know, and the program signs in to your database before it reads or writes.</p>' +
+      '<p><b>Backups</b> are files you download and keep yourself. Nothing is sent anywhere.</p>' +
       '<p><b>The DigiDoughnut noticeboard.</b> Once a week, ' + ui.esc(name) + ' checks the DigiDoughnut noticeboard for updated help links and notices. ' +
         'It only downloads a small file. Your numbers, your code and anything you type are never sent.</p>' +
       '<div class="dd-btnrow"><button class="dd-btn" data-close>Close</button></div>');
@@ -1268,10 +1295,13 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
   pair.whatTravels = function (made) {
     var p = dd.getProgram && dd.getProgram(), thing = (p && p.dataLabel) || "numbers";
     var parts = [], code = made.included.indexOf("k") >= 0, data = made.included.indexOf("d") >= 0;
+    var synced = made.included.indexOf("s") >= 0;
     if (code) parts.push("your access code");
     if (data) parts.push("your " + thing);
+    if (synced) parts.push("live sync");
     var says = parts.length ? "This brings " + parts.join(" and ") + " to your phone. " : "";
-    if (!data && dd.isExample && dd.isExample()) says += "Example data doesn't travel: once you start your own " + thing + ", it will come along too.";
+    if (synced && !(dd.isExample && dd.isExample())) says += "Your " + thing + " comes across through live sync, and stays in step from then on.";
+    else if (!data && dd.isExample && dd.isExample()) says += "Example data doesn't travel: once you start your own " + thing + ", it will come along too.";
     else if (made.left.length) says += "Your " + thing + " can't fit in one square, so it will stay on this computer for now. Keeping devices in step (setup step 4) will move it.";
     else if (!data) says += "Your " + thing + " will stay on this computer.";
     return says.trim();
@@ -1305,7 +1335,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     var got = [];
     pieces.forEach(function (p) {
       if (!(p.key in payload)) return;
-      try { if (p.take(payload[p.key]) !== false) got.push(p.label); } catch (e) { dd.errors.record("pair.take:" + p.key, e); }
+      try { if (p.take(payload[p.key]) !== false && !p.hidden) got.push(p.label); } catch (e) { dd.errors.record("pair.take:" + p.key, e); }
     });
     last.received = { at: new Date().toLocaleTimeString(), result: got.length ? "got " + got.join(", ") : "nothing new" };
     dd.ui.clearNotice("pair");
@@ -2151,7 +2181,8 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
       var done = s.done(), wiz = s.wizard && setup.wizards[s.wizard];
       var btn = done && s.id === "phone" && needsHomeScreen() ? '<button class="dd-btn small" data-home>Add to Home Screen</button>'
         : done && s.id === "phone" && dd.env.isPhone ? ""
-        : done && s.id === "phone" && dd.pair ? '<button class="dd-btn small ghost" data-phone>📲 Send to my phone</button>' : done
+        : done && s.id === "phone" && dd.pair ? '<button class="dd-btn small ghost" data-phone>📲 Send to my phone</button>'
+        : done && s.id === "sync" && dd.sync ? '<button class="dd-linkbtn" data-syncsheet>Settings</button>' : done
         ? (wiz && wiz.ready !== false && s.id !== "try" ? '<button class="dd-linkbtn" data-start="' + s.wizard + '">Change</button>' : "")
         : (wiz && wiz.ready !== false ? '<button class="dd-btn small" data-start="' + s.wizard + '">' + (inProgress(st, s.wizard) ? "Continue" : "Start") + '</button>'
                                       : '<span class="dd-note">Coming soon</span>');
@@ -2162,6 +2193,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
       '<p class="dd-note" style="margin:0 0 8px">Each step is optional. Do them in any order, any time.</p><ol class="dd-steps">' + rows + '</ol>' +
       '<div class="dd-btnrow"><button class="dd-linkbtn" id="dd-setup-fold">Hide this for now</button></div></div>';
     var ph = host.querySelector("[data-phone]"); if (ph) ph.addEventListener("click", function () { dd.pair.open(); });
+    var ss = host.querySelector("[data-syncsheet]"); if (ss) ss.addEventListener("click", function () { dd.sync.openSheet(); });
     var hs = host.querySelector("[data-home]"); if (hs) hs.addEventListener("click", function () { setup.showHomeScreen(); });
     host.querySelectorAll("[data-start]").forEach(function (b) { b.addEventListener("click", function () { setup.open(b.dataset.start); }); });
     document.getElementById("dd-setup-fold").addEventListener("click", function () { var s = state(); s.folded = true; saveState(s); setup.paint(); });
@@ -2352,6 +2384,11 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
       "Only help with the step they're on. If unsure what a screen shows, say so and suggest the 'I'm stuck' button. " +
       "Facts: the access code is free from Google AI Studio, no credit card. The program keeps the code only in this browser. " +
       "Nothing they do in setup can break the program; every step can be redone." +
+      (cur && cur.id === "sync" ? " Sync facts: live sync uses the buyer's own free Firebase project (console.firebase.google.com, the free Spark plan, no card). " +
+        "Steps: create a project (any name; Google Analytics and Gemini can be switched off), Authentication > Sign-in method > Anonymous > Enable > Save, " +
+        "Realtime Database > Create Database (United States for Canada/US; Belgium europe-west1 for the UK/Europe) > Start in locked mode, then the Rules tab: replace everything with the rules this program shows and tap Publish, " +
+        "then Project settings > Your apps > the </> web button > any nickname (no Hosting) > Register app, and copy the whole firebaseConfig box. " +
+        "The setup code is not a password: it only says where the database is. Google may change button names; if what they see differs, believe their screen. Never ask for passwords." : "") +
       (cur && /^host/.test(cur.id) ? " Hosting facts: the program is ONE self-contained HTML file. It must be uploaded unchanged, keeping its file name, to an https address, " +
         "not behind a password. The host must not block outside connections (a Content-Security-Policy with connect-src 'self' breaks the helper; Neocities' free plan does this). " +
         "Updates: upload the new file with the same name to the same place, because each web address keeps its own saved numbers. If the buyer names a host " +
@@ -2946,7 +2983,97 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     ].concat(finishScreens("tiiny"))
   };
 
-  setup.wizards.sync = { title: "Keep devices in step", ready: false, screens: [] };   // Phase 5 sync + Firebase wizard
+  /* ---------- "Keep devices in step" (Phase 5) ----------
+     PROVISIONAL (2026-10-07): the Firebase console screens below are written from Firebase's
+     docs, NOT yet checked against Oran's screenshots of a brand-new project (rule 3). Labels go
+     through L() so the noticeboard can correct them; pictures come once the screenshots are in.
+     Order matters: the database is made BEFORE the web app is registered, so the setup code
+     Firebase shows includes the database's address (dd.sync also guesses it if it's missing). */
+  function syncLink() { return link("sync_console", "https://console.firebase.google.com/"); }
+  setup.wizards.sync = {
+    title: "Keep devices in step",
+    onDone: function () { dd.ui.toast("Live sync is on. Now send it to your phone.", 4500); },
+    screens: [
+      { title: "Your own free database",
+        pic: { kind: "hero", icons: ["💻", "🔄", "📱"], caption: "A change on one shows on the other" },
+        todo: "Read this, then tap Next.",
+        body: function () { return '<p>Live sync keeps your computer and phone in step: add something on one, and it appears on the other a moment later.</p>' +
+          '<p>It uses a free Google <b>Firebase</b> database that belongs to you, in your own Google account. DigiDoughnut never sees it.</p>' +
+          '<ul class="dd-facts"><li>✓ Free (Firebase\'s Spark plan). No credit card.</li><li>✓ About 10 minutes, once. Every DigiDoughnut program on this address shares it.</li><li>✓ Easiest on a computer.</li></ul>' +
+          (dd.env.isFile ? '<p class="dd-status show warn">Put the program online first (setup step 3), then do this from its web address.</p>' : ""); } },
+      { title: "Make a Firebase project",
+        todo: function () { return "Open Firebase, tap <b>" + esc(L("fb_create", "Create a project")) + "</b>, and follow it to the end."; },
+        body: function () { return '<p>Tap the button. Firebase opens in a new tab. Sign in with your Google account, then tap <b>' + esc(L("fb_create", "Create a project")) + '</b>.</p>' +
+          '<ul><li>Name it anything, like <i>My DigiDoughnut</i>.</li><li>If it offers <b>Gemini</b> or <b>Google Analytics</b>, you can switch them off. You don\'t need them.</li>' +
+          '<li>Tap <b>' + esc(L("fb_continue", "Continue")) + '</b> until it says your project is ready.</li></ul>' +
+          '<p><b>You can ignore</b> anything about plans, billing or upgrading.</p>'; },
+        action: { label: "Open Firebase", run: function (c) { c.open(syncLink()); } },
+        stuck: ["Already have a Firebase project? You can use it: open it and tap Next."], guide: "sync_project" },
+      { title: "Let the program sign in",
+        todo: function () { return "Switch on <b>" + esc(L("fb_anonymous", "Anonymous")) + "</b> and tap <b>" + esc(L("fb_save", "Save")) + "</b>."; },
+        body: function () { return '<p>In your project, open <b>' + esc(L("fb_build", "Build")) + '</b> (or <b>All products</b>) and choose <b>' + esc(L("fb_auth", "Authentication")) + '</b>. Tap <b>' + esc(L("fb_get_started", "Get started")) + '</b> if it asks.</p>' +
+          '<ol><li>Open the <b>' + esc(L("fb_signin_method", "Sign-in method")) + '</b> tab.</li><li>Choose <b>' + esc(L("fb_anonymous", "Anonymous")) + '</b>.</li><li>Switch it on and tap <b>' + esc(L("fb_save", "Save")) + '</b>.</li></ol>' +
+          '<p class="dd-note">This lets your own programs sign in to your database without a password. Nobody gets an account.</p>'; },
+        stuck: ["Can't find Authentication? It's in the list on the left, sometimes under Build or Security."], guide: "sync_auth" },
+      { title: "Make the database",
+        todo: function () { return "Create a <b>" + esc(L("fb_rtdb", "Realtime Database")) + "</b> in <b>locked mode</b>."; },
+        body: function () { return '<p>Open <b>' + esc(L("fb_rtdb", "Realtime Database")) + '</b> (under Build or Databases) and tap <b>' + esc(L("fb_create_db", "Create Database")) + '</b>.</p>' +
+          '<ul><li><b>Location</b>: <b>United States</b> if you\'re in Canada or the US. In the UK or Europe, <b>Belgium (europe-west1)</b>.</li>' +
+          '<li>Choose <b>' + esc(L("fb_locked", "Start in locked mode")) + '</b>, then <b>' + esc(L("fb_enable", "Enable")) + '</b>.</li></ul>' +
+          '<p class="dd-note">Make sure it\'s <b>Realtime Database</b>, not Firestore.</p>'; },
+        stuck: ["Picked Firestore by mistake? That's fine, just leave it. Open Realtime Database and create that one too."], guide: "sync_db" },
+      { title: "Paste the rules",
+        todo: function () { return "On the <b>" + esc(L("fb_rules", "Rules")) + "</b> tab, replace everything with these rules and tap <b>" + esc(L("fb_publish", "Publish")) + "</b>."; },
+        body: function () { return '<p>In Realtime Database, open the <b>' + esc(L("fb_rules", "Rules")) + '</b> tab. Select everything in the box, delete it, and paste these instead:</p>' +
+          '<pre class="dd-rules" id="dd-rules"></pre><div class="dd-btnrow"><button class="dd-btn small ghost" data-copyrules>Copy the rules</button></div>' +
+          '<p>Then tap <b>' + esc(L("fb_publish", "Publish")) + '</b>.</p>' +
+          '<p class="dd-note">The rules let only signed-in copies of your programs read and write, each in its own private place, and nothing else.</p>'; },
+        mount: function (c) {
+          var pre = c.el.querySelector("#dd-rules"); pre.textContent = dd.sync.rules;
+          c.el.querySelector("[data-copyrules]").addEventListener("click", function (e) {
+            var b = e.target;
+            (navigator.clipboard && window.isSecureContext ? navigator.clipboard.writeText(dd.sync.rules) : Promise.reject()).then(function () { b.textContent = "Copied ✓"; },
+              function () { var r = document.createRange(); r.selectNodeContents(pre); var s = getSelection(); s.removeAllRanges(); s.addRange(r); try { document.execCommand("copy"); b.textContent = "Copied ✓"; } catch (x) {} });
+          });
+        },
+        stuck: ["Publish greyed out? Click inside the box and type a space, then delete it."], guide: "sync_rules" },
+      { title: "Copy your setup code",
+        todo: function () { return "Register a web app and copy the whole <b>firebaseConfig</b> box."; },
+        body: function () { return '<p>Tap the ⚙️ next to <b>Project Overview</b>, then <b>' + esc(L("fb_project_settings", "Project settings")) + '</b>. Under <b>' + esc(L("fb_your_apps", "Your apps")) + '</b>, tap the web button <b>&lt;/&gt;</b>.</p>' +
+          '<ul><li>Nickname: anything, like <i>My programs</i>.</li><li><b>You can ignore</b> Firebase Hosting. Leave it unticked.</li>' +
+          '<li>Tap <b>' + esc(L("fb_register", "Register app")) + '</b>.</li></ul>' +
+          '<p>Firebase then shows a box of code with <b>firebaseConfig</b> in it. Copy the whole box.</p>' +
+          '<p class="dd-note">Already registered an app? Your setup code is on the same page, under Your apps, then SDK setup and configuration, then Config.</p>'; },
+        stuck: ["Copy everything from const firebaseConfig to the closing };. Extra bits don't matter: the program picks out what it needs."], guide: "sync_config" },
+      { title: "Paste it here",
+        pic: { kind: "page", site: "this page", items: [{ type: "field", label: "Firebase setup code", value: "const firebaseConfig = {" }], btn: "Connect" },
+        todo: "Paste the setup code in the box below, then tap Connect.",
+        body: '<p>Paste the setup code, then tap <b>Connect</b>. We\'ll sign in to your database and check it works.</p>' +
+              '<textarea class="dd-input" id="dd-wiz-fb" rows="5" placeholder="const firebaseConfig = { … }" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>',
+        action: { label: "Connect", run: function (c) { connectSync(c); } },
+        next: false,
+        stuck: ["It says sign-in isn't switched on? Go back to the Authentication step.", "It says the database said no? Go back to the rules step and tap Publish."], guide: "sync_paste" },
+      { title: "Live sync is on!",
+        pic: { kind: "done" },
+        body: function () { return '<p>This device is connected to your database. Now bring your phone in: tap <b>Send to my phone</b> and scan the square. The phone joins straight away and stays in step.</p>' +
+          '<p class="dd-note">The chip at the top of the page shows "In step" while everything is up to date.</p>'; },
+        action: { label: "📲 Send to my phone", run: function (c) { c.next(); if (dd.pair && !dd.env.isPhone) setTimeout(dd.pair.open, 250); } },
+        nextLabel: "Done" }
+    ]
+  };
+  function connectSync(c) {
+    var input = c.el.querySelector("#dd-wiz-fb"), btn = c.el.querySelector("[data-action]");
+    if (btn.disabled) return;
+    if (!input.value.trim()) { c.status("warn", "Paste your setup code in the box first."); input.focus(); return; }
+    btn.disabled = true; btn.textContent = "Connecting…";
+    c.status("info", "Signing in to your database. This can take up to 20 seconds.");
+    dd.sync.connect(input.value).then(function (r) {
+      btn.disabled = false; btn.textContent = "Connect";
+      if (r.ok) { c.status("ok", "Connected!"); setTimeout(function () { if (document.body.contains(c.el)) c.next(); }, 600); }
+      else c.status("err", r.title, r.help);
+    });
+  }
+
 
   /* ---------- bookmark name + Home Screen ----------
      Phones: a page added to the Home Screen opens like an app, and iPhones keep its saved
@@ -2981,6 +3108,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     program = p;
     setup.paint();
     dd.on("ai:changed", setup.paint);
+    dd.on("sync:changed", setup.paint);
     dd.on("pair:received", function (ev) {
       setup.paint();
       // Just arrived on the phone by QR: the best moment to add it to the Home Screen.
@@ -3345,6 +3473,642 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     return [helper.name() + " · window: " + (mode || "-") + " · messages saved: " + msgs.length + " · undo steps kept: " + n + " · tools: " + ((program.tools || []).map(function (t) { return t.name; }).join(", ") || "none"),
             "Last turn: " + (lastTurn ? lastTurn.at + " · " + lastTurn.secs + " s · " + (lastTurn.ok ? "answered" : "failed " + lastTurn.type) + " · model " + lastTurn.model + " · tools used: " + lastTurn.tools + (lastTurn.changed ? " · changed data" : "") : "none this visit")];
   });
+})();
+
+/* ---- dd.sync.js ---- */
+/* ===== DigiDoughnut Platform · dd.sync — keep devices in step =====
+   Phase 5 (Oran, 2026-10-07). Live sync through the buyer's OWN free Firebase project.
+
+   Decisions:
+   - Firebase Realtime Database + Firebase Authentication "Anonymous" sign-in (Oran chose this
+     over open rules: open rules make Google email the buyer an "insecure rules" warning).
+     The real lock is still the long secret ledger id; signing in keeps the scanners quiet and
+     turns away drive-by visitors.
+   - The setup code (firebaseConfig) is SHARED by every program on the same web address
+     (dd_firebase_config_v1): one Firebase project holds all of a buyer's programs. Each program
+     keeps its own ledger: /sync/<program>/<ledger id>, ledger id = 128-bit random (32 hex).
+   - Each item travels as ONE sealed piece of text (its JSON). Firebase drops empty values and
+     mangles lists; a sealed item comes back exactly as it went in, and comparing two versions
+     of an item is a plain text comparison.
+
+   What's stored (one ledger):
+     meta/v = 1, meta/schema = program.schemaVersion
+     lists/<name>/order        "o:" + item ids joined by ","   (never empty, so empty lists survive)
+     lists/<name>/items/<id>   JSON text of one item
+     fields/<key>              JSON text of any other top-level value
+   By default every top-level array whose items all have a string `id` is a list; everything
+   else is a field (last change wins). Programs with odd data can give sync: {toParts, fromParts}
+   or sync: false.
+
+   How changes move (the POC engine, made three-way):
+   - base = what we believe the database holds, kept on this device (dd_<id>_sync_base_v1), so a
+     change made offline survives a reload.
+   - A local change: 700 ms later, push only the paths that differ from base.
+   - A remote snapshot: for each path, if this device didn't change it since base, take the
+     remote one; if it did, keep ours (and push it). First join (no base yet): union by id,
+     the database wins on the same id.
+   - Echoes of our own pushes match what we have, so nothing happens. Example data never travels.
+*/
+(function () {
+  "use strict";
+  var dd = window.dd = window.dd || {};
+  var sync = dd.sync = {};
+
+  sync.sdkVersion = "12.19.0";   // 13.0.0 came out 2026-10-07; stay on the last 12.x until it settles
+  sync.sdkBase = function () { return "https://www.gstatic.com/firebasejs/" + sync.sdkVersion + "/"; };
+  sync.limits = { debounce: 700, connect: 20000 };   // tests may shrink these
+
+  var CONFIG_KEY = "dd_firebase_config_v1";
+
+  /* The rules the buyer pastes into Firebase (Realtime Database, Rules tab). Only a signed-in copy
+     of a program may read or write, only inside /sync/<program>/<32-character ledger>, and only
+     in the shape this module writes. Nothing else in the database can be read. */
+  sync.rules = JSON.stringify({ rules: { sync: { "$program": { "$ledger": {
+    ".read": "auth != null && $ledger.length == 32",
+    ".write": "auth != null && $ledger.length == 32 && $program.matches(/^[a-z0-9]+$/)",
+    meta: { v: { ".validate": "newData.isNumber()" }, schema: { ".validate": "newData.isNumber()" }, "$other": { ".validate": false } },
+    lists: { "$list": { order: { ".validate": "newData.isString() && newData.val().length < 200000" },
+                        items: { "$id": { ".validate": "newData.isString() && newData.val().length < 100000" } },
+                        "$other": { ".validate": false } } },
+    fields: { "$field": { ".validate": "newData.isString() && newData.val().length < 200000" } },
+    "$other": { ".validate": false }
+  } } } } }, null, 2);
+  var program = null, fb = null, app = null, db = null;
+  var ledgerRef = null, unsubs = [], pushTimer = null, starting = null;
+  var base = null, pend = {}, pendSeq = 0, connectedNow = false, resumeAfterPair = false;
+  var state = "off";   // off | connecting | on | problem | newer
+  var problem = null;  // friendly error type
+  var diag = { pushes: 0, acked: 0, lastPush: "-", remote: 0, applied: 0, lastRemote: "-", lastError: "-", signedIn: "-", resumed: "no", joined: "-" };
+
+  function key(thing) { return dd.store.programKey(program.id, thing); }
+  function now() { return new Date().toLocaleTimeString(); }
+
+  /* ---------- the setup code (shared per web address) ---------- */
+  var FIELDS = ["apiKey", "authDomain", "databaseURL", "projectId", "storageBucket", "messagingSenderId", "appId", "measurementId"];
+  /* Accepts what the Firebase console shows (a JS object, with or without "const firebaseConfig ="),
+     strict JSON, or text with stray quotes. Returns a config or null. */
+  sync.parseConfig = function (text) {
+    var t = String(text || ""), cfg = null;
+    try { var j = JSON.parse(t); if (j && typeof j === "object") cfg = j; } catch (e) {}
+    if (!cfg) {
+      cfg = {};
+      var re = /(["']?)(apiKey|authDomain|databaseURL|projectId|storageBucket|messagingSenderId|appId|measurementId)\1\s*:\s*["'`]([^"'`]+)["'`]/g, m;
+      while ((m = re.exec(t))) cfg[m[2]] = m[3].trim();
+    }
+    var out = {};
+    FIELDS.forEach(function (f) { if (typeof cfg[f] === "string" && cfg[f].trim()) out[f] = cfg[f].trim(); });
+    if (!out.apiKey || !out.projectId) return null;
+    // The console leaves databaseURL out when the database was made after the app was
+    // registered. The default database of a project lives at a predictable address (US).
+    if (!out.databaseURL) { out.databaseURL = "https://" + out.projectId + "-default-rtdb.firebaseio.com"; out.guessedURL = true; }
+    if (!/^https:\/\/[a-z0-9.-]+\/?$/i.test(out.databaseURL)) return null;
+    if (!out.authDomain) out.authDomain = out.projectId + ".firebaseapp.com";
+    return out;
+  };
+  sync.config = function () { var c = dd.store.getJSON(CONFIG_KEY); return c && c.apiKey && c.databaseURL ? c : null; };
+  function saveConfig(c) { return dd.store.setJSON(CONFIG_KEY, c).ok; }
+
+  /* ---------- ledger id (per program) ---------- */
+  function ledger() { var v = dd.store.get(key("sync_id")); return /^[0-9a-f]{32}$/.test(v || "") ? v : null; }
+  function newLedger() {
+    var b = new Uint8Array(16); crypto.getRandomValues(b);
+    return Array.prototype.map.call(b, function (x) { return (x < 16 ? "0" : "") + x.toString(16); }).join("");
+  }
+  function wasOn() { return dd.store.get(key("sync_on")) === "1"; }
+  function rememberOn(on) { if (on) dd.store.set(key("sync_on"), "1"); else dd.store.remove(key("sync_on")); }
+  /* base: what the database last showed us. pend: paths this device sent that the database hasn't
+     confirmed yet. Both are kept on the device, so a change made offline survives a reload
+     (the Firebase library forgets unsent writes when the page closes). */
+  function loadBase() {
+    var b = dd.store.getJSON(key("sync_base")), mine = b && typeof b === "object" && b.ledger === ledger();
+    base = mine ? b.flat : null; pend = mine && b.pend && typeof b.pend === "object" ? b.pend : {};
+  }
+  function saveBase() { dd.store.setJSON(key("sync_base"), { ledger: ledger(), flat: base, pend: pend }); }
+  /* base, with every unconfirmed path marked as changed here, so it's kept and sent again */
+  function effBase() {
+    if (!base) return null;
+    var b = {}; Object.keys(base).forEach(function (p) { b[p] = base[p]; });
+    Object.keys(pend).forEach(function (p) { b[p] = "\u0000unconfirmed"; });
+    return b;
+  }
+
+  sync.isOn = function () { return state === "on" || state === "connecting" || (state === "problem" && wasOn()); };
+  sync.state = function () { return { state: state, problem: problem, connected: connectedNow }; };
+
+  /* ---------- data <-> parts ---------- */
+  function enc(k) { return String(k).replace(/[.#$\[\]\/%,]/g, function (c) { return "%" + c.charCodeAt(0).toString(16).toUpperCase(); }); }
+  function dec(k) { return String(k).replace(/%([0-9A-F]{2})/g, function (_, h) { return String.fromCharCode(parseInt(h, 16)); }); }
+  function isList(v) { return Array.isArray(v) && v.every(function (i) { return i && typeof i === "object" && !Array.isArray(i) && typeof i.id === "string" && i.id; }); }
+
+  /* data -> flat map of path -> text */
+  sync.toFlat = function (data) {
+    if (program && program.sync && program.sync.toParts) data = program.sync.toParts(data);
+    var flat = {};
+    Object.keys(data || {}).forEach(function (k) {
+      var v = data[k];
+      if (v === undefined) return;
+      if (isList(v)) {
+        var seen = {}, ids = [];
+        v.forEach(function (item) { if (seen[item.id]) return; seen[item.id] = 1; ids.push(enc(item.id)); flat["lists/" + enc(k) + "/items/" + enc(item.id)] = JSON.stringify(item); });
+        flat["lists/" + enc(k) + "/order"] = "o:" + ids.join(",");
+      } else flat["fields/" + enc(k)] = JSON.stringify(v);
+    });
+    return flat;
+  };
+  /* flat map -> data (null if something can't be read) */
+  sync.fromFlat = function (flat) {
+    var out = {}, lists = {};
+    try {
+      Object.keys(flat).forEach(function (p) {
+        var s = p.split("/");
+        if (s[0] === "fields" && s.length === 2) out[dec(s[1])] = JSON.parse(flat[p]);
+        else if (s[0] === "lists") {
+          var l = lists[s[1]] = lists[s[1]] || { items: {}, order: null };
+          if (s[2] === "order" && s.length === 3) l.order = flat[p];
+          else if (s[2] === "items" && s.length === 4) l.items[s[3]] = JSON.parse(flat[p]);
+        }
+      });
+    } catch (e) { dd.errors.record("sync.read", e); return null; }
+    Object.keys(lists).forEach(function (name) {
+      var l = lists[name], arr = [], used = {};
+      String(l.order || "o:").slice(2).split(",").forEach(function (id) { if (id && l.items[id] && !used[id]) { used[id] = 1; arr.push(l.items[id]); } });
+      Object.keys(l.items).forEach(function (id) { if (!used[id]) arr.push(l.items[id]); });   // items the order doesn't mention yet
+      out[dec(name)] = arr;
+    });
+    if (program && program.sync && program.sync.fromParts) out = program.sync.fromParts(out);
+    return out;
+  };
+  /* the ledger as Firebase gives it -> flat map */
+  function remoteFlat(v) {
+    var flat = {};
+    if (!v || typeof v !== "object") return flat;
+    Object.keys(v.fields || {}).forEach(function (k) { if (typeof v.fields[k] === "string") flat["fields/" + k] = v.fields[k]; });
+    Object.keys(v.lists || {}).forEach(function (n) {
+      var l = v.lists[n] || {};
+      if (typeof l.order === "string") flat["lists/" + n + "/order"] = l.order;
+      Object.keys(l.items || {}).forEach(function (id) { if (typeof l.items[id] === "string") flat["lists/" + n + "/items/" + id] = l.items[id]; });
+    });
+    return flat;
+  }
+  function same(a, b) {
+    var ka = Object.keys(a), kb = Object.keys(b);
+    if (ka.length !== kb.length) return false;
+    for (var i = 0; i < ka.length; i++) if (a[ka[i]] !== b[ka[i]]) return false;
+    return true;
+  }
+  function diff(from, to) {
+    var u = {}, n = 0;
+    Object.keys(to).forEach(function (p) { if (from[p] !== to[p]) { u[p] = to[p]; n++; } });
+    Object.keys(from).forEach(function (p) { if (!(p in to)) { u[p] = null; n++; } });
+    return n ? u : null;
+  }
+  /* three-way merge. b = base (null on first join), l = this device, r = the database */
+  sync.merge = function (b, l, r) {
+    var out = {}, all = {};
+    [l, r].concat(b ? [b] : []).forEach(function (m) { Object.keys(m).forEach(function (p) { all[p] = 1; }); });
+    Object.keys(all).forEach(function (p) {
+      var v;
+      if (!b) v = p in r ? r[p] : l[p];                                     // first join: union, database wins
+      else if (l[p] === b[p]) v = r[p];                                     // we didn't touch it: take theirs
+      else v = l[p];                                                        // we changed it: keep ours
+      if (v !== undefined && v !== null) out[p] = v;
+    });
+    // Lists: an order that both sides changed keeps ours; items it doesn't mention are added at the
+    // end by fromFlat. On first join, put this device's own extra items after the database's.
+    if (!b) Object.keys(out).forEach(function (p) {
+      if (!/\/order$/.test(p) || !(p in l) || !(p in r)) return;
+      var ids = r[p].slice(2).split(",").filter(Boolean);
+      l[p].slice(2).split(",").forEach(function (id) { if (id && ids.indexOf(id) < 0) ids.push(id); });
+      out[p] = "o:" + ids.join(",");
+    });
+    return out;
+  };
+
+  function localFlat() { return dd.isExample() ? {} : sync.toFlat(dd.getData()); }
+
+  /* ---------- Firebase ---------- */
+  function loadSdk() {
+    if (fb) return Promise.resolve(fb);
+    var B = sync.sdkBase();
+    return Promise.all([import(B + "firebase-app.js"), import(B + "firebase-auth.js"), import(B + "firebase-database.js")]).then(function (m) {
+      fb = { A: m[0], U: m[1], D: m[2] };
+      return fb;
+    });
+  }
+  function useApp(cfg) {
+    var A = fb.A, existing = A.getApps().filter(function (a) { return a.name === "dd"; })[0];
+    var p = existing && JSON.stringify(existing.options) !== JSON.stringify(strip(cfg)) ? A.deleteApp(existing).then(function () { existing = null; }) : Promise.resolve();
+    return p.then(function () {
+      app = existing || A.initializeApp(strip(cfg), "dd");
+      return app;
+    });
+  }
+  function strip(cfg) { var o = {}; FIELDS.forEach(function (f) { if (cfg[f]) o[f] = cfg[f]; }); return o; }
+  function signIn() {
+    var auth = fb.U.getAuth(app);
+    return Promise.resolve(auth.authStateReady ? auth.authStateReady() : null).then(function () {
+      if (auth.currentUser) return auth.currentUser;
+      return fb.U.signInAnonymously(auth).then(function (c) { return c.user; });
+    }).then(function (u) { diag.signedIn = "yes"; return u; });
+  }
+  function withTimeout(p, ms, what) {
+    return new Promise(function (res, rej) {
+      var t = setTimeout(function () { rej({ ddType: "sync_offline", raw: what + ": no answer in " + Math.round(ms / 1000) + " s" }); }, ms);
+      p.then(function (v) { clearTimeout(t); res(v); }, function (e) { clearTimeout(t); rej(e); });
+    });
+  }
+
+  /* Firebase error -> one of our friendly types */
+  sync.classify = function (e) {
+    if (e && e.ddType) return e.ddType;
+    var code = String((e && e.code) || ""), msg = String((e && e.message) || e || "");
+    if (/admin-restricted-operation|operation-not-allowed|configuration-not-found|ADMIN_ONLY/i.test(code + msg)) return "sync_auth";
+    if (/api-key|API_KEY|invalid-api-key|project.*not.*found|app-not-authorized|invalid-app-id/i.test(code + msg)) return "sync_config";
+    if (/permission|PERMISSION_DENIED/i.test(code + msg)) return "sync_rules";
+    if (/different region|firebasedatabase\.app|Database lives/i.test(msg)) return "sync_config";
+    if (/network-request-failed|Failed to fetch|NetworkError|offline/i.test(code + msg)) {
+      var cfg = sync.config();
+      if (dd.errors.blockedRecently(sync.sdkBase()) || (cfg && dd.errors.blockedRecently(cfg.databaseURL)) || dd.errors.blockedRecently("https://identitytoolkit.googleapis.com")) return "host_blocked";
+      return "sync_offline";
+    }
+    if (/import|module|dynamically imported/i.test(msg)) return dd.errors.blockedRecently(sync.sdkBase()) ? "host_blocked" : "sync_offline";
+    return "unexpected";
+  };
+  function fail(where, e) {
+    var type = sync.classify(e);
+    diag.lastError = now() + " · " + where + " · " + dd.errors.scrub(String((e && (e.raw || e.code || e.message)) || e)).slice(0, 200);
+    dd.errors.record("sync " + where, (e && (e.raw || e.message)) || e);
+    return type;
+  }
+
+  /* ---------- start / stop ---------- */
+  /* Connect this program's ledger. Resolves {ok:true} or {ok:false, type, title, help}. */
+  sync.start = function (opts) {
+    opts = opts || {};
+    if (starting) return starting;
+    var cfg = opts.config || sync.config();
+    if (!program || program.sync === false) return Promise.resolve(friendly("unexpected"));
+    if (!cfg) return Promise.resolve(friendly("sync_config"));
+    if (dd.env.isFile && !opts.allowFile) return Promise.resolve(friendly("sync_file"));
+    if (!ledger()) dd.store.set(key("sync_id"), newLedger());
+    stopListening();
+    state = "connecting"; problem = null; paint();
+    var gotFirst = false;
+    starting = loadSdk().catch(function (e) { throw { stage: "loading", e: e }; })
+      .then(function () { return useApp(cfg); })
+      .then(function () { return withTimeout(signIn(), sync.limits.connect, "sign-in").catch(function (e) { throw { stage: "sign-in", e: e }; }); })
+      .then(function () {
+        db = fb.D.getDatabase(app);
+        ledgerRef = fb.D.ref(db, "sync/" + program.id + "/" + ledger());
+        loadBase();
+        return withTimeout(new Promise(function (resolve, reject) {
+          unsubs.push(fb.D.onValue(ledgerRef, function (snap) {
+            diag.remote++; diag.lastRemote = now();
+            var ok = onRemote(snap.val());
+            if (!gotFirst) { gotFirst = true; ok ? resolve() : reject({ ddType: state === "newer" ? "sync_newer" : "unexpected", raw: "first snapshot not usable" }); }
+          }, function (e) {
+            var t = fail("listening", e);
+            if (!gotFirst) { gotFirst = true; reject({ stage: "listening", e: e }); return; }
+            setProblem(t);
+          }));
+        }), sync.limits.connect, "first read").catch(function (e) { throw e.stage ? e : { stage: "reading", e: e }; });
+      })
+      .then(function () {
+        // Prove we can write too (rules), and record which version wrote here.
+        return withTimeout(fb.D.update(ledgerRef, { "meta/v": 1, "meta/schema": program.schemaVersion }), sync.limits.connect, "first write")
+          .catch(function (e) { throw { stage: "writing", e: e }; });
+      })
+      .then(function () {
+        try {
+          unsubs.push(fb.D.onValue(fb.D.ref(db, ".info/connected"), function (s) { connectedNow = !!s.val(); paint(); }));
+        } catch (e) {}
+        state = "on"; problem = null; rememberOn(true); diag.joined = now(); dd.ui.clearNotice("sync");
+        pushNow();
+        paint(); dd.emit("sync:changed", { on: true });
+        return { ok: true };
+      })
+      .catch(function (err) {
+        stopListening();
+        var type = fail(err.stage || "start", err.e || err);
+        setProblem(type);
+        return friendly(type);
+      })
+      .finally(function () { starting = null; });
+    return starting;
+  };
+
+  function friendly(type) {
+    var f = dd.errors.friendly(type, { company: "Firebase" });
+    return { ok: false, type: type, title: f.title, help: f.help };
+  }
+  function setProblem(type) { state = "problem"; problem = type; paint(); dd.emit("sync:changed", { on: wasOn(), problem: type }); }
+
+  function stopListening() {
+    unsubs.forEach(function (u) { try { u(); } catch (e) {} });
+    unsubs = []; ledgerRef = null; connectedNow = false;
+    clearTimeout(pushTimer); pushTimer = null;
+  }
+
+  /* Turn sync off on this device. The database and the setup code are left alone. */
+  sync.stop = function () {
+    stopListening();
+    rememberOn(false); state = "off"; problem = null;
+    paint(); dd.emit("sync:changed", { on: false });
+  };
+
+  /* Connect with a pasted setup code (the wizard's Connect button). */
+  sync.connect = function (text) {
+    var cfg = sync.parseConfig(text);
+    if (!cfg) return Promise.resolve(friendly("sync_config"));
+    var old = sync.config();
+    if (old && (old.databaseURL !== cfg.databaseURL || old.apiKey !== cfg.apiKey)) {
+      // A different Firebase project: start a fresh ledger there.
+      dd.store.remove(key("sync_id")); dd.store.remove(key("sync_base"));
+    }
+    return sync.start({ config: cfg }).then(function (r) {
+      if (r.ok) saveConfig(cfg);
+      return r;
+    });
+  };
+
+  /* Forget the setup code on this device (all programs on this web address). */
+  sync.forget = function () { sync.stop(); dd.store.remove(CONFIG_KEY); dd.store.remove(key("sync_base")); };
+
+  /* ---------- the two directions ---------- */
+  function onRemote(v) {
+    var remote = remoteFlat(v), rschema = v && v.meta && typeof v.meta.schema === "number" ? v.meta.schema : null;
+    if (rschema !== null && rschema > program.schemaVersion) {
+      state = "newer"; problem = "sync_newer"; paint();
+      dd.ui.notice("sync-newer", dd.errors.friendly("sync_newer").title + " " + dd.errors.friendly("sync_newer").help, "warn");
+      return false;
+    }
+    dd.ui.clearNotice("sync-newer");
+    var example = dd.isExample(), local = localFlat();
+    // Example data never travels, and an empty database doesn't replace example data.
+    if (example && !Object.keys(remote).length) { base = remote; saveBase(); return true; }
+    var merged = sync.merge(example ? null : effBase(), local, remote);
+    if (rschema !== null && rschema < program.schemaVersion && Object.keys(remote).length) {
+      // Written by an older version: bring it up to date before using it.
+      var old = sync.fromFlat(merged);
+      try { if (old) merged = sync.toFlat(program.migrate(old, rschema)); } catch (e) { dd.errors.record("sync.migrate", e); return false; }
+    }
+    if (!example && same(merged, local)) { base = remote; saveBase(); if (!same(remote, local)) schedulePush(0); return true; }
+    var next = sync.fromFlat(merged);
+    if (!next || !program.validateData(next)) {
+      fail("applying", "the database holds data this program can't read");
+      dd.ui.toast("A change from your other device couldn't be read, so it was skipped.");
+      base = remote; saveBase();
+      return true;
+    }
+    dd.replaceData(next, { source: "sync", example: false });
+    diag.applied++;
+    base = remote; saveBase();
+    if (!same(remote, merged)) schedulePush(0);
+    return true;
+  }
+
+  function schedulePush(ms) {
+    if (state !== "on" && state !== "connecting") return;
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(pushNow, ms == null ? sync.limits.debounce : ms);
+  }
+  function pushNow() {
+    pushTimer = null;
+    if (!ledgerRef || state !== "on" || dd.isExample()) return;
+    var local = localFlat(), from = effBase() || {};
+    var u = diff(from, local);
+    if (!u) return;
+    var seq = ++pendSeq;
+    Object.keys(u).forEach(function (p) { pend[p] = seq; });
+    base = local; saveBase();
+    diag.pushes++;
+    fb.D.update(ledgerRef, u).then(function () {
+      Object.keys(u).forEach(function (p) { if (pend[p] === seq) delete pend[p]; });
+      saveBase(); diag.acked++; diag.lastPush = now(); paint();
+    }, function (e) { setProblem(fail("saving", e)); });   // pend keeps the change, so it's sent again
+    paint();
+  }
+
+  /* ---------- the QR: the phone joins on scan ---------- */
+  var arrived = null;
+  if (dd.pair) {
+    dd.pair.register({
+      key: "s", label: "live sync",
+      give: function () { return sync.isOn() && ledger() ? ledger() : undefined; },
+      take: function (v) {
+        if (!/^[0-9a-f]{32}$/.test(String(v))) return false;
+        arrived = arrived || {}; arrived.ledger = v; return true;
+      }
+    });
+    dd.pair.register({
+      key: "f", label: "sync setup", hidden: true,
+      give: function () { var c = sync.config(); return sync.isOn() && c ? strip(c) : undefined; },
+      take: function (v) {
+        var c = v && typeof v === "object" ? sync.parseConfig(JSON.stringify(v)) : null;
+        if (!c) return false;
+        arrived = arrived || {}; arrived.config = c; return true;
+      }
+    });
+  }
+  function joinFromPair() {
+    var a = arrived; arrived = null;
+    if (!a || !a.ledger || !a.config || !program) {
+      if (resumeAfterPair) { resumeAfterPair = false; if (wasOn() && sync.config()) { diag.resumed = "yes"; sync.start(); } }
+      return;
+    }
+    resumeAfterPair = false;
+    if (ledger() !== a.ledger) { dd.store.set(key("sync_id"), a.ledger); dd.store.remove(key("sync_base")); base = null; pend = {}; }
+    saveConfig(a.config);
+    sync.start().then(function (r) {
+      if (r.ok) dd.ui.toast("Live sync is on. This phone and your computer are in step.", 4000);
+      else dd.ui.notice("sync", r.title + " " + r.help, "warn");
+    });
+  }
+
+  /* ---------- the little status chip in the header ---------- */
+  function paint() {
+    var slot = document.getElementById("dd-top-slot"); if (!slot) return;
+    var chip = document.getElementById("dd-sync-chip");
+    if (state === "off" && !wasOn()) { if (chip) chip.remove(); return; }
+    if (!chip) {
+      chip = document.createElement("button"); chip.id = "dd-sync-chip"; chip.className = "dd-sync-chip";
+      chip.addEventListener("click", function () { sync.openSheet(); });
+      slot.appendChild(chip);
+    }
+    var pending = !!pushTimer, s = sync.status();
+    chip.className = "dd-sync-chip " + s.kind + (pending ? " busy" : "");
+    chip.innerHTML = '<i aria-hidden="true"></i>' + dd.ui.esc(s.short);
+    chip.title = s.long;
+  }
+  /* {kind: ok|wait|bad|off, short, long} in plain words */
+  sync.status = function () {
+    if (state === "connecting") return { kind: "wait", short: "Connecting…", long: "Connecting to your Firebase database." };
+    if (state === "on" && connectedNow) return { kind: "ok", short: "In step", long: "Live sync is on. Changes go to your other devices straight away." };
+    if (state === "on") return { kind: "wait", short: "Offline", long: "Can't reach your database right now. Your changes are kept here and go across when you're back online." };
+    if (state === "newer") { var n = dd.errors.friendly("sync_newer"); return { kind: "bad", short: "Update needed", long: n.title + " " + n.help }; }
+    if (state === "problem") { var f = dd.errors.friendly(problem, { company: "Firebase" }); return { kind: "bad", short: "Not in step", long: f.title + " " + f.help }; }
+    return { kind: "off", short: "Sync off", long: "Live sync is off on this device." };
+  };
+
+  /* The sheet behind the chip (also Setup step 4's "Change"). */
+  sync.openSheet = function () {
+    var s = sync.status(), on = sync.isOn(), cfg = sync.config();
+    var sh = dd.ui.sheet('<h2>Keep devices in step</h2>' +
+      '<p class="dd-status show ' + (s.kind === "ok" ? "ok" : s.kind === "bad" ? "err" : "info") + '">' + dd.ui.esc(s.long) + '</p>' +
+      (cfg ? '<p class="dd-note">Your database: <b>' + dd.ui.esc(cfg.projectId) + '</b></p>' : "") +
+      '<div class="dd-btnrow">' +
+        (on && dd.pair && !dd.env.isPhone ? '<button class="dd-btn" data-phone>📲 Add my phone</button>' : "") +
+        (on ? (s.kind !== "ok" ? '<button class="dd-btn ghost" data-retry>Try again now</button>' : "") + '<button class="dd-btn ghost" data-off>Turn off on this device</button>'
+            : (cfg ? '<button class="dd-btn" data-on>Turn it on</button>' : '<button class="dd-btn" data-setup>Set it up</button>')) +
+        '<button class="dd-btn ghost" data-close>Close</button></div>' +
+      '<p class="dd-note">Turning it off keeps everything on this device. Your other devices carry on as before.</p>');
+    var q = function (s) { return sh.querySelector(s); };
+    q("[data-close]").addEventListener("click", dd.ui.closeSheet);
+    if (q("[data-phone]")) q("[data-phone]").addEventListener("click", function () { dd.ui.closeSheet(); dd.pair.open(); });
+    if (q("[data-off]")) q("[data-off]").addEventListener("click", function () { sync.stop(); dd.ui.closeSheet(); dd.ui.toast("Live sync is off on this device."); });
+    if (q("[data-retry]")) q("[data-retry]").addEventListener("click", function () { dd.ui.closeSheet(); sync.start(); });
+    if (q("[data-on]")) q("[data-on]").addEventListener("click", function () { dd.ui.closeSheet(); sync.start().then(function (r) { if (!r.ok) dd.ui.notice("sync", r.title + " " + r.help, "warn"); }); });
+    if (q("[data-setup]")) q("[data-setup]").addEventListener("click", function () { dd.ui.closeSheet(); dd.setup.open("sync"); });
+  };
+
+  /* ---------- start with the program ---------- */
+  sync.attach = function (p) {
+    program = p;
+    if (p.sync === false) return;
+    dd.on("change", function (ev) {
+      if (!ev || ev.source === "sync") return;
+      if (state === "on") { schedulePush(); paint(); }
+    });
+    dd.on("pair:received", joinFromPair);
+    window.addEventListener("online", function () { if (wasOn() && state === "problem" && problem === "sync_offline") sync.start(); });
+    // A pairing link in the address is read just after this; it may bring a different ledger.
+    if (/[#&]dd=/.test(location.hash)) { resumeAfterPair = true; paint(); }
+    else if (wasOn() && sync.config()) { diag.resumed = "yes"; sync.start(); }
+    else paint();
+  };
+
+  if (dd.diag) dd.diag.addSection("Sync", function () {
+    if (!program) return ["-"];
+    var cfg = sync.config(), id = ledger();
+    return [
+      "State: " + state + (problem ? " (" + problem + ")" : "") + " · remembered on: " + (wasOn() ? "yes" : "no") + " · resumed on load: " + diag.resumed,
+      "Database: " + (cfg ? cfg.projectId + " · " + String(cfg.databaseURL).replace(/^https:\/\//, "") + (cfg.guessedURL ? " (address guessed)" : "") : "none") +
+        " · SDK " + sync.sdkVersion + " · signed in: " + diag.signedIn + " · connected: " + (connectedNow ? "yes" : "no"),
+      "Ledger: " + (id ? id.slice(0, 6) + "…" : "-") + " · joined: " + diag.joined + " · base kept: " + (base ? Object.keys(base).length + " paths" : "none"),
+      "Pushes sent / confirmed: " + diag.pushes + " / " + diag.acked + " · last confirmed: " + diag.lastPush + (pushTimer ? " · a change is waiting to go" : "") +
+        " · unconfirmed: " + Object.keys(pend).length,
+      "Remote updates: " + diag.remote + " · applied: " + diag.applied + " · last: " + diag.lastRemote,
+      "Last sync problem: " + diag.lastError
+    ];
+  });
+})();
+
+/* ---- dd.backup.js ---- */
+/* ===== DigiDoughnut Platform · dd.backup — download a backup, restore from one =====
+   Spec 3.5 (Oran, 2026-10-07: "build it in this phase; it's the safety net if sync ever mangles
+   data"). Browsers can't quietly save files, so a backup is a download the buyer keeps:
+     <program>-backup-YYYY-MM-DD.json
+   It uses the same envelope as saved data, marked as a backup:
+     { dd:1, kind:"backup", program, name, schemaVersion, savedAt, data }
+   Restore reads a file, checks it belongs to this program, upgrades older data with the program's
+   migrate(), checks it with validateData(), asks first, and offers Undo. A restore is an ordinary
+   dd.replaceData, so live sync carries it to the other devices.
+   Example data is never put in a backup. */
+(function () {
+  "use strict";
+  var dd = window.dd = window.dd || {};
+  var backup = dd.backup = {};
+  var esc = function (s) { return dd.ui.esc(s); };
+  var last = { made: "-", restored: "-" };
+
+  backup.fileName = function () {
+    var p = dd.getProgram();
+    return p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + "-backup-" + dd.ui.isoDate() + ".json";
+  };
+  backup.make = function () {
+    var p = dd.getProgram();
+    return JSON.stringify({ dd: 1, kind: "backup", program: p.id, name: p.name, schemaVersion: p.schemaVersion,
+                            savedAt: new Date().toISOString(), data: dd.getData() }, null, 1);
+  };
+
+  /* Download the file. Returns false (and says why) when there's nothing of the buyer's to keep. */
+  backup.download = function () {
+    if (dd.isExample()) { dd.ui.toast("These are example numbers, so there's nothing of yours to back up yet."); return false; }
+    var blob = new Blob([backup.make()], { type: "application/json" }), url = URL.createObjectURL(blob);
+    var a = document.createElement("a"); a.href = url; a.download = backup.fileName();
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    last.made = new Date().toLocaleTimeString();
+    dd.ui.toast("Backup downloaded. Keep it somewhere safe.", 3500);
+    return true;
+  };
+
+  /* Read a backup's text. Returns {ok, data, savedAt} or {ok:false, type, title, help}. */
+  backup.read = function (text) {
+    var p = dd.getProgram(), raw = null, bad = function () { var f = dd.errors.friendly("backup_bad"); return { ok: false, type: "backup_bad", title: f.title, help: f.help }; };
+    try { raw = JSON.parse(String(text || "")); } catch (e) { return bad(); }
+    if (!raw || typeof raw !== "object" || raw.dd !== 1 || !("data" in raw)) return bad();
+    if (raw.program && raw.program !== p.id) {
+      var f = dd.errors.friendly("backup_bad");
+      return { ok: false, type: "backup_other", title: "That's a backup from " + (raw.name || "a different program") + ", not " + p.name + ".", help: f.help };
+    }
+    var v = raw.schemaVersion | 0, body = raw.data;
+    if (v > p.schemaVersion) return { ok: false, type: "backup_newer", title: "That backup was made by a newer version of " + p.name + ".", help: "Open it in the newer version instead, or contact DigiDoughnut and we'll help." };
+    try { if (v < p.schemaVersion) body = p.migrate(body, v); } catch (e) { dd.errors.record("backup.migrate", e); return bad(); }
+    if (!p.validateData(body)) return bad();
+    return { ok: true, data: body, savedAt: raw.savedAt };
+  };
+
+  /* Ask, then swap in the backup. Keeps what was there so it can be undone. */
+  backup.restoreText = function (text) {
+    var r = backup.read(text);
+    if (!r.ok) { dd.ui.toast(r.title, 5000); dd.errors.record("backup.restore", r.type); return Promise.resolve(r); }
+    var when = r.savedAt && !isNaN(Date.parse(r.savedAt)) ? new Date(r.savedAt).toLocaleString() : "an earlier date";
+    var p = dd.getProgram(), thing = p.dataLabel || "numbers";
+    return dd.ui.confirm("Restore the backup from " + when + "?",
+      "Your " + thing + " on this device will be replaced with the backup." + (dd.sync && dd.sync.isOn() ? " Your other devices will get it too." : "") + " You can undo this straight after.",
+      "Yes, restore it", "No, keep what I have").then(function (yes) {
+      if (!yes) return { ok: false, type: "cancelled" };
+      var before = JSON.stringify(dd.getData()), wasExample = dd.isExample();
+      if (!dd.replaceData(r.data, { example: false, source: "restore" })) { var f = dd.errors.friendly("backup_bad"); dd.ui.toast(f.title, 5000); return { ok: false, type: "backup_bad" }; }
+      last.restored = new Date().toLocaleTimeString();
+      dd.ui.notice("restore", "Restored the backup from " + when + ".", "info", [
+        { label: "Undo", onClick: function () { dd.replaceData(JSON.parse(before), { example: wasExample, source: "restore-undo" }); dd.ui.clearNotice("restore"); dd.ui.toast("Put back the way it was."); } },
+        { label: "OK", primary: true, onClick: function () { dd.ui.clearNotice("restore"); } }
+      ]);
+      return { ok: true };
+    });
+  };
+
+  /* Open the file picker, then restore. */
+  backup.pick = function () {
+    var input = document.createElement("input");
+    input.type = "file"; input.accept = ".json,application/json"; input.style.display = "none";
+    input.addEventListener("change", function () {
+      var f = input.files && input.files[0]; input.remove();
+      if (!f) return;
+      if (f.size > 5 * 1024 * 1024) { var x = dd.errors.friendly("backup_bad"); dd.ui.toast(x.title, 5000); return; }
+      f.text().then(backup.restoreText, function (e) { dd.errors.record("backup.file", e); dd.ui.toast("That file couldn't be opened.", 4000); });
+    });
+    document.body.appendChild(input); input.click();
+  };
+
+  /* "Your data": backup, restore, and where things stand with sync. Opened from the footer. */
+  backup.open = function () {
+    var p = dd.getProgram(), thing = p.dataLabel || "numbers", s = dd.sync && dd.sync.status ? dd.sync.status() : null;
+    var sh = dd.ui.sheet('<h2>Your ' + esc(thing) + '</h2>' +
+      '<p>Everything here is saved in this browser, on this device.</p>' +
+      '<h3 class="dd-sub">Keep a copy</h3>' +
+      '<p class="dd-note">Download a backup file now and then, and keep it somewhere safe (your Documents folder, a USB stick or your email). If anything goes wrong, you can put it back.</p>' +
+      '<div class="dd-btnrow"><button class="dd-btn" data-down>⬇ Download a backup</button><button class="dd-btn ghost" data-up>Restore from a backup</button></div>' +
+      (s ? '<h3 class="dd-sub">Other devices</h3><p class="dd-note">' + esc(s.kind === "off" ? "Live sync is off. Set it up in step 4 of the setup card to keep your devices in step." : s.long) + '</p>' : "") +
+      '<div class="dd-btnrow"><button class="dd-btn ghost" data-close>Close</button></div>');
+    sh.querySelector("[data-close]").addEventListener("click", dd.ui.closeSheet);
+    sh.querySelector("[data-down]").addEventListener("click", function () { backup.download(); });
+    sh.querySelector("[data-up]").addEventListener("click", function () { dd.ui.closeSheet(); backup.pick(); });
+  };
+
+  if (dd.diag) dd.diag.addSection("Backup", function () { return ["Backup downloaded this visit: " + last.made + " · restored this visit: " + last.restored]; });
 })();
 
 </script>
