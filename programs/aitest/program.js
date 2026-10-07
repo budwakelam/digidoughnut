@@ -108,10 +108,11 @@ const DD_PROGRAM = {
     // 4. Problem drills: the next request pretends to fail, so we can see the friendly message.
     document.querySelectorAll("[data-drill]").forEach((b) => b.addEventListener("click", async () => {
       dd.ai.drill = b.dataset.drill;
-      if (b.dataset.drill === "timeout") dd.ai.limits.request = 5000;   // don't make Oran wait 30 s
+      const keep = Object.assign({}, dd.ai.limits);
+      if (b.dataset.drill === "timeout") Object.assign(dd.ai.limits, { perModel: 2000, request: 3000, turn: 8000 });   // don't make Oran wait
       busy(true, "tDrillStatus");
       const res = await dd.ai.chat({ history: [{ role: "user", text: "Say hello." }] });
-      dd.ai.limits.request = 30000;
+      dd.ai.drill = null; Object.assign(dd.ai.limits, keep);
       showResult("tDrillStatus", res, () => "That worked normally (the drill didn't trigger).");
     }));
   },

@@ -46,12 +46,17 @@ class FakeGoogle:
         if s == "leaked": return self.err(route, 403, "PERMISSION_DENIED", "Your API key was reported as leaked. Please use another API key.")
         if s == "region": return self.err(route, 400, "FAILED_PRECONDITION", "User location is not supported for the API use.")
         if url.split("?")[0].endswith("/models"):
-            return self.ok(route, {"models": [{"name": "models/" + m, "supportedGenerationMethods": ["generateContent"]} for m in MODELS] +
+            ids = MODELS + (["gemini-4-flash"] if self.scenario == "new_model" else [])
+            return self.ok(route, {"models": [{"name": "models/" + m, "supportedGenerationMethods": ["generateContent"]} for m in ids] +
                                    [{"name": "models/gemini-embedding-001", "supportedGenerationMethods": ["embedContent"]}]})
         model = re.search(r"/models/([^:]+):generateContent", url).group(1)
         body = json.loads(req.post_data or "{}"); self.calls.append({"model": model, "body": body})
         if s == "retired" and model == "gemini-3.8-flash":
             return self.err(route, 404, "NOT_FOUND", f"models/{model} is not found for API version v1beta, or is not supported for generateContent.")
+        if s == "only_last" and model != "gemini-3.1-pro-preview":
+            return self.err(route, 503, "UNAVAILABLE", "This model is currently experiencing high demand.")
+        if s == "new_model" and model != "gemini-4-flash":
+            return self.err(route, 404, "NOT_FOUND", f"models/{model} is not found for API version v1beta.")
         if s == "flash_down" and "lite" not in model:   # this morning: Flash busy or silent, Lite fine
             if model == "gemini-3.8-flash": return self.err(route, 503, "UNAVAILABLE", "This model is currently experiencing high demand.")
             return   # never answers
@@ -106,7 +111,7 @@ with sync_playwright() as p:
         page = ctx.new_page(); errs = []
         page.on("pageerror", lambda e: errs.append(str(e)))
         page.goto(URL); page.evaluate("() => localStorage.clear()"); page.reload()
-        page.evaluate("() => { dd.ai.limits.request = 2500; dd.ai.limits.turn = 6000; }")
+        page.evaluate("() => { dd.ai.limits.request = 2500; dd.ai.limits.perModel = 1200; dd.ai.limits.turn = 8000; }")
         return ctx, page, errs
     def connect(page, code=GOOD):
         page.fill("#tCode", code); page.click("#tConnect")
@@ -136,7 +141,7 @@ with sync_playwright() as p:
     check("header pill shows masked code", page.inner_text("#tConn").endswith("…pqrs)"))
     diag = page.evaluate("() => dd.diag.text()")
     check("diagnostic shows model + masked code, never the code", "gemini-3.8-flash" in diag and GOOD not in diag and "…pqrs" in diag)
-    page.reload(); page.evaluate("() => { dd.ai.limits.request = 2500; dd.ai.limits.turn = 6000; }")
+    page.reload(); page.evaluate("() => { dd.ai.limits.request = 2500; dd.ai.limits.perModel = 1200; dd.ai.limits.turn = 8000; }")
     check("connection survives reload", page.evaluate("() => dd.ai.hasCode()"))
 
     print("\n== tools and memory ==")
@@ -160,16 +165,27 @@ with sync_playwright() as p:
     G.reset("retired"); r = chat(page, "hi")
     check("retired model: quietly moves to the next model", r["ok"] and G.calls[-1]["model"] == "gemini-3.5-flash-lite", json.dumps([c["model"] for c in G.calls]))
     page.evaluate("() => { const k='dd_ai_models_v1', m=JSON.parse(localStorage.getItem(k)); m.google.model='gemini-3.8-flash'; m.google.candidates=['gemini-3.8-flash','gemini-3.5-flash-lite']; m.google.busy={}; localStorage.setItem(k, JSON.stringify(m)); }")
-    page.evaluate("() => { localStorage.removeItem('dd_ai_models_v1'); dd.ai.limits.request = 2500; dd.ai.limits.turn = 6000; }")
+    page.evaluate("() => { localStorage.removeItem('dd_ai_models_v1'); dd.ai.limits.request = 2500; dd.ai.limits.perModel = 1200; dd.ai.limits.turn = 8000; }")
+    G.reset("only_last"); r = chat(page, "hi")
+    order = [c["model"] for c in G.calls]
+    check("every model busy except the last: keeps going until one answers", r["ok"] and order[-1] == "gemini-3.1-pro-preview", json.dumps(order))
+    G.reset(); r = chat(page, "hi")
+    check("the model that worked is tried FIRST next time", r["ok"] and G.calls[0]["model"] == "gemini-3.1-pro-preview", json.dumps([c["model"] for c in G.calls]))
+    G.reset("new_model"); r = chat(page, "hi")
+    order = [c["model"] for c in G.calls]
+    check("all known models gone: fetches Google's list again, finds the NEW model, answers", r["ok"] and order[-1] == "gemini-4-flash", json.dumps(order))
+    check("a new model name ranks first automatically", page.evaluate("() => dd.ai.rankModels('google', ['gemini-3.8-flash','gemini-4-flash','gemini-3.5-flash-lite'])[0]") == "gemini-4-flash")
+    page.evaluate("() => localStorage.removeItem('dd_ai_models_v1')")
     G.reset("flash_down"); r = chat(page, "add three items")
     order = [c["model"] for c in G.calls]
     check("Flash family down (busy + silent): reaches Flash-Lite and answers", r["ok"] and "lite" in order[1], json.dumps(order))
     check("fallback order alternates Flash / Flash-Lite", page.evaluate("() => dd.ai.rankModels('google', ['gemini-3.8-flash','gemini-3.7-flash','gemini-3.5-flash-lite','gemini-3.1-flash-lite'])").__eq__(["gemini-3.8-flash","gemini-3.5-flash-lite","gemini-3.7-flash","gemini-3.1-flash-lite"]))
     page.evaluate("() => { const k='dd_ai_models_v1', m=JSON.parse(localStorage.getItem(k)); m.google.busy={}; localStorage.setItem(k, JSON.stringify(m)); }")
+    page.evaluate("() => { const k='dd_ai_models_v1', m=JSON.parse(localStorage.getItem(k)); m.google.model='gemini-3.8-flash'; m.google.busy={}; localStorage.setItem(k, JSON.stringify(m)); }")
     G.reset("busy_main"); r = chat(page, "hi")
-    check("main model busy (503): switches to the next model, answers", r["ok"] and [c["model"] for c in G.calls] == ["gemini-3.8-flash", "gemini-3.5-flash-lite"], json.dumps([c["model"] for c in G.calls]))
+    check("main model busy (503): switches to the next model, answers", r["ok"] and [c["model"] for c in G.calls][0] == "gemini-3.8-flash" and len(G.calls) == 2, json.dumps([c["model"] for c in G.calls]))
     G.reset("busy_main"); r = chat(page, "hi")
-    check("busy model remembered: next turn skips it", r["ok"] and [c["model"] for c in G.calls] == ["gemini-3.5-flash-lite"], json.dumps([c["model"] for c in G.calls]))
+    check("busy model remembered: next turn skips it", r["ok"] and len(G.calls) == 1 and G.calls[0]["model"] != "gemini-3.8-flash", json.dumps([c["model"] for c in G.calls]))
     check("support details list the busy model", "Busy right now: gemini-3.8-flash" in page.evaluate("() => dd.diag.text()"))
     page.evaluate("() => { const k='dd_ai_models_v1', m=JSON.parse(localStorage.getItem(k)); m.google.busy={}; localStorage.setItem(k, JSON.stringify(m)); }")
     G.reset("busy_once"); r = chat(page, "hi")
@@ -177,7 +193,8 @@ with sync_playwright() as p:
     G.reset("minute_once"); r = chat(page, "hi")
     check("per-minute limit: waits and retries once", r["ok"] and len(G.calls) == 2)
     G.reset("daily"); r = chat(page, "hi")
-    check("daily limit: 'You've used today's free share'", (not r["ok"]) and r["type"] == "out_of_share" and "free share" in r["title"] and len(G.calls) == 1)
+    check("daily share used up on every model: 'You've used today's free share'", (not r["ok"]) and r["type"] == "out_of_share" and "free share" in r["title"], r.get("title"))
+    check("...after trying every model, not just one", len(set(c["model"] for c in G.calls)) >= 4, json.dumps(sorted(set(c["model"] for c in G.calls))))
     G.reset("badrequest"); r = chat(page, "hi")
     check("a 400 that isn't about the code does NOT say 'bad code'", r["type"] == "unexpected" and "code" not in r["title"].lower(), r["title"])
     G.reset("leaked"); r = chat(page, "hi")
@@ -198,7 +215,7 @@ with sync_playwright() as p:
     page.wait_for_timeout(500); page.evaluate("() => dd.ai.stop()")
     page.wait_for_function("() => window.__r !== null", timeout=3000)
     check("Stop ends a stuck request at once", page.evaluate("() => window.__r.stopped === true"))
-    page.evaluate("() => { dd.ai.limits.request = 2500; dd.ai.limits.turn = 6000; }")
+    page.evaluate("() => { dd.ai.limits.request = 2500; dd.ai.limits.perModel = 1200; dd.ai.limits.turn = 8000; }")
     for drill, words in [("out_of_share", "free share"), ("offline", "internet"), ("timeout", "too long")]:
         G.reset()
         page.evaluate("() => { const s = document.getElementById('tDrillStatus'); s.className = 'dd-status'; s.textContent = ''; }")

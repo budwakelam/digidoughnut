@@ -19,9 +19,12 @@
   var dd = window.dd = window.dd || {};
   var ai = dd.ai = {};
 
-  ai.limits = { request: 30000, turn: 60000, rounds: 5 };   // tests shrink these
+  // request: one model, when it's the last one left · perModel: one model while others remain
+  // turn: everything the helper does for one message · rounds: tool round-trips per message
+  ai.limits = { request: 30000, perModel: 12000, turn: 90000, rounds: 5 };   // tests shrink these
   var CONN_KEY = "dd_ai_connections_v1", MODELS_KEY = "dd_ai_models_v1", LEGACY_KEY = "dd_gemini_key_v1";
   var RECHECK_MS = 7 * 24 * 3600 * 1000;
+  var BUSY_MS = 10 * 60 * 1000;   // a model that just failed is tried last for 10 minutes
 
   /* ---------- provider registry ---------- */
   ai.providers = {
@@ -128,11 +131,11 @@
   ai.stop = function () { stopped = true; if (current) try { current.abort(); } catch (e) {} };
   var stopped = false;
 
-  /* Test drills (used only by the AI test page): make the NEXT request behave as if
-     Google ran out of free share, went silent, or the internet dropped. */
+  /* Test drills (AI test page only): while ai.drill is set, every request behaves as if
+     Google ran out of free share, went silent, or the internet dropped. The page clears it. */
   ai.drill = null;
   function drilled(ms, ctl) {
-    var d = ai.drill; ai.drill = null;
+    var d = ai.drill;
     if (d === "offline") return Promise.resolve({ status: 0, network: true, error: "drill: offline" });
     if (d === "out_of_share") return Promise.resolve({ status: 429, ok: false, text: "", body: { error: { code: 429, status: "RESOURCE_EXHAUSTED",
       message: "drill: quota exceeded", details: [{ "@type": "type.googleapis.com/google.rpc.QuotaFailure", violations: [{ quotaId: "GenerateRequestsPerDayPerProjectPerModel-FreeTier" }] }] } } });
@@ -295,14 +298,14 @@
     var p = ai.providers[conn.provider], ad = adapters[p.adapter];
     var all = models(), m = all[conn.provider];
     var stale = !m || !m.checkedAt || Date.now() - m.checkedAt > RECHECK_MS;
-    if (m && m.model && !force && !stale && m.order === 2) return Promise.resolve(firstNotBusy(m));
+    if (m && m.model && !force && !stale && m.order >= 2) return Promise.resolve(m.model);
     return ad.listModels(p, conn.code).then(function (ids) {
       var ranked = ai.rankModels(conn.provider, ids);
       if (!ranked.length) throw { type: "unexpected", raw: "no usable models in list of " + ids.length };
       // Weekly re-check moves to the best model on the list. If it misbehaves, the next
       // call falls back down the candidate list on its own.
       var keep = ranked[0];
-      all[conn.provider] = { model: keep, candidates: ranked.slice(0, 8), checkedAt: Date.now(), order: 2, busy: (m && m.busy) || {} };
+      all[conn.provider] = { model: keep, candidates: ranked, checkedAt: Date.now(), order: 3, busy: (m && m.busy) || {} };
       saveModels(all);
       return keep;
     }).catch(function (e) {
@@ -313,7 +316,6 @@
   }
   /* Busy models: Google sometimes refuses a model for a while ("high demand", 503) while its
      sister models work fine. We remember a busy model for 10 minutes and use the next one. */
-  var BUSY_MS = 10 * 60 * 1000;
   function firstNotBusy(m) {
     var busy = m.busy || {}, now = Date.now();
     var list = [m.model].concat((m.candidates || []).filter(function (id) { return id !== m.model; }));
@@ -347,36 +349,39 @@
     var p = ai.providers[provider], ad = adapters[p.adapter];
     var conn = { provider: provider, code: code };
     stopped = false;
-    var ranked = [], lastProblem = null;
+    var ranked = [], lastProblem = null, started = Date.now(), failed = {};
     return ad.listModels(p, code).then(function (ids) {
       ranked = ai.rankModels(provider, ids);
       if (!ranked.length) throw { type: "unexpected", raw: "no usable models" };
-      return tryModels(ranked.slice(0, 6), 0);
+      return tryModels(ranked, 0);
     }).then(function (model) {
       var c = loadConns(); c.main = { provider: provider, code: code, savedAt: new Date().toISOString() };
       var saved = dd.store.setJSON(CONN_KEY, c);
       if (!saved.ok) return fail({ type: saved.reason }, provider);
       dd.store.remove(LEGACY_KEY);
-      var all = models(); all[provider] = { model: model, candidates: [model].concat(ranked.filter(function (id) { return id !== model; })).slice(0, 8), checkedAt: Date.now(), order: 2 }; saveModels(all);
+      var all = models(); all[provider] = { model: model, candidates: [model].concat(ranked.filter(function (id) { return id !== model; })), checkedAt: Date.now(), order: 3, busy: failed }; saveModels(all);
       dd.emit("ai:changed", { connected: true, provider: provider });
       return { ok: true, provider: provider, label: p.label };
     }).catch(function (e) { return fail(e, provider); });
 
     function tryModels(list, i) {
-      if (i >= list.length) throw lastProblem || { type: "unexpected", raw: "no model passed the tool test" };
+      var left = ai.limits.turn - (Date.now() - started);
+      if (i >= list.length || left < 3000) throw lastProblem || { type: "unexpected", raw: "no model passed the tool test" };
       var model = list[i];
       return ad.send(p, code, model, {
-        system: "You are a connection test.", ms: ai.limits.request / 2, forceTool: "confirm_ready",
+        system: "You are a connection test.", ms: Math.min(i < list.length - 1 ? ai.limits.perModel : ai.limits.request, left), forceTool: "confirm_ready",
         history: [{ role: "user", text: "Call confirm_ready with word set to ready." }],
         tools: [{ name: "confirm_ready", description: "Confirms the connection works.", params: { word: { type: "string", description: "Always 'ready'" } } }]
       }).then(function (res) {
         if (res.calls.some(function (c) { return c.name === "confirm_ready"; })) return model;
         lastProblem = { type: "unexpected", raw: model + " answered without using the tool" };
+        failed[model] = Date.now() + BUSY_MS;
         return tryModels(list, i + 1);
       }, function (e) {
         // A bad code, no internet or Stop won't get better with another model: stop here.
         if (e.type === "bad_code" || e.type === "offline" || e.type === "stopped" || e.type === "not_allowed" && !e.rediscover) throw e;
-        lastProblem = e; dd.errors.record("ai.connect:" + model, e.raw || e.type);
+        lastProblem = e; failed[model] = Date.now() + BUSY_MS;
+        dd.errors.record("ai.connect", model + " " + describe(e) + (list[i + 1] ? ", trying " + list[i + 1] : ""));
         return tryModels(list, i + 1);
       });
     }
@@ -402,22 +407,24 @@
     if (!conns.main) return Promise.resolve(fail({ type: "bad_code" }, null, "The helper needs your free access code first."));
     var conn = conns.main, p = ai.providers[conn.provider], ad = adapters[p.adapter];
     var history = (req.history || []).slice();
-    var started = Date.now(), rounds = 0, retried = 0, switched = 0, rediscovered = false, ran = [];
+    var started = Date.now(), rounds = 0, ran = [], queue = [], tried = {}, lastProblem = null, refreshed = false;
     var status = req.onStatus || function () {};
     stopped = false;
 
     function left() { return ai.limits.turn - (Date.now() - started); }
+    function untried() { return queue.filter(function (id) { return !tried[id]; }); }
 
     function step(model) {
       if (stopped) return Promise.reject({ type: "stopped" });
-      // While other models are still available, don't let one silent model eat the whole turn.
-      var ms = Math.min(switched < 4 ? ai.limits.request / 2 : ai.limits.request, left());
-      if (ms <= 500) return Promise.reject({ type: "timeout", raw: "turn budget used up" });
+      tried[model] = true;
+      // A silent model gets a short wait while other models are still left to try.
+      var ms = Math.min(untried().length ? ai.limits.perModel : ai.limits.request, left());
+      if (left() <= 1000) return Promise.reject(lastProblem || { type: "timeout", raw: "turn budget used up" });
       status(rounds ? "working" : "thinking");
-      return ad.send(p, conn.code, model, { system: req.system, history: history, tools: req.tools, ms: ms }).then(function (res) {
+      return ad.send(p, conn.code, model, { system: req.system, history: history, tools: req.tools, ms: ms, model: model }).then(function (res) {
         history.push({ role: "model", text: res.text, calls: res.calls, raw: res.raw });
-        if (!res.calls.length) return { ok: true, text: res.text, history: history, calls: ran, model: model };
-        if (++rounds > ai.limits.rounds) return { ok: true, text: res.text || "", history: history, calls: ran, model: model, cappedRounds: true };
+        if (!res.calls.length) { rememberWorking(conn.provider, model); return { ok: true, text: res.text, history: history, calls: ran, model: model }; }
+        if (++rounds > ai.limits.rounds) { rememberWorking(conn.provider, model); return { ok: true, text: res.text || "", history: history, calls: ran, model: model, cappedRounds: true }; }
         // Run every call in order, collect every result, send them back together.
         var results = [];
         return res.calls.reduce(function (chain, call) {
@@ -434,34 +441,61 @@
           return step(model);
         });
       }, function (e) {
-        if (e.type === "stopped") throw e;
-        if (e.rediscover && !rediscovered) {
-          rediscovered = true; dd.errors.record("ai.model", e.raw);
-          var next = nextCandidate(conn.provider, model);
-          return (next ? Promise.resolve(next) : pickModel(conn, true)).then(step);
+        // Problems no other model can fix: stop and explain.
+        if (e.type === "stopped" || e.type === "bad_code" || e.type === "offline" || (e.type === "not_allowed" && !e.rediscover)) throw e;
+        // Anything else (busy, silent, retired, this model's daily share used up, a model-
+        // specific refusal): note it and try the next model. Every model, until one answers.
+        lastProblem = e;
+        markBusy(conn.provider, model);
+        var next = untried()[0];
+        if (next && left() > 3000) {
+          status("retrying");
+          dd.errors.record("ai.switch", model + " " + describe(e) + ", trying " + next);
+          return step(next);
         }
-        if ((e.type === "busy" || e.type === "timeout") && switched < 4 && left() > 4000) {
-          var other = markBusy(conn.provider, model);
-          if (other) {
-            switched++; status("retrying");
-            dd.errors.record("ai.switch", model + " " + (e.type === "busy" ? "busy" : "no answer") + ", trying " + other);
-            return step(other);
-          }
-        }
-        if (e.retry && retried < 2 && left() > (e.wait || 0) + 3000) {
-          retried++; status("retrying"); dd.errors.record("ai.retry", e.raw);
-          return wait(e.wait || 2500).then(function () { return step(model); });
+        // Every model we knew about failed. Google may have added new ones: look once.
+        if (!refreshed && left() > 5000) {
+          refreshed = true;
+          return pickModel(conn, true).then(function () {
+            queue = modelQueue(conn.provider);
+            var fresh = untried()[0];
+            if (!fresh) throw e;
+            dd.errors.record("ai.switch", "all known models failed; new model found: " + fresh);
+            return step(fresh);
+          });
         }
         throw e;
       });
     }
 
-    return pickModel(conn).then(step).catch(function (e) {
+    return pickModel(conn).then(function () {
+      queue = modelQueue(conn.provider);
+      return step(queue[0]);
+    }).catch(function (e) {
       var out = fail(e, conn.provider);
-      out.history = history; out.calls = ran;
+      out.history = history; out.calls = ran; out.tried = Object.keys(tried);
       return out;
     });
   };
+
+  function describe(e) {
+    return { busy: "busy", timeout: "no answer", out_of_share: "used up its free share", unexpected: e.rediscover ? "retired" : "refused" }[e.type] || e.type;
+  }
+
+  /* Every usable model, in order: the one that last worked first, then the rest by rank,
+     with models that recently failed moved to the end (still tried, never skipped). */
+  function modelQueue(provider) {
+    var m = models()[provider] || {}, busy = m.busy || {}, now = Date.now(), seen = {}, list = [];
+    [m.model].concat(m.candidates || []).forEach(function (id) { if (id && !seen[id]) { seen[id] = 1; list.push(id); } });
+    return list.filter(function (id) { return !(busy[id] > now); }).concat(list.filter(function (id) { return busy[id] > now; }));
+  }
+  ai._queue = modelQueue;
+  /* The model that just answered becomes the first choice next time. */
+  function rememberWorking(provider, id) {
+    var all = models(), m = all[provider]; if (!m) return;
+    m.model = id; if (m.busy) delete m.busy[id];
+    saveModels(all);
+  }
 
   /* Speed check (AI test page only): times each kind of request with a generous limit,
      so we can see what's slow. Resolves [{step, secs, outcome}]. */
