@@ -503,8 +503,11 @@
   /* GitHub Pages (Oran's number one, 2026-10-07): the buyer's own free GitHub account, one
      repository named <username>.github.io that holds every DigiDoughnut program they buy, at
      https://<username>.github.io/<file name>. No outside-connection block (checked: the
-     DigiDoughnut noticeboard is on Pages too), no ads, no expiry. Steps from GitHub's docs
-     (2026-10-07): New repository (name <username>.github.io, Public, "Add README" on, "Create
+     DigiDoughnut noticeboard is on Pages too), no ads, no expiry. Steps from GitHub's docs and
+     Oran's screenshots (2026-10-07; sign-up = Email, Password, Username, Your Country/Region,
+     "Create account"; 8-digit "Enter code" > "Continue"; then "Sign in"; new-repo page checked
+     live: "Repository name", "Choose visibility" Public, "Add README" Off/On switch). Upload and
+     Pages settings screens still to confirm. New repository (name <username>.github.io, Public, "Add README" on, "Create
      repository"); "Add file" > "Upload files" > "Commit changes"; Settings > Pages > "Deploy
      from a branch" > main > Save; live within ~10 minutes. Logged-out sign-up screens NOT yet
      seen: labels go through L() so the noticeboard can correct them. */
@@ -530,14 +533,21 @@
     onDone: function () { dd.ui.toast("Use your new address from now on. Bookmark it!", 4500); },
     screens: [
       { title: "Make a free GitHub account",
-        body: function () { return '<p>GitHub is where people keep files online, and it can show a file as a web page for free. Tap the button to open GitHub\'s sign-up page:</p>' +
-          '<ul><li>Type your <b>email</b>, a <b>password</b>, and a <b>username</b>. The username becomes your web address, so keep it simple, like <i>smith-tools</i>.</li>' +
-          '<li>GitHub may ask you to solve a small picture puzzle, then sends a code to your email. Type it in.</li></ul>' +
-          '<p><b>You can ignore</b> any questions about teams, plans, Copilot or what you\'ll build. Skip them, or pick the free option.</p>' +
+        body: function () { return '<p>GitHub keeps files online, and it can show a file as a web page for free. Tap the button. On <b>' + esc(L("gh_signup_title", "Sign up for GitHub")) + '</b>, fill in:</p>' +
+          '<ul><li><b>Email</b>.</li>' +
+          '<li><b>Password</b>: at least 15 characters, or at least 8 with a number and a small letter.</li>' +
+          '<li><b>Username</b>: this becomes your web address, so keep it simple, like <i>smith-tools</i>. Letters, numbers and single hyphens. Write it down.</li>' +
+          '<li><b>Your Country/Region</b>.</li></ul>' +
+          '<p>Then tap <b>' + esc(L("gh_create_account", "Create account")) + '</b>. (Or tap <b>Continue with Google</b> to use your Google account instead.)</p>' +
           '<p class="dd-note">Already have GitHub? Just sign in and tap Next.</p>' + phoneWarn(); },
         action: { label: "Open GitHub sign-up", run: function (c) { c.open(link("gh_signup", "https://github.com/signup")); } },
-        stuck: ["GitHub can also sign you up with your Google account: look for Continue with Google.",
-                "No email code? Check your spam folder. The code expires after a while; ask GitHub to send a new one."], guide: "gh_signup" },
+        stuck: ["Password refused? Make it longer: 15 characters of anything works.",
+                "Username taken? Add a word or a number, like smith-tools-2."], guide: "gh_signup" },
+      { title: "Confirm your email and sign in",
+        body: function () { return '<p>GitHub emails you an <b>8-digit code</b>. Type it under <b>' + esc(L("gh_enter_code", "Enter code")) + '</b> and tap <b>' + esc(L("gh_code_continue", "Continue")) + '</b>.</p>' +
+          '<p>GitHub then asks you to sign in: type your username (or email) and password, and tap <b>' + esc(L("gh_sign_in", "Sign in")) + '</b>.</p>' +
+          '<p><b>You can ignore</b> everything on GitHub\'s welcome page: the "Ask anything" box, Copilot, videos, "Getting started" and "Create project". We\'ll take you to the right pages from here.</p>'; },
+        stuck: ["No email? Check your spam folder, or tap Resend the code.", "Code expired? Tap Resend the code and use the newest one."], guide: "gh_confirm" },
       { title: "Your GitHub username",
         body: function () { return '<p>Type the username you picked on GitHub.</p>' +
           '<input class="dd-input" id="dd-wiz-user" placeholder="e.g. smith-tools" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + esc(state().ghUser || "") + '">' +
@@ -552,10 +562,10 @@
         body: function () { var a = setup.githubAddress(ghUser()) || { repo: "yourname.github.io" };
           return '<p>Tap the button. On GitHub\'s <b>' + esc(L("gh_new_repo", "Create a new repository")) + '</b> page:</p>' +
           '<ol><li>Under <b>' + esc(L("gh_repo_name", "Repository name")) + '</b>, type exactly:' + copyBox(a.repo) + '</li>' +
-          '<li>Keep it <b>' + esc(L("gh_public", "Public")) + '</b>.</li>' +
-          '<li>Turn on <b>' + esc(L("gh_readme", "Add README")) + '</b>.</li>' +
+          '<li>Under <b>' + esc(L("gh_visibility", "Choose visibility")) + '</b>, keep <b>' + esc(L("gh_public", "Public")) + '</b>.</li>' +
+          '<li>Switch <b>' + esc(L("gh_readme", "Add README")) + '</b> from Off to <b>On</b>.</li>' +
           '<li>Tap <b>' + esc(L("gh_create_repo", "Create repository")) + '</b>.</li></ol>' +
-          '<p><b>You can ignore</b> description, template, .gitignore and license.</p>'; },
+          '<p><b>You can ignore</b> Owner (it\'s already you), Description, Add .gitignore and Add license.</p>'; },
         mount: wireCopy,
         action: { label: "Open GitHub: new repository", run: function (c) { c.open(link("gh_new", "https://github.com/new")); } },
         stuck: ["The name must be exactly your username followed by .github.io, all lower case.",
