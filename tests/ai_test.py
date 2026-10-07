@@ -125,9 +125,11 @@ with sync_playwright() as p:
 
     print("\n== connect ==")
     G.reset(); ctx, page, errs = fresh()
-    txt = connect(page, "hello there")
+    txt = connect(page, "hi there")   # under 10 characters: obviously not a code, never sent
     check("garbage code: friendly 'not a Google code' message", "doesn't look like a code from Google" in txt and friendly_only(txt), txt)
     check("garbage code: nothing saved", page.evaluate("() => !dd.ai.hasCode()"))
+    txt = connect(page, "hello there friend")   # odd text of code length: Google decides, not us
+    check("odd text is asked of Google, friendly answer", "That code didn't work" in txt and friendly_only(txt), txt)
     txt = connect(page, "AIzaSyWRONG0123456789abcdefghijklmnopqr")
     check("wrong code: 'That code didn't work'", "That code didn't work" in txt and friendly_only(txt), txt)
     G.reset(); txt = connect(page, "ZZ9-totallyUnfamiliarFormat0123456789abc")

@@ -47,7 +47,7 @@
     var rows = setup.steps.map(function (s, i) {
       var done = s.done(), wiz = s.wizard && setup.wizards[s.wizard];
       var btn = done
-        ? (wiz && s.id !== "try" ? '<button class="dd-linkbtn" data-start="' + s.wizard + '">Change</button>' : "")
+        ? (wiz && wiz.ready !== false && s.id !== "try" ? '<button class="dd-linkbtn" data-start="' + s.wizard + '">Change</button>' : "")
         : (wiz && wiz.ready !== false ? '<button class="dd-btn small" data-start="' + s.wizard + '">' + (st.wizards[s.wizard] ? "Continue" : "Start") + '</button>'
                                       : '<span class="dd-note">Coming soon</span>');
       return '<li class="dd-step' + (done ? " done" : "") + '"><span class="dd-tick" aria-hidden="true">' + (done ? "✓" : i + 1) + '</span>' +
@@ -68,7 +68,7 @@
   /* ---------- the wizard ---------- */
   var cur = null;   // {id, wiz, at, context}
   setup.open = function (id, opts) {
-    var wiz = setup.wizards[id]; if (!wiz) return;
+    var wiz = setup.wizards[id]; if (!wiz || wiz.ready === false || !wiz.screens.length) return;
     var st = state(), at = (st.wizards[id] && st.wizards[id].at) || 0;
     if (at >= wiz.screens.length) at = 0;
     cur = { id: id, wiz: wiz, at: at, context: opts && opts.context };
@@ -162,7 +162,14 @@
       text = (text || input.value).trim(); if (!text) return;
       input.value = "";
       say(box, "me", text);
-      setup.answer(text, cur).then(function (a) { say(box, a.live ? "bot live" : "bot", a.text); });
+      var live = dd.ai && dd.ai.hasCode();
+      var wait = live ? say(box, "bot pending", "The helper is thinking…") : null;
+      box.querySelector("#dd-ask-go").disabled = true;
+      setup.answer(text, cur).then(function (a) {
+        if (wait) wait.remove();
+        box.querySelector("#dd-ask-go").disabled = false;
+        say(box, a.live ? "bot live" : "bot", a.text);
+      });
     };
     box.querySelector("#dd-ask-go").addEventListener("click", function () { send(); });
     input.addEventListener("keydown", function (e) { if (e.key === "Enter") send(); });
@@ -173,6 +180,7 @@
     var m = document.createElement("div"); m.className = "dd-ask-msg " + who;
     m.textContent = text; box.querySelector("#dd-ask-msgs").appendChild(m);
     m.scrollIntoView({ block: "nearest" });
+    return m;
   }
 
   /* Returns Promise<{text, live}>. Live AI when a code works; otherwise (or if the AI fails)
@@ -237,11 +245,11 @@
 
   setup.wizards.ai = {
     title: "Turn on the helper",
-    onDone: function () { dd.ui.toast("The helper is on. Try asking it something!", 4000); },
+    onDone: function () { dd.ui.toast("The helper is turned on.", 4000); },
     screens: [
       { title: "A free code from Google",
         body: function () { return '<p>The helper runs on Google\'s AI. To use it, you need a free code from Google. <b>Google calls this an API key. We call it your free access code.</b></p>' +
-          '<ul class="dd-facts"><li>✓ Free. No credit card.</li><li>✓ About 2 minutes.</li><li>✓ Easiest on a computer.</li></ul>' +
+          '<ul class="dd-facts"><li>✓ Free. No credit card.</li><li>✓ About 2 minutes.</li>' + (dd.env.isPhone ? "" : '<li>✓ Easiest on a computer, like you\'re using now.</li>') + '</ul>' +
           (dd.env.isPhone ? '<p class="dd-status show warn">This is easiest on a computer. You can do it there, then send it to your phone with one scan.</p>' : "") +
           '<p class="dd-note">' + esc(dd.ai.providers.google.privacyNote) + '</p>'; } },
       { title: "Open Google AI Studio",
@@ -268,6 +276,11 @@
         body: '<p>Paste your code in the box, then tap <b>Connect</b>. We\'ll check it with Google straight away.</p>' +
               '<input class="dd-input" id="dd-wiz-code" placeholder="Paste your free access code" autocomplete="off" autocapitalize="off" spellcheck="false">',
         action: { label: "Connect", run: function (c) { connectFromWizard(c); } },
+        mount: function (c) {
+          var input = c.el.querySelector("#dd-wiz-code");
+          input.addEventListener("keydown", function (e) { if (e.key === "Enter") connectFromWizard(c); });
+          if (!dd.env.isPhone) input.focus();
+        },
         next: false,
         stuck: ["Paste with Ctrl+V (Windows) or Cmd+V (Mac). On a phone, press and hold the box, then tap Paste.", "If it says the code didn't work, go back to Google, copy it again with Google's Copy button, and paste again."], guide: "ai_paste" },
       { title: "You're connected!",
@@ -279,11 +292,13 @@
 
   function connectFromWizard(c) {
     var input = c.el.querySelector("#dd-wiz-code"), btn = c.el.querySelector("[data-action]");
+    if (btn.disabled) return;
+    if (!input.value.trim()) { c.status("warn", "Paste your code in the box first."); input.focus(); return; }
     btn.disabled = true; btn.textContent = "Checking with Google…";
     c.status("info", "Checking your code with Google. This can take up to a minute when Google is busy.");
     dd.ai.connect(input.value).then(function (r) {
       btn.disabled = false; btn.textContent = "Connect";
-      if (r.ok) { c.status("ok", "It works!"); setTimeout(c.next, 600); }
+      if (r.ok) { c.status("ok", "It works!"); setTimeout(function () { if (document.body.contains(c.el)) c.next(); }, 600); }
       else c.status("err", r.title, r.help);
     });
   }
@@ -296,6 +311,7 @@
     program = p;
     setup.paint();
     dd.on("ai:changed", setup.paint);
+    dd.on("pair:received", setup.paint);
   };
 
   if (dd.diag) dd.diag.addSection("Setup", function () {

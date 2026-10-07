@@ -58,13 +58,34 @@
 
   /* ---------- raw detail for support only ---------- */
   var log = [];
-  // Anything that looks like a code or secret is masked before it's stored.
+  /* Anything that looks like a code or secret is masked before it's stored or shown.
+     Three layers, so it never depends on one company's code format:
+       1. the buyer's actual saved codes, wherever they appear (modules register them below);
+       2. any long run of letters and digits that mixes upper case, lower case and digits:
+          real codes from every company look like that, while model names, dates, addresses
+          and messages don't;
+       3. known code formats and the usual places codes travel (key=, Bearer, x-api-key,
+          the "k" piece of a phone-pairing link), as a backstop. */
+  var secretSources = [];
+  errors.addSecrets = function (fn) { secretSources.push(fn); };
+  function knownSecrets() {
+    var out = [];
+    secretSources.forEach(function (fn) { try { (fn() || []).forEach(function (s) { if (s && String(s).length >= 8) out.push(String(s)); }); } catch (e) {} });
+    return out.sort(function (a, b) { return b.length - a.length; });
+  }
+  function keep4(m) { return m.slice(0, 4) + "…[hidden]"; }
   function scrub(s) {
-    return String(s)
-      .replace(/([?&](?:key|api_key|token)=)[^&\s"']+/gi, "$1[hidden]")
-      .replace(/\b(AIza[0-9A-Za-z_\-]{4})[0-9A-Za-z_\-]{20,}/g, "$1…[hidden]")
-      .replace(/\b((?:sk-or-|sk-ant-|sk-|gsk_|xai-)[0-9A-Za-z]{0,2})[0-9A-Za-z_\-]{12,}/g, "$1…[hidden]")
-      .replace(/(Bearer\s+)\S+/gi, "$1[hidden]");
+    s = String(s);
+    knownSecrets().forEach(function (code) { s = s.split(code).join(keep4(code)); });
+    return s
+      .replace(/([?&](?:key|api_?key|token|access_token)=)[^&\s"']+/gi, "$1[hidden]")
+      .replace(/(Bearer\s+)[^\s"',;]{8,}/gi, "$1[hidden]")
+      .replace(/((?:x-api-key|x-goog-api-key|api_?key|apikey)["']?\s*[:=]\s*["']?)[^\s"',;]{8,}/gi, "$1[hidden]")
+      .replace(/([#&~]dd=1~[^~\s]*~[^~\s]*(?:~[^~\s]*)*?~k)[^~\s"']+/g, "$1[hidden]")
+      .replace(/\b(?:AQ\.|AIza|sk-|gsk_|xai-|pk-|or-)[0-9A-Za-z_.\-]{12,}/g, keep4)
+      .replace(/[0-9A-Za-z_.\-]{24,}/g, function (m) {
+        return /[a-z]/.test(m) && /[A-Z]/.test(m) && /[0-9]/.test(m) ? keep4(m) : m;
+      });
   }
   errors.scrub = scrub;
 

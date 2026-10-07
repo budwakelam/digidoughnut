@@ -36,3 +36,16 @@ Collected as decisions come up; folded into handoff.md later.
   code-only QR on a tiiny address is 41x41. Expires after 10 minutes, one-time id, removed from
   the address bar on arrival, works when re-scanned into an open tab.
 - Still to do in Phase 5: sync details (s/f pieces), iPhone Home Screen hand-off, Firebase wizard.
+
+## Phase 3, round 1 (2026-10-07)
+
+- Code masking no longer depends on any company's format (Oran: OpenAI/Anthropic codes are
+  coming, don't over-specify). The support report hides (1) every code saved in this browser,
+  exactly, wherever it appears; (2) any 24+ character run mixing upper case, lower case and digits;
+  (3) known prefixes and the usual carriers (key=, Bearer, x-api-key, the QR link's k piece).
+- Google's code pattern is now a prefix hint only (AQ. / AIza). connect() asks Google about
+  anything 10+ characters long; only shorter text is answered locally.
+- dd.setup is in the build. Card on every program (opt out with `setup: false` in DD_PROGRAM).
+  "Turn on the helper" wizard complete and tested (tests/setup_test.py, 68 checks).
+- Oran's decisions: Firebase wizard waits for Phase 5 ("Coming soon" until then). Real
+  iPhone+PC sync via QR passed. Gate tester comes at the end; for now Oran tests each round.

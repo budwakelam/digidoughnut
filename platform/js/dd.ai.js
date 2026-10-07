@@ -30,9 +30,10 @@
   ai.providers = {
     google: {
       id: "google", label: "Google", adapter: "gemini",
-      // "AQ." = auth keys, the only kind AI Studio creates since 2026-05-28; "AIza" = older
-      // standard keys, which Google is retiring (rejected from Sept 2026 per Google's notice).
-      codePattern: /^(AQ\.[0-9A-Za-z_.\-]{20,}|AIza[0-9A-Za-z_\-]{30,})$/,
+      // Only a HINT for which company a pasted code belongs to: Google decides whether it works.
+      // "AQ." = auth keys (all AI Studio has made since 2026-05-28); "AIza" = older keys being
+      // retired. Anything else still goes to the default company, never refused on its looks.
+      codePattern: /^(AQ\.|AIza)/,
       getCodeUrl: "https://aistudio.google.com/apikey",   // overridable via noticeboard helpLinks.getCode_google
       base: "https://generativelanguage.googleapis.com/v1beta",
       free: true,
@@ -85,6 +86,13 @@
     }
     return c;
   }
+  /* Every code this browser knows about is hidden from the support report, whatever its format. */
+  var pendingCode = null;   // the code being checked by connect(), before it's saved
+  dd.errors.addSecrets(function () {
+    var c = dd.store.getJSON(CONN_KEY) || {}, out = [pendingCode, dd.store.get(LEGACY_KEY)];
+    ["main", "backup"].forEach(function (k) { if (c[k] && c[k].code) out.push(c[k].code); });
+    return out;
+  });
   ai.hasCode = function () { var c = loadConns(); return !!(c.main && c.main.code); };
   ai.connection = function () { var c = loadConns().main; return c ? { provider: c.provider, label: ai.providers[c.provider] ? ai.providers[c.provider].label : c.provider, hint: mask(c.code) } : null; };
   ai.forget = function () {
@@ -352,13 +360,14 @@
     // Patterns are only a hint for WHICH company. Google decides whether a code is valid:
     // codes change format over time, and we must never refuse a real code on a guess.
     var provider = providerId || ai.detectProvider(code) || ai.defaultProvider;
-    if (code.length < 20 || /\s/.test(code)) {
+    if (code.length < 10) {
       dd.errors.record("ai.connect", "pasted text not code-shaped: " + code.length + " characters, starts " + JSON.stringify(code.slice(0, 2)));
       return Promise.resolve(fail({ type: "bad_code" }, null));
     }
     if (!ai.detectProvider(code)) dd.errors.record("ai.connect", "unfamiliar code format (" + code.length + " characters, starts " + JSON.stringify(code.slice(0, 2)) + "), asking " + provider);
     var p = ai.providers[provider], ad = adapters[p.adapter];
     var conn = { provider: provider, code: code };
+    pendingCode = code;
     stopped = false;
     var ranked = [], lastProblem = null, started = Date.now(), failed = {};
     return ad.listModels(p, code).then(function (ids) {
@@ -561,7 +570,7 @@
       return c.provider === ai.defaultProvider ? c.code : c.provider + ":" + c.code;
     },
     take: function (v) {
-      if (typeof v !== "string" || v.length < 20 || v.length > 300) return false;
+      if (typeof v !== "string" || v.length < 10 || v.length > 1000) return false;
       var i = v.indexOf(":"), provider = ai.defaultProvider, code = v;
       if (i > 0 && ai.providers[v.slice(0, i)]) { provider = v.slice(0, i); code = v.slice(i + 1); }
       var c = loadConns();

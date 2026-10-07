@@ -126,6 +126,7 @@
         dd.pair.receive();
       }
       paintExampleNotice();
+      if (dd.setup && program.setup !== false) dd.setup.start(program);
       dd.diag.attach();
       if (dd.notes) dd.notes.start();
       dd.emit("ready", { source: loaded.source });

@@ -101,7 +101,8 @@
     overlay.addEventListener("click", function (e) { if (e.target === overlay && !opts.sticky) ui.closeSheet(); });
     ui.$("dd-layer").appendChild(overlay);
     openSheet = { el: overlay, onClose: opts.onClose };
-    var first = overlay.querySelector("button, input, textarea, select, a[href]");
+    // On a phone, focusing a text box pops the keyboard over the sheet: focus a button instead.
+    var first = overlay.querySelector(dd.env && dd.env.isPhone ? "button, a[href]" : "button, input, textarea, select, a[href]");
     if (first) first.focus();
     return overlay.firstChild;
   };
