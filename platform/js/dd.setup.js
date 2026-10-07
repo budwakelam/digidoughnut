@@ -546,7 +546,7 @@
       { title: "Confirm your email and sign in",
         body: function () { return '<p>GitHub emails you an <b>8-digit code</b>. Type it under <b>' + esc(L("gh_enter_code", "Enter code")) + '</b> and tap <b>' + esc(L("gh_code_continue", "Continue")) + '</b>.</p>' +
           '<p>GitHub then asks you to sign in: type your username (or email) and password, and tap <b>' + esc(L("gh_sign_in", "Sign in")) + '</b>.</p>' +
-          '<p><b>You can ignore</b> everything on GitHub\'s welcome page: the "Ask anything" box, Copilot, videos, "Getting started" and "Create project". We\'ll take you to the right pages from here.</p>'; },
+          '<p><b>You can ignore</b> everything on GitHub\'s welcome page: the "Ask anything" box, Copilot, videos, "Getting started", "Create project", and anything offering a <b>Download</b> (you don\'t need to install anything). We\'ll take you to the right pages from here.</p>'; },
         stuck: ["No email? Check your spam folder, or tap Resend the code.", "Code expired? Tap Resend the code and use the newest one."], guide: "gh_confirm" },
       { title: "Your GitHub username",
         body: function () { return '<p>Type the username you picked on GitHub.</p>' +
