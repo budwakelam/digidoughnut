@@ -131,7 +131,7 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
 <div id="dd-layer"></div>     <!-- sheets and toasts render here -->
 
 <script>
-window.DD_BUILD = {"built":"2026-10-07","commit":"eca6cd0","platform":"0.1.0"};
+window.DD_BUILD = {"built":"2026-10-07","commit":"ef1c908","platform":"0.1.0"};
 /* ---- dd.core.js ---- */
 /* ===== DigiDoughnut Platform · dd.core =====
    The `dd` namespace, a tiny event bus, device/page detection, and dd.start(), which boots
@@ -853,20 +853,26 @@ window.DD_BUILD = {"built":"2026-10-07","commit":"eca6cd0","platform":"0.1.0"};
   /* Timing log for support: the last 8 requests, newest first. No codes, no content. */
   var reqLog = [];
   ai.requestLog = function () { return reqLog.slice(); };
-  function logRequest(url, started, r) {
+  function logStart(url) {
     var what = /\/models\?/.test(url) || /\/models$/.test(url.split("?")[0]) ? "list" : "send";
     var m = url.match(/\/models\/([^:?]+):/);
-    var outcome = r.timeout ? "TIMED OUT" : r.stopped ? "stopped" : r.network ? "no connection" : String(r.status);
-    reqLog.unshift({ at: new Date().toLocaleTimeString(), what: what, model: m ? decodeURIComponent(m[1]) : "", secs: ((Date.now() - started) / 1000).toFixed(1), outcome: outcome });
+    var entry = { at: new Date().toLocaleTimeString(), what: what, model: m ? decodeURIComponent(m[1]) : "", secs: "…", outcome: "waiting for Google" };
+    reqLog.unshift(entry);
     if (reqLog.length > 8) reqLog.length = 8;
+    return entry;
+  }
+  function logRequest(url, started, r, entry) {
+    var m = url.match(/\/models\/([^:?]+):/), what = entry.what;
+    entry.outcome = r.timeout ? "TIMED OUT" : r.stopped ? "stopped" : r.network ? "no connection" : String(r.status);
+    entry.secs = ((Date.now() - started) / 1000).toFixed(1);
     if (r.timeout) dd.errors.record("ai " + what + (m ? " " + decodeURIComponent(m[1]) : ""), "no answer within " + ((Date.now() - started) / 1000).toFixed(0) + " s");
   }
 
   function request(url, opts, ms) {
-    var started = Date.now();
+    var started = Date.now(), entry = logStart(url);
     var ctl = new AbortController(); current = ctl;
     var d = ai.drill && drilled(ms, ctl);
-    if (d) return d.finally(function () { if (current === ctl) current = null; });
+    if (d) return d.then(function (r) { logRequest(url, started, r, entry); return r; }).finally(function () { if (current === ctl) current = null; });
     var timer = setTimeout(function () { ctl.timedOut = true; ctl.abort(); }, ms);
     opts.signal = ctl.signal;
     return fetch(url, opts).then(function (res) {
@@ -878,7 +884,7 @@ window.DD_BUILD = {"built":"2026-10-07","commit":"eca6cd0","platform":"0.1.0"};
       if (ctl.timedOut) return { status: -1, timeout: true };
       if (e && e.name === "AbortError") return { status: -1, stopped: true };
       return { status: 0, network: true, error: String(e && e.message || e) };
-    }).then(function (r) { logRequest(url, started, r); return r; })
+    }).then(function (r) { logRequest(url, started, r, entry); return r; })
       .finally(function () { clearTimeout(timer); if (current === ctl) current = null; });
   }
 
@@ -1166,14 +1172,16 @@ window.DD_BUILD = {"built":"2026-10-07","commit":"eca6cd0","platform":"0.1.0"};
 
   /* Speed check (AI test page only): times each kind of request with a generous limit,
      so we can see what's slow. Resolves [{step, secs, outcome}]. */
-  ai.speedCheck = function (limitMs) {
+  ai.speedCheck = function (limitMs, onRow) {
     var conn = loadConns().main; if (!conn) return Promise.resolve([{ step: "no code saved", secs: "-", outcome: "-" }]);
     var p = ai.providers[conn.provider], ad = adapters[p.adapter], out = [], keep = ai.limits.request;
     ai.limits.request = limitMs || 90000; stopped = false;
     function timed(step, fn) {
       var t = Date.now();
+      if (onRow) onRow(out.concat({ step: step, secs: "…", outcome: "waiting for Google" }));
       return fn().then(function (r) { out.push({ step: step, secs: ((Date.now() - t) / 1000).toFixed(1), outcome: r }); },
-                       function (e) { out.push({ step: step, secs: ((Date.now() - t) / 1000).toFixed(1), outcome: "failed: " + (e.type || "?") + (e.status ? " (" + e.status + ")" : "") }); });
+                       function (e) { out.push({ step: step, secs: ((Date.now() - t) / 1000).toFixed(1), outcome: "failed: " + (e.type === "timeout" ? "no answer" : e.type || "?") + (e.status ? " (" + e.status + ")" : "") }); })
+        .then(function () { if (onRow) onRow(out.slice()); });
     }
     var model, working = null;
     return pickModel(conn).then(function (m) { model = m; })
