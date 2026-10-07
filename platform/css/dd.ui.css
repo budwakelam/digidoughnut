@@ -134,3 +134,85 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
 .dd-choice-btn:hover{background:var(--dd-brand-soft)}
 .dd-choice-btn b{font-size:1.05rem;color:var(--dd-brand)} .dd-choice-btn span{font-size:.88rem;color:var(--dd-muted)}
 .dd-copyrow{display:flex;gap:8px;align-items:center;margin:6px 0} .dd-copyrow .dd-filename{flex:1;margin:0}
+
+/* ===== wizard extras: close button, nudge, "Your turn", pictures ===== */
+.dd-wiz{position:relative}
+.dd-wiz-x{position:sticky;top:0;float:right;margin:-10px -10px 0 8px;z-index:3;width:40px;height:40px;border-radius:50%;border:none;background:#f3f4f6;
+          color:var(--dd-muted);font-size:1.05rem;cursor:pointer;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.dd-wiz-x:hover{background:var(--dd-line);color:var(--dd-ink)}
+.dd-wiz .dd-wiz-top{padding-right:4px}
+.dd-nudge{animation:dd-shake .45s}
+@keyframes dd-shake{20%{transform:translateX(-8px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+.dd-todo{background:#fef9c3;border:2px solid #fde047;border-radius:12px;padding:10px 12px;font-size:1.02rem;margin:0 0 12px}
+
+.dd-pic{margin:2px 0 12px;border-radius:16px;padding:14px;background:linear-gradient(135deg,#fef3c7,#fce7f3 55%,#e0f2fe);overflow:hidden;
+        font-size:.85rem;color:#1f2937;user-select:none;-webkit-user-select:none}
+.dd-pic-frame{background:#fff;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.12);overflow:hidden;flex:1;min-width:0}
+.dd-pic-bar{display:flex;align-items:center;gap:5px;background:#e5e7eb;padding:6px 8px}
+.dd-pic-bar i{width:8px;height:8px;border-radius:50%;background:#f87171}.dd-pic-bar i:nth-child(2){background:#fbbf24}.dd-pic-bar i:nth-child(3){background:#34d399}
+.dd-pic-bar span{margin-left:6px;background:#fff;border-radius:99px;padding:1px 10px;font-size:.75rem;color:#6b7280;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dd-pic-page{padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.dd-pic-row{display:flex;flex-direction:column;gap:3px}
+.dd-pic-inline{flex-direction:row;align-items:center;gap:8px;flex-wrap:wrap}
+.dd-pic-end{align-items:flex-end;margin-top:2px}
+.dd-pic-label{font-weight:600;font-size:.78rem;color:#374151}
+.dd-pic-input{border:2px solid #d1d5db;border-radius:7px;padding:4px 7px;min-height:28px;background:#fff;display:flex;align-items:center}
+.dd-pic-typed{display:inline-block;overflow:hidden;white-space:nowrap;font-family:ui-monospace,Menlo,Consolas,monospace;width:0;border-right:2px solid #2563eb;
+              animation:dd-type calc(var(--n) * .07s) steps(var(--n)) var(--d) forwards,dd-caret .8s step-end infinite}
+@keyframes dd-type{to{width:calc(var(--n) * 1ch + 2px)}}
+@keyframes dd-caret{50%{border-color:transparent}}
+.dd-pic-lines{display:flex;flex-direction:column;gap:6px}.dd-pic-lines i{height:8px;border-radius:4px;background:#e5e7eb;width:90%}.dd-pic-lines i:nth-child(2){width:70%}.dd-pic-lines i:nth-child(3){width:50%}
+.dd-pic-target{position:relative;display:inline-block}
+.dd-pic-btn{display:inline-block;background:#16a34a;color:#fff;font-weight:700;border-radius:8px;padding:6px 12px;white-space:nowrap;
+            animation:dd-press 2s var(--d) infinite both}
+.dd-pic-hand{position:absolute;right:-16px;bottom:-24px;font-size:26px;animation:dd-hand 2s var(--d) infinite both;filter:drop-shadow(0 2px 2px rgba(0,0,0,.25))}
+@keyframes dd-hand{0%{opacity:0;transform:translate(26px,26px)}30%{opacity:1;transform:translate(0,0)}40%{transform:translate(0,0) scale(.82)}55%{transform:translate(0,0) scale(1)}85%{opacity:1}100%{opacity:0}}
+@keyframes dd-press{0%,36%{transform:scale(1);box-shadow:0 0 0 0 rgba(22,163,74,.55)}42%{transform:scale(.93)}65%{box-shadow:0 0 0 12px rgba(22,163,74,0)}100%{transform:scale(1)}}
+.dd-pic-toggle{width:40px;height:22px;border-radius:99px;background:#d1d5db;position:relative;animation:dd-on .3s var(--d) forwards}
+.dd-pic-toggle i{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;animation:dd-knob .3s var(--d) forwards}
+@keyframes dd-on{to{background:#16a34a}}@keyframes dd-knob{to{transform:translateX(18px)}}
+.dd-pic-check{width:22px;height:22px;border:2px solid #9ca3af;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;color:transparent;font-weight:900;
+              animation:dd-tick .3s var(--d) forwards}
+@keyframes dd-tick{to{background:#2563eb;border-color:#2563eb;color:#fff}}
+.dd-pic-select{border:2px solid #d1d5db;border-radius:7px;padding:4px 8px;align-self:flex-start;animation:dd-flash .6s var(--d) both}
+@keyframes dd-flash{0%{background:#fff}50%{background:#fde68a;border-color:#f59e0b}100%{background:#fff;border-color:#16a34a}}
+.dd-pic-menu{position:relative;align-self:flex-start;border:2px solid #d1d5db;border-radius:7px;padding:4px 8px;font-weight:600}
+.dd-pic-menuitem{position:absolute;left:0;top:calc(100% + 4px);background:#fff;border:2px solid #2563eb;border-radius:7px;padding:4px 8px;white-space:nowrap;
+                 box-shadow:0 4px 10px rgba(0,0,0,.15);opacity:0;animation:dd-show .3s var(--d) forwards;z-index:2}
+@keyframes dd-show{to{opacity:1}}
+.dd-pic-file{align-self:flex-start;background:#eef2ff;border-radius:7px;padding:4px 8px;font-weight:600;opacity:0;animation:dd-slide .6s var(--d) forwards;margin-top:24px}
+@keyframes dd-slide{from{opacity:0;transform:translate(-30px,14px) rotate(-8deg)}to{opacity:1;transform:none}}
+.dd-pic-code{font-family:ui-monospace,Menlo,Consolas,monospace;background:#f3f4f6;border-radius:6px;padding:4px 8px}
+.dd-pic-bubble{background:#111827;color:#fff;border-radius:8px;padding:2px 8px;font-size:.75rem;animation:dd-bubble 2s var(--d) infinite both}
+@keyframes dd-bubble{0%,45%{opacity:0;transform:translateY(4px)}55%,85%{opacity:1;transform:none}100%{opacity:0}}
+.dd-pic-digits{display:flex;gap:4px}.dd-pic-digits i{width:20px;height:26px;border:2px solid #d1d5db;border-radius:5px;display:flex;align-items:center;justify-content:center;
+               font-style:normal;font-weight:700;color:transparent;animation:dd-digit .15s calc(var(--d) + var(--k) * .15s) forwards}
+@keyframes dd-digit{to{color:#111827;border-color:#2563eb}}
+.dd-pic-popup{background:linear-gradient(160deg,#4c1d95,#1e1b4b);color:#fff;border-radius:10px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.dd-pic-ghostbtn{background:#2563eb;color:#fff;border-radius:7px;padding:5px 12px;opacity:.45;text-decoration:line-through}
+.dd-pic-popup .dd-pic-btn{background:#fff;color:#1e1b4b}
+.dd-pic-split{display:flex;align-items:center;gap:8px}
+.dd-pic-mail{display:flex;flex-direction:column;align-items:center;gap:4px}
+.dd-pic-env{font-size:34px;animation:dd-bob 2s ease-in-out infinite}
+.dd-pic-mailcode{font-family:ui-monospace,Menlo,Consolas,monospace;background:#fff;border-radius:6px;padding:2px 6px;font-weight:700;font-size:.75rem}
+.dd-pic-hero{display:flex;align-items:center;justify-content:center;gap:10px;font-size:40px;min-height:64px}
+.dd-pic-hero span{display:inline-block;animation:dd-bob 2s ease-in-out calc(var(--i) * .35s) infinite}
+.dd-pic-arrow{font-size:22px;color:#7c3aed;animation:dd-nudgeR 1.4s ease-in-out infinite}
+@keyframes dd-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes dd-nudgeR{0%,100%{transform:translateX(0)}50%{transform:translateX(6px)}}
+.dd-pic-caption{text-align:center;font-weight:700;color:#4c1d95;margin-top:4px}
+.dd-pic-spin{display:inline-block;animation:dd-spin 2s ease-in-out infinite}
+@keyframes dd-spin{0%{transform:rotate(0)}40%,50%{transform:rotate(180deg)}90%,100%{transform:rotate(360deg)}}
+.dd-pic-burst{position:relative;height:90px;display:flex;align-items:center;justify-content:center}
+.dd-pic-burst span{width:64px;height:64px;border-radius:50%;background:#16a34a;color:#fff;font-size:36px;font-weight:900;display:flex;align-items:center;justify-content:center;
+                  animation:dd-pop .5s cubic-bezier(.3,1.6,.6,1) both}
+.dd-pic-burst em{position:absolute;font-style:normal;font-size:22px;left:50%;top:50%;animation:dd-burst 1.6s calc(.3s + var(--i) * .1s) infinite both}
+.dd-pic-burst em:nth-of-type(1){--x:-70px;--y:-26px}.dd-pic-burst em:nth-of-type(2){--x:62px;--y:-30px}.dd-pic-burst em:nth-of-type(3){--x:-58px;--y:28px}.dd-pic-burst em:nth-of-type(4){--x:70px;--y:24px}
+@keyframes dd-pop{from{transform:scale(0)}to{transform:scale(1)}}
+@keyframes dd-burst{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}40%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) scale(1.1)}}
+.dd-pic-star{font-size:26px;color:#d1d5db;animation:dd-star .5s .4s forwards}
+@keyframes dd-star{60%{transform:scale(1.4)}to{color:#f59e0b;transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){
+  .dd-pic *,.dd-nudge{animation-duration:.001s !important;animation-delay:0s !important;animation-iteration-count:1 !important}
+  .dd-pic-hand{opacity:1 !important;animation:none !important}
+}

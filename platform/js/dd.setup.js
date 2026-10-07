@@ -23,13 +23,13 @@
 
   /* ---------- the four steps ---------- */
   setup.steps = [
-    { id: "try", title: "Try it", gives: "Everything works right now, saved in this browser.", time: "Done",
+    { id: "try", icon: "✨", title: "Try it", gives: "Everything works right now, saved in this browser.", time: "Done",
       done: function () { return true; } },
-    { id: "ai", title: "Turn on the helper", gives: "The AI helper and every smart feature.", time: "About 2 minutes",
+    { id: "ai", icon: "🤖", title: "Turn on the helper", gives: "The AI helper and every smart feature.", time: "About 2 minutes",
       done: function () { return !!(dd.ai && dd.ai.hasCode()); }, wizard: "ai" },
-    { id: "phone", title: "Put it on your phone", gives: "The same program on your phone, moved over by scanning a code.", time: "About 10 minutes",
+    { id: "phone", icon: "📱", title: "Put it on your phone", gives: "The same program on your phone, moved over by scanning a code.", time: "About 10 minutes",
       done: function () { return dd.env.isHosted; }, wizard: "host" },
-    { id: "sync", title: "Keep devices in step", gives: "Changes on one device show up on the other.", time: "About 10 minutes",
+    { id: "sync", icon: "🔄", title: "Keep devices in step", gives: "Changes on one device show up on the other.", time: "About 10 minutes",
       done: function () { return !!(dd.sync && dd.sync.isOn && dd.sync.isOn()); }, wizard: "sync" }
   ];
 
@@ -54,7 +54,7 @@
         : (wiz && wiz.ready !== false ? '<button class="dd-btn small" data-start="' + s.wizard + '">' + (inProgress(st, s.wizard) ? "Continue" : "Start") + '</button>'
                                       : '<span class="dd-note">Coming soon</span>');
       return '<li class="dd-step' + (done ? " done" : "") + '"><span class="dd-tick" aria-hidden="true">' + (done ? "✓" : i + 1) + '</span>' +
-        '<div class="dd-step-text"><b>' + esc(s.title) + '</b><span>' + esc(s.gives) + (done ? "" : " · " + esc(s.time)) + '</span></div>' + btn + '</li>';
+        '<div class="dd-step-text"><b><span class="dd-step-icon" aria-hidden="true">' + (s.icon || "") + '</span> ' + esc(s.title) + '</b><span>' + esc(s.gives) + (done ? "" : " · " + esc(s.time)) + '</span></div>' + btn + '</li>';
     }).join("");
     host.innerHTML = '<div class="dd-card dd-setup-card"><h2>Set up ' + esc(program.name) + ' <span class="dd-setup-count">' + n + ' of ' + total + ' done</span></h2>' +
       '<p class="dd-note" style="margin:0 0 8px">Each step is optional. Do them in any order, any time.</p><ol class="dd-steps">' + rows + '</ol>' +
@@ -86,8 +86,9 @@
     draw();
   };
   // Screen 1 isn't progress: only remember a place once the buyer has moved past it.
-  function remember() { var s = state(); if (cur.at > 0 || (cur.wiz.parent && !hostChoice())) s.wizards[cur.id] = { at: cur.at }; else delete s.wizards[cur.id]; saveState(s); }
-  function finish() { var s = state(); delete s.wizards[cur.id]; saveState(s); }
+  // Any wizard that's been opened and not finished shows "Continue" (Oran, 2026-10-07).
+  function remember() { var s = state(); s.wizards[cur.id] = { at: cur.at }; saveState(s); }
+  function finish() { var s = state(); delete s.wizards[cur.id]; if (cur.wiz.parent) delete s.wizards[cur.wiz.parent]; saveState(s); }
 
   function draw() {
     var wiz = cur.wiz, sc = wiz.screens[cur.at], total = wiz.screens.length;
@@ -99,15 +100,19 @@
     var canBack = cur.at > 0 || !!parent;
     var body = typeof sc.body === "function" ? sc.body() : sc.body;
     var html =
+      '<button class="dd-wiz-x" data-later aria-label="Close. Your place is saved.">✕</button>' +
       '<div class="dd-wiz-top"><span class="dd-wiz-name">' + esc(wiz.title) + '</span><span class="dd-wiz-progress">' + (shownTotal > 1 ? 'Step ' + (shownAt + 1) + ' of ' + shownTotal : '') + '</span></div>' +
       '<div class="dd-wiz-dots">' + dots + '</div>' +
       (cur.context && cur.at === 0 ? '<p class="dd-status show info">' + esc(cur.context) + '</p>' : "") +
-      '<h2>' + esc(sc.title) + '</h2><div class="dd-wiz-body">' + body + '</div>' +
-      (sc.action ? '<div class="dd-btnrow"><button class="dd-btn dd-wiz-big" data-action>' + esc(sc.action.label) + '</button></div>' : "") +
+      '<h2>' + esc(sc.title) + '</h2>' +
+      (sc.pic ? setup.pic(typeof sc.pic === "function" ? sc.pic() : sc.pic) : "") +
+      (sc.todo ? '<p class="dd-todo"><span aria-hidden="true">👉</span> <b>Your turn:</b> ' + (typeof sc.todo === "function" ? sc.todo() : esc(sc.todo)) + '</p>' : "") +
+      '<div class="dd-wiz-body">' + body + '</div>' +
+      (sc.action ? '<div class="dd-btnrow"><button class="dd-btn dd-wiz-big" data-action data-autofocus>' + esc(sc.action.label) + '</button></div>' : "") +
       '<div class="dd-status" id="dd-wiz-status"></div>' +
       '<div class="dd-wiz-nav">' +
         (canBack ? '<button class="dd-btn ghost" data-back>Back</button>' : "") +
-        (sc.next !== false ? '<button class="dd-btn" data-next>' + esc(sc.nextLabel || "Next") + '</button>' : "") +
+        (sc.next !== false ? '<button class="dd-btn" data-next' + (sc.action ? '' : ' data-autofocus') + '>' + esc(sc.nextLabel || "Next") + '</button>' : "") +
       '</div>' +
       '<div class="dd-wiz-help">' +
         '<button class="dd-linkbtn" data-stuck>I\'m stuck</button>' +
@@ -117,13 +122,15 @@
       '</div>' +
       '<div class="dd-wiz-stuck" id="dd-wiz-stuck" hidden></div>' +
       '<div class="dd-wiz-ask" id="dd-wiz-ask" hidden></div>';
-    var sh = dd.ui.sheet(html, { onClose: function () { setup.paint(); } });
+    var later = function () { dd.ui.closeSheet(); dd.ui.toast("Saved. Tap Continue in the setup card to pick up here."); };
+    var sh = dd.ui.sheet(html, { sticky: true, onClose: function () { setup.paint(); }, onEscape: later,
+      onOutside: function () { dd.ui.toast("To close this, tap Finish later or ✕. Your place is saved."); } });
     sh.classList.add("dd-wiz");
 
     var q = function (sel) { return sh.querySelector(sel); };
     if (q("[data-back]")) q("[data-back]").addEventListener("click", function () { if (cur.at > 0) { cur.at--; draw(); } else toParent(); });
     if (q("[data-over]")) q("[data-over]").addEventListener("click", function () { if (parent) toParent(); else { cur.at = 0; draw(); } });
-    q("[data-later]").addEventListener("click", function () { dd.ui.closeSheet(); dd.ui.toast("Saved. Tap Continue in the setup card to pick up here."); });
+    sh.querySelectorAll("[data-later]").forEach(function (b) { b.addEventListener("click", later); });
     if (q("[data-action]")) q("[data-action]").addEventListener("click", function () { sc.action.run(ctxFor(sh)); });
     if (q("[data-next]")) q("[data-next]").addEventListener("click", function () { next(sh); });
     q("[data-stuck]").addEventListener("click", function () { toggleStuck(sh, sc); });
@@ -283,6 +290,49 @@
     return best.a.replace("My Program", "My " + (program ? program.name : "Program"));
   };
 
+  /* ---------- pictures: a tiny moving drawing on every wizard screen ----------
+     Oran (2026-10-07): "think of this like a children's book". Each screen can show a little
+     mock of the page the buyer is about to see, with the thing to do highlighted and a
+     pointing hand that taps it, a box that types itself, a code that gets copied, and so on.
+     Pure HTML + CSS (no images), labels from the same wording as the text, so they never
+     disagree. Motion stops for people who ask their device to reduce motion.
+       spec = { kind, site, items:[…], btn, … }  (see each kind below) */
+  function hand() { return '<span class="dd-pic-hand" aria-hidden="true">👆</span>'; }
+  function tapBtn(label, delay) {
+    return '<span class="dd-pic-target" style="--d:' + (delay || 0) + 's"><span class="dd-pic-btn">' + esc(label) + '</span>' + hand() + '</span>';
+  }
+  function frame(site, inner) {
+    return '<div class="dd-pic-frame"><div class="dd-pic-bar"><i></i><i></i><i></i><span>' + esc(site || "") + '</span></div><div class="dd-pic-page">' + inner + '</div></div>';
+  }
+  function item(it, i) {
+    var d = (0.5 + i * 0.6).toFixed(1) + "s";
+    if (it.type === "field") return '<div class="dd-pic-row"><span class="dd-pic-label">' + esc(it.label) + '</span><span class="dd-pic-input"><span class="dd-pic-typed" style="--n:' + Math.max(4, (it.value || "").length) + ';--d:' + d + '">' + esc(it.value || "") + '</span></span></div>';
+    if (it.type === "toggle") return '<div class="dd-pic-row dd-pic-inline"><span class="dd-pic-label">' + esc(it.label) + '</span><span class="dd-pic-toggle" style="--d:' + d + '"><i></i></span></div>';
+    if (it.type === "check") return '<div class="dd-pic-row dd-pic-inline"><span class="dd-pic-check" style="--d:' + d + '">✓</span><span class="dd-pic-label">' + esc(it.label) + '</span></div>';
+    if (it.type === "select") return '<div class="dd-pic-row"><span class="dd-pic-label">' + esc(it.label) + '</span><span class="dd-pic-select" style="--d:' + d + '"><span>' + esc(it.value) + '</span> ▾</span></div>';
+    if (it.type === "menu") return '<div class="dd-pic-row"><span class="dd-pic-menu" style="--d:' + d + '">' + esc(it.label) + ' ▾<span class="dd-pic-menuitem">' + esc(it.value) + '</span></span></div>';
+    if (it.type === "file") return '<div class="dd-pic-row"><span class="dd-pic-file" style="--d:' + d + '">📄 ' + esc(it.value) + '</span></div>';
+    if (it.type === "code") return '<div class="dd-pic-row dd-pic-inline"><span class="dd-pic-code">' + esc(it.value) + '</span>' + tapBtn(it.btn || "Copy", d.replace("s", "")) + '<span class="dd-pic-bubble" style="--d:' + d + '">Copied!</span></div>';
+    if (it.type === "digits") return '<div class="dd-pic-row"><span class="dd-pic-label">' + esc(it.label) + '</span><span class="dd-pic-digits" style="--d:' + d + '">' + "12345678".split("").map(function (c, k) { return '<i style="--k:' + k + '">' + c + '</i>'; }).join("") + '</span></div>';
+    if (it.type === "lines") return '<div class="dd-pic-lines"><i></i><i></i><i></i></div>';
+    if (it.type === "popup") return '<div class="dd-pic-popup"><b>' + esc(it.label) + '</b><span class="dd-pic-ghostbtn">' + esc(it.value) + '</span>' + tapBtn(it.btn, 1) + '</div>';
+    return "";
+  }
+  setup.pic = function (spec) {
+    if (!spec) return "";
+    var k = spec.kind, out = "";
+    if (k === "hero") out = '<div class="dd-pic-hero">' + spec.icons.map(function (ic, i) { return '<span style="--i:' + i + '">' + ic + '</span>'; }).join('<b class="dd-pic-arrow">➜</b>') + '</div>' +
+                           (spec.caption ? '<div class="dd-pic-caption">' + esc(spec.caption) + '</div>' : "");
+    else if (k === "page") out = frame(spec.site, (spec.items || [{ type: "lines" }]).map(item).join("") +
+                                 (spec.btn ? '<div class="dd-pic-row dd-pic-end">' + tapBtn(spec.btn, 0.5 + (spec.items || []).length * 0.6) + '</div>' : ""));
+    else if (k === "email") out = '<div class="dd-pic-split"><div class="dd-pic-mail"><span class="dd-pic-env">✉️</span><span class="dd-pic-mailcode">12345678</span></div><b class="dd-pic-arrow">➜</b>' +
+                                  frame(spec.site, item({ type: "digits", label: spec.label }, 0) + '<div class="dd-pic-row dd-pic-end">' + tapBtn(spec.btn, 2.4) + '</div>') + '</div>';
+    else if (k === "wait") out = '<div class="dd-pic-hero"><span class="dd-pic-spin">⏳</span></div><div class="dd-pic-caption">' + esc(spec.caption || "") + '</div>';
+    else if (k === "done") out = '<div class="dd-pic-burst"><span>✓</span>' + Array.from("🎉✨🎊⭐").map(function (c, i) { return '<em style="--i:' + i + '">' + c + '</em>'; }).join("") + '</div>';
+    else if (k === "bookmark") out = frame(spec.site, '<div class="dd-pic-row dd-pic-inline"><span class="dd-pic-star">★</span><span class="dd-pic-input"><span class="dd-pic-typed" style="--n:' + spec.name.length + ';--d:1s">' + esc(spec.name) + '</span></span></div>');
+    return '<div class="dd-pic dd-pic--' + k + '" aria-hidden="true">' + out + '</div>';
+  };
+
   /* ---------- wizards (screens as data) ---------- */
   setup.wizards = {};
 
@@ -291,31 +341,43 @@
     onDone: function () { dd.ui.toast("The helper is turned on.", 4000); },
     screens: [
       { title: "A free code from Google",
+        pic: { kind: "hero", icons: ["🤖", "🔑", "✨"], caption: "A free code turns the helper on" },
+        todo: "Read this, then tap Next.",
         body: function () { return '<p>The helper runs on Google\'s AI. To use it, you need a free code from Google. <b>Google calls this an API key. We call it your free access code.</b></p>' +
           '<ul class="dd-facts"><li>✓ Free. No credit card.</li><li>✓ About 2 minutes.</li>' + (dd.env.isPhone ? "" : '<li>✓ Easiest on a computer, like you\'re using now.</li>') + '</ul>' +
           (dd.env.isPhone ? '<p class="dd-status show warn">This is easiest on a computer. You can do it there, then send it to your phone with one scan.</p>' : "") +
           '<p class="dd-note">' + esc(dd.ai.providers.google.privacyNote) + '</p>'; } },
       { title: "Open Google AI Studio",
+        pic: function () { return { kind: "page", site: "this page", items: [{ type: "lines" }], btn: "Open Google AI Studio" }; },
+        todo: "Tap the big blue button. Google opens in a new tab. Sign in there.",
         body: function () { return '<p>Tap the button. Google AI Studio opens in a new tab. Sign in with your Google account (the one you use for Gmail or YouTube).</p>' +
           '<p class="dd-note">Keep this page open. You\'ll come back here in a minute.</p>'; },
         action: { label: "Open Google AI Studio", run: function (c) { c.open(dd.ai.getCodeLink("google")); } },
         stuck: ["If Google asks you to make an account, that's free too.", "If the page is blank, close that tab and tap the button again."], guide: "ai_open" },
       { title: "Agree to Google's terms (first time only)",
+        pic: function () { return { kind: "page", site: "aistudio.google.com", items: [{ type: "lines" }, { type: "check", label: "I agree to the terms" }], btn: L("ai_terms_continue", "Continue") }; },
+        todo: function () { return "Tick the box, then tap <b>" + esc(L("ai_terms_continue", "Continue")) + "</b>. No box? Tap Next."; },
         body: function () { return '<p>The first time, Google shows its terms. Tick the box that you agree, then tap <b>' + esc(L("ai_terms_continue", "Continue")) + '</b>.</p>' +
           '<p><b>You can ignore</b> any box about emails, news or research. Leave those empty if you like.</p>' +
           '<p class="dd-note">Didn\'t see any terms? That\'s fine, you\'ve agreed before. Tap Next.</p>'; },
         stuck: ["You need to be 18 or older to use Google AI Studio.", "If Google says it isn't available in your country, the helper can't be used there yet."], guide: "ai_terms" },
       { title: "Find your code",
+        pic: function () { return { kind: "page", site: "aistudio.google.com · " + L("ai_keys_page", "API Keys"), items: [{ type: "lines" }], btn: L("ai_create_key", "Create API key") }; },
+        todo: function () { return "Tap <b>" + esc(L("ai_create_key", "Create API key")) + "</b>. Already see a code in the list? Skip it and tap Next."; },
         body: function () { return '<p>Look for the page called <b>' + esc(L("ai_keys_page", "API Keys")) + '</b> (Google sometimes opens it for you).</p>' +
           '<ul><li>If you see a code in the list already, you\'re done with this step: Google made one for you.</li>' +
           '<li>If the list is empty, tap <b>' + esc(L("ai_create_key", "Create API key")) + '</b>.</li></ul>' +
           '<p><b>You can ignore</b> anything about projects, billing or "upgrade". You don\'t need any of it.</p>'; },
         stuck: ["Can't find the API Keys page? Tap Back, then tap Open Google AI Studio again: it opens the right page.", "If Google asks you to choose or name a project, pick the one it suggests, or type anything, like \"My helper\"."], guide: "ai_find" },
       { title: "Copy your code",
+        pic: function () { return { kind: "page", site: "aistudio.google.com · " + L("ai_keys_page", "API Keys"), items: [{ type: "code", value: "AQ.Ab8R••••••••", btn: L("ai_copy", "Copy") }] }; },
+        todo: function () { return "Tap <b>" + esc(L("ai_copy", "Copy")) + "</b> next to your code."; },
         body: function () { return '<p>Next to your code, tap Google\'s <b>' + esc(L("ai_copy", "Copy")) + '</b> button (it may just be a small copy icon).</p>' +
           '<p class="dd-note">Copying the whole code with Google\'s button is the safest way. Don\'t worry about what it looks like.</p>'; },
         stuck: ["If you can only see part of the code, click on it first, then copy.", "On a phone, press and hold the code, then tap Copy."], guide: "ai_copy" },
       { title: "Paste it here",
+        pic: { kind: "page", site: "this page", items: [{ type: "field", label: "Your free access code", value: "AQ.Ab8R••••••••" }], btn: "Connect" },
+        todo: "Paste your code in the box below, then tap Connect.",
         body: '<p>Paste your code in the box, then tap <b>Connect</b>. We\'ll check it with Google straight away.</p>' +
               '<input class="dd-input" id="dd-wiz-code" placeholder="Paste your free access code" autocomplete="off" autocapitalize="off" spellcheck="false">',
         action: { label: "Connect", run: function (c) { connectFromWizard(c); } },
@@ -327,7 +389,8 @@
         next: false,
         stuck: ["Paste with Ctrl+V (Windows) or Cmd+V (Mac). On a phone, press and hold the box, then tap Paste.", "If it says the code didn't work, go back to Google, copy it again with Google's Copy button, and paste again."], guide: "ai_paste" },
       { title: "You're connected!",
-        body: '<p class="dd-big-tick">✓</p><p>The helper is ready. Your code stays in this browser, on this device.</p>' +
+        pic: { kind: "done" },
+        body: '<p>The helper is ready. Your code stays in this browser, on this device.</p>' +
               '<p class="dd-note">To use the helper on your phone too, use <b>Send to my phone</b>: it brings your code across with one scan.</p>',
         nextLabel: "Done" }
     ]
@@ -405,6 +468,8 @@
     title: "Put it on your phone",
     screens: [
       { title: "Put it online, for free",
+        pic: { kind: "hero", icons: ["💻", "🌐", "📱"], caption: "Computer → online → phone" },
+        todo: "Pick one of the choices below.",
         body: function () { return '<p>Your phone can\'t open a file that lives on this computer. So first we put the program online, at its own web address, using a free service.</p>' +
           facts + phoneWarn() +
           '<div class="dd-choice">' + setup.hostChoices.map(function (id) { var o = HOSTS[id];
@@ -424,8 +489,10 @@
   function finishScreens(svc) {
     return [
       { title: "Move your setup across",
+        pic: { kind: "hero", icons: ["🔑", "📋", "🌐"], caption: "Your code and numbers come along" },
+        todo: "Tap the big blue button. Your program opens in a new tab.",
         body: function () {
-          var url = hostState(), host = url; try { host = new URL(url).host + new URL(url).pathname; } catch (e) {}
+          var url = hostState(), host = url || "your new address"; try { host = new URL(url).host + new URL(url).pathname; } catch (e) {}
           return '<p>Tap the button. Your program opens at <b>' + esc(host) + '</b>' + (dd.ai && dd.ai.hasCode() ? ', with your free access code' : '') +
             (dd.isExample && !dd.isExample() ? ' and your numbers' : '') + ' already in it.</p>' +
             '<p class="dd-note">The button works for 10 minutes. If it runs out, just tap it again.</p>'; },
@@ -438,7 +505,9 @@
                 svc !== "tiiny" ? "Page not found? Check the upload finished, and that your username is right: tap Back to fix it."
                                     : "If the new page looks empty, check the address you pasted: tap Back and fix it."], guide: "host_move" },
       { title: "Bookmark it and keep it",
-        body: function () { return '<p class="dd-big-tick">✓</p><p>In the new tab, <b>bookmark the page</b> (Ctrl+D on Windows, Cmd+D on a Mac). Name the bookmark:</p>' +
+        pic: function () { return { kind: "bookmark", site: "Bookmark", name: setup.bookmarkName() }; },
+        todo: function () { return "In the new tab, press <b>Ctrl+D</b> (Windows) or <b>Cmd+D</b> (Mac) and save the bookmark."; },
+        body: function () { return '<p>In the new tab, <b>bookmark the page</b> (Ctrl+D on Windows, Cmd+D on a Mac). Name the bookmark:</p>' +
           '<p class="dd-filename">' + esc(setup.bookmarkName()) + '</p>' +
           '<p>From now on, always open the program from that bookmark.</p>' +
           '<ul><li><b>Same address, same numbers.</b> A different address, or the file on this computer, starts with its own separate numbers.</li>' +
@@ -533,6 +602,8 @@
     onDone: function () { dd.ui.toast("Use your new address from now on. Bookmark it!", 4500); },
     screens: [
       { title: "Make a free GitHub account",
+        pic: function () { return { kind: "page", site: "github.com/signup", items: [{ type: "field", label: "Email", value: "you@email.com" }, { type: "field", label: "Password", value: "••••••••••••••••" }, { type: "field", label: "Username", value: "smith-tools" }], btn: L("gh_create_account", "Create account") }; },
+        todo: function () { return "Tap the button below, fill in GitHub's boxes, then tap <b>" + esc(L("gh_create_account", "Create account")) + "</b>."; },
         body: function () { return '<p>GitHub keeps files online, and it can show a file as a web page for free. Tap the button. On <b>' + esc(L("gh_signup_title", "Sign up for GitHub")) + '</b>, fill in:</p>' +
           '<ul><li><b>Email</b>.</li>' +
           '<li><b>Password</b>: at least 15 characters, or at least 8 with a number and a small letter.</li>' +
@@ -544,11 +615,15 @@
         stuck: ["Password refused? Make it longer: 15 characters of anything works.",
                 "Username taken? Add a word or a number, like smith-tools-2."], guide: "gh_signup" },
       { title: "Confirm your email and sign in",
+        pic: function () { return { kind: "email", site: "github.com", label: L("gh_enter_code", "Enter code"), btn: L("gh_code_continue", "Continue") }; },
+        todo: "Copy the 8-digit code from GitHub's email into GitHub's boxes. Then sign in.",
         body: function () { return '<p>GitHub emails you an <b>8-digit code</b>. Type it under <b>' + esc(L("gh_enter_code", "Enter code")) + '</b> and tap <b>' + esc(L("gh_code_continue", "Continue")) + '</b>.</p>' +
           '<p>GitHub then asks you to sign in: type your username (or email) and password, and tap <b>' + esc(L("gh_sign_in", "Sign in")) + '</b>.</p>' +
           '<p><b>You can ignore</b> everything on GitHub\'s welcome page: the "Ask anything" box, Copilot, videos, "Getting started", "Create project", and anything offering a <b>Download</b> (you don\'t need to install anything). We\'ll take you to the right pages from here.</p>'; },
         stuck: ["No email? Check your spam folder, or tap Resend the code.", "Code expired? Tap Resend the code and use the newest one."], guide: "gh_confirm" },
       { title: "Your GitHub username",
+        pic: { kind: "page", site: "this page", items: [{ type: "field", label: "Your GitHub username", value: "smith-tools" }] },
+        todo: "Type your GitHub username in the box below.",
         body: function () { return '<p>Type the username you picked on GitHub.</p>' +
           '<input class="dd-input" id="dd-wiz-user" placeholder="e.g. smith-tools" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + esc(state().ghUser || "") + '">' +
           '<p class="dd-note">It\'s shown when you tap your picture at the top right of GitHub.</p>'; },
@@ -559,6 +634,9 @@
           var s = state(); s.ghUser = a.user; saveState(s); hostState(a.url); return true;
         } },
       { title: "Make a home for your programs",
+        pic: function () { var a = setup.githubAddress(ghUser()) || { repo: "yourname.github.io" };
+          return { kind: "page", site: "github.com/new", items: [{ type: "field", label: L("gh_repo_name", "Repository name"), value: a.repo }, { type: "toggle", label: L("gh_readme", "Add README") }], btn: L("gh_create_repo", "Create repository") }; },
+        todo: function () { var a = setup.githubAddress(ghUser()) || { repo: "yourname.github.io"}; return "Name it <b>" + esc(a.repo) + "</b>, switch on " + esc(L("gh_readme", "Add README")) + ", then tap <b>" + esc(L("gh_create_repo", "Create repository")) + "</b>."; },
         body: function () { var a = setup.githubAddress(ghUser()) || { repo: "yourname.github.io" };
           return '<p>Tap the button. On GitHub\'s <b>' + esc(L("gh_new_repo", "Create a new repository")) + '</b> page:</p>' +
           '<ol><li>Under <b>' + esc(L("gh_repo_name", "Repository name")) + '</b>, type exactly:' + copyBox(a.repo) + '</li>' +
@@ -572,6 +650,8 @@
                 "Already made it before? Then it already exists: tap Next.",
                 "\"Public\" only means the program file can be seen. Your numbers and your code are never in it."], guide: "gh_repo" },
       { title: "Upload this program",
+        pic: function () { return { kind: "page", site: "github.com · your repository", items: [{ type: "menu", label: L("gh_add_file", "Add file"), value: L("gh_upload", "Upload files") }, { type: "file", value: fileName() }], btn: L("gh_commit", "Commit changes") }; },
+        todo: function () { return "<b>" + esc(L("gh_add_file", "Add file")) + "</b> → <b>" + esc(L("gh_upload", "Upload files")) + "</b>, pick the file, then tap <b>" + esc(L("gh_commit", "Commit changes")) + "</b>."; },
         body: function () { return '<p>On your new repository\'s page, tap <b>' + esc(L("gh_add_file", "Add file")) + '</b>, then <b>' + esc(L("gh_upload", "Upload files")) + '</b>, and choose this file:</p>' +
           '<p class="dd-filename">' + esc(fileName()) + '</p>' +
           '<p>Then tap the green <b>' + esc(L("gh_commit", "Commit changes")) + '</b> button at the bottom.</p>' +
@@ -580,6 +660,8 @@
         stuck: ["Can't find the file? On Windows, open File Explorer and look in Downloads. On a Mac, open Finder and look in Downloads.",
                 "You can also drag the file from your folder onto the GitHub page."], guide: "gh_upload" },
       { title: "Turn on the website",
+        pic: function () { return { kind: "page", site: "Settings · " + L("gh_pages", "Pages"), items: [{ type: "select", label: L("gh_source", "Source"), value: L("gh_deploy_branch", "Deploy from a branch") }, { type: "select", label: L("gh_branch", "Branch"), value: "main" }], btn: L("gh_save", "Save") }; },
+        todo: function () { return "Pick <b>" + esc(L("gh_deploy_branch", "Deploy from a branch")) + "</b>, then <b>main</b>, then tap <b>" + esc(L("gh_save", "Save")) + "</b>."; },
         body: function () { return '<p>Tap the button. It opens your repository\'s <b>' + esc(L("gh_pages", "Pages")) + '</b> settings. There:</p>' +
           '<ol><li>Under <b>' + esc(L("gh_source", "Source")) + '</b>, pick <b>' + esc(L("gh_deploy_branch", "Deploy from a branch")) + '</b>.</li>' +
           '<li>Under <b>' + esc(L("gh_branch", "Branch")) + '</b>, pick <b>main</b>, leave <b>/ (root)</b> as it is, and tap <b>' + esc(L("gh_save", "Save")) + '</b>.</li></ol>' +
@@ -589,6 +671,8 @@
         stuck: ["Don't see Settings? It's along the top of your repository, on the right. Pages is in the list on the left.",
                 "Branch shows \"None\"? Click it and choose main, then Save."], guide: "gh_pages" },
       { title: "Wait for it to go live",
+        pic: { kind: "wait", caption: "GitHub is putting it online…" },
+        todo: "Wait a minute or two, then tap Next.",
         body: function () { var a = setup.githubAddress(ghUser());
           return '<p>GitHub takes a few minutes, sometimes up to 10, to put a new website online. Your program\'s address will be:</p>' +
             (a ? '<p class="dd-filename">' + esc(a.url.replace(/^https:\/\//, "")) + '</p>' : "") +
@@ -620,6 +704,8 @@
     onDone: function () { dd.ui.toast("Use your new address from now on. Bookmark it!", 4500); },
     screens: [
       { title: "Open tiiny.host and sign up",
+        pic: function () { return { kind: "page", site: "tiiny.host", items: [{ type: "popup", label: "Start your free trial", value: "Start free trial", btn: L("host_skip_trial", "Skip") }] }; },
+        todo: function () { return "Sign up. If a free trial pops up, tap <b>" + esc(L("host_skip_trial", "Skip")) + "</b>."; },
         body: function () { return (hostChoice() ? '<p>Your phone can\'t open a file that lives on this computer. So first we put the program online, at its own web address, using a free service called <b>tiiny.host</b>.</p>' + facts + publicNote : "") +
           '<p>Tap the button. tiiny.host opens in a new tab. Sign up for free, with your email or your Google account.</p>' +
           '<p>If tiiny.host offers a free trial, tap <b>' + esc(L("host_skip_trial", "Skip")) + '</b>. You don\'t need it.</p>' +
@@ -627,6 +713,8 @@
         action: { label: "Open tiiny.host", run: function (c) { c.open(link("host_open", "https://tiiny.host/")); } },
         stuck: ["Already have a tiiny.host account? Just log in.", "If a big \"Start free trial\" button appears, look below it for Skip. The trial turns into a paid plan, so skip it."], guide: "host_open" },
       { title: "Upload this program",
+        pic: function () { return { kind: "page", site: "tiiny.host", items: [{ type: "file", value: fileName() }], btn: L("host_upload", "Upload file") }; },
+        todo: function () { return "Tap <b>" + esc(L("host_upload", "Upload file")) + "</b> and pick this program's file."; },
         body: function () { return '<p>On tiiny.host, tap <b>' + esc(L("host_upload", "Upload file")) + '</b> and choose this file:</p>' +
           '<p class="dd-filename">' + esc(fileName()) + '</p>' +
           '<p class="dd-note">It\'s wherever you saved it from Etsy, often the Downloads folder.</p>' +
@@ -634,6 +722,8 @@
         stuck: ["Can't find the file? On Windows, open File Explorer and look in Downloads. On a Mac, open Finder and look in Downloads.",
                 "If tiiny.host says you've used your free project, the free plan holds one program at a time. Contact DigiDoughnut and we'll help."], guide: "host_upload" },
       { title: "Copy your new address",
+        pic: { kind: "page", site: "tiiny.host", items: [{ type: "code", value: "something-12.tiiny.site", btn: "Copy" }] },
+        todo: "Copy your new address from tiiny.host and paste it below.",
         body: function () { return '<p>When the upload finishes, tiiny.host shows your program\'s new address. It ends in <b>.tiiny.site</b>. Copy it, then paste it here.</p>' +
           '<input class="dd-input" id="dd-wiz-addr" placeholder="e.g. something-12.tiiny.site" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + esc(hostState()) + '">'; },
         mount: function (c) { var i = c.el.querySelector("#dd-wiz-addr"); if (!dd.env.isPhone && !i.value) i.focus(); },

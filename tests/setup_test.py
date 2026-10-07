@@ -133,7 +133,29 @@ with sync_playwright() as p:
     check("Start over goes back to step 1", wiz_step(page) == "Step 1 of 7")
     page.keyboard.press("Escape")
     check("Escape closes it too (never trapped)", page.locator(".dd-wiz").count() == 0)
-    check("back on screen 1 is not 'in progress'", page.locator("[data-start=ai]").inner_text() == "Start")
+    check("opened and left on screen 1: says Continue (Oran)", page.locator("[data-start=ai]").inner_text() == "Continue")
+    page.click("[data-start=ai]")
+    page.mouse.click(5, 5)
+    check("a click beside the wizard does NOT close it", page.locator(".dd-wiz").count() == 1)
+    check("...and says how to close it", "Finish later" in page.inner_text(".dd-toast"))
+    page.click(".dd-wiz-x")
+    check("the ✕ button closes it, place kept", page.locator(".dd-wiz").count() == 0 and page.locator("[data-start=ai]").inner_text() == "Continue")
+    check("setup card rows have friendly icons", page.locator(".dd-step-icon").count() == 4)
+
+    print("\n== pictures and 'Your turn' on every screen ==")
+    for wid in ["ai", "host_github", "host_tiiny"]:
+        n = page.evaluate("(w) => dd.setup.wizards[w].screens.length", wid)
+        missing = []
+        for i in range(n):
+            page.evaluate("([w, i]) => { const s = JSON.parse(localStorage.getItem('dd_demo_setup_v1') || '{}'); s.wizards = s.wizards || {}; s.wizards[w] = { at: i }; localStorage.setItem('dd_demo_setup_v1', JSON.stringify(s)); dd.setup.open(w); }", [wid, i])
+            has_pic = page.locator(".dd-wiz .dd-pic").count() == 1
+            has_todo = page.locator(".dd-wiz .dd-todo").count() == 1 or page.locator(".dd-wiz .dd-pic--done").count() == 1
+            if not (has_pic and has_todo): missing.append(i + 1)
+            if wid == "host_github" and i == 4: page.screenshot(path=os.path.join(SHOTS, "pic-github-upload.png"))
+            if wid == "ai" and i == 4: page.screenshot(path=os.path.join(SHOTS, "pic-ai-copy.png"))
+            page.keyboard.press("Escape")
+        check(f"{wid}: every screen has a picture and a 'Your turn' line", not missing, f"missing on screens {missing}")
+    page.evaluate("() => localStorage.removeItem('dd_demo_setup_v1')"); page.reload()
 
     print("\n== scripted answers (before the code works) ==")
     page.click("[data-start=ai]"); page.click("[data-ask]")

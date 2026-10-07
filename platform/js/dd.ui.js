@@ -98,12 +98,21 @@
     var overlay = document.createElement("div");
     overlay.className = "dd-overlay";
     overlay.innerHTML = '<div class="dd-sheet" role="dialog" aria-modal="true">' + html + '</div>';
-    overlay.addEventListener("click", function (e) { if (e.target === overlay && !opts.sticky) ui.closeSheet(); });
+    // sticky: a click beside the sheet doesn't close it (Oran: "older people click off to the
+    // side and it's gone"). The sheet gives a little nudge instead, and opts.onOutside can explain.
+    overlay.addEventListener("click", function (e) {
+      if (e.target !== overlay) return;
+      if (!opts.sticky) { ui.closeSheet(); return; }
+      var box = overlay.firstChild; box.classList.remove("dd-nudge"); void box.offsetWidth; box.classList.add("dd-nudge");
+      if (opts.onOutside) opts.onOutside();
+    });
     ui.$("dd-layer").appendChild(overlay);
-    openSheet = { el: overlay, onClose: opts.onClose };
+    openSheet = { el: overlay, onClose: opts.onClose, onEscape: opts.onEscape };
     // On a phone, focusing a text box pops the keyboard over the sheet: focus a button instead.
-    var first = overlay.querySelector(dd.env && dd.env.isPhone ? "button, a[href]" : "button, input, textarea, select, a[href]");
-    if (first) first.focus();
+    var first = overlay.querySelector("[data-autofocus]") ||
+                overlay.querySelector(dd.env && dd.env.isPhone ? "button, a[href]" : "button, input, textarea, select, a[href]");
+    // Focus without scrolling: the top of a sheet (title, picture) is what people should see first.
+    if (first) { try { first.focus({ preventScroll: true }); } catch (e) { first.focus(); } overlay.firstChild.scrollTop = 0; }
     return overlay.firstChild;
   };
   ui.closeSheet = function () {
@@ -113,7 +122,10 @@
     if (s.onClose) try { s.onClose(); } catch (e) {}
     if (lastFocus && lastFocus.focus) try { lastFocus.focus(); } catch (e) {}
   };
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && openSheet) ui.closeSheet(); });
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape" || !openSheet) return;
+    if (openSheet.onEscape) openSheet.onEscape(); else ui.closeSheet();
+  });
 
   /* ---------- confirm: friendly Yes/No, returns a Promise<boolean> ---------- */
   ui.confirm = function (title, body, yesLabel, noLabel, danger) {
