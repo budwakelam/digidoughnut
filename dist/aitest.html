@@ -170,7 +170,7 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
 <div id="dd-layer"></div>     <!-- sheets and toasts render here -->
 
 <script>
-window.DD_BUILD = {"built":"2026-10-07","commit":"e707542","platform":"0.1.0"};
+window.DD_BUILD = {"built":"2026-10-07","commit":"dd8fe18","platform":"0.1.0"};
 /* ---- dd.core.js ---- */
 /* ===== DigiDoughnut Platform · dd.core =====
    The `dd` namespace, a tiny event bus, device/page detection, and dd.start(), which boots
@@ -799,6 +799,8 @@ window.DD_BUILD = {"built":"2026-10-07","commit":"e707542","platform":"0.1.0"};
     }
   };
 
+  ai.defaultProvider = "google";   // launch lineup: Google only
+
   /* The "get a free code" page for a company (noticeboard can update it). */
   ai.getCodeLink = function (id) {
     var p = ai.providers[id || "google"];
@@ -1104,8 +1106,14 @@ window.DD_BUILD = {"built":"2026-10-07","commit":"e707542","platform":"0.1.0"};
   ai.connect = function (rawCode, providerId) {
     var code = ai.cleanCode(rawCode);
     if (!code) return Promise.resolve(fail({ type: "bad_code" }, null, "Paste your code first."));
-    var provider = providerId || ai.detectProvider(code);
-    if (!provider) return Promise.resolve(fail({ type: "bad_code" }, null));
+    // Patterns are only a hint for WHICH company. Google decides whether a code is valid:
+    // codes change format over time, and we must never refuse a real code on a guess.
+    var provider = providerId || ai.detectProvider(code) || ai.defaultProvider;
+    if (code.length < 20 || /\s/.test(code)) {
+      dd.errors.record("ai.connect", "pasted text not code-shaped: " + code.length + " characters, starts " + JSON.stringify(code.slice(0, 2)));
+      return Promise.resolve(fail({ type: "bad_code" }, null));
+    }
+    if (!ai.detectProvider(code)) dd.errors.record("ai.connect", "unfamiliar code format (" + code.length + " characters, starts " + JSON.stringify(code.slice(0, 2)) + "), asking " + provider);
     var p = ai.providers[provider], ad = adapters[p.adapter];
     var conn = { provider: provider, code: code };
     stopped = false;

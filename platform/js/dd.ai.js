@@ -40,6 +40,8 @@
     }
   };
 
+  ai.defaultProvider = "google";   // launch lineup: Google only
+
   /* The "get a free code" page for a company (noticeboard can update it). */
   ai.getCodeLink = function (id) {
     var p = ai.providers[id || "google"];
@@ -345,8 +347,14 @@
   ai.connect = function (rawCode, providerId) {
     var code = ai.cleanCode(rawCode);
     if (!code) return Promise.resolve(fail({ type: "bad_code" }, null, "Paste your code first."));
-    var provider = providerId || ai.detectProvider(code);
-    if (!provider) return Promise.resolve(fail({ type: "bad_code" }, null));
+    // Patterns are only a hint for WHICH company. Google decides whether a code is valid:
+    // codes change format over time, and we must never refuse a real code on a guess.
+    var provider = providerId || ai.detectProvider(code) || ai.defaultProvider;
+    if (code.length < 20 || /\s/.test(code)) {
+      dd.errors.record("ai.connect", "pasted text not code-shaped: " + code.length + " characters, starts " + JSON.stringify(code.slice(0, 2)));
+      return Promise.resolve(fail({ type: "bad_code" }, null));
+    }
+    if (!ai.detectProvider(code)) dd.errors.record("ai.connect", "unfamiliar code format (" + code.length + " characters, starts " + JSON.stringify(code.slice(0, 2)) + "), asking " + provider);
     var p = ai.providers[provider], ad = adapters[p.adapter];
     var conn = { provider: provider, code: code };
     stopped = false;
