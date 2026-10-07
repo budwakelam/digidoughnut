@@ -549,6 +549,28 @@
     });
   }
 
+  /* ---------- phone pairing: the AI code travels in the QR (on by default) ----------
+     Google codes travel as-is (the company is the default); others as "company:code". */
+  if (dd.pair) dd.pair.register({
+    key: "k", label: "access code",
+    give: function (opts) {
+      var c = loadConns().main;
+      if (!opts.includeCode || !c || !c.code) return undefined;
+      return c.provider === ai.defaultProvider ? c.code : c.provider + ":" + c.code;
+    },
+    take: function (v) {
+      if (typeof v !== "string" || v.length < 20 || v.length > 300) return false;
+      var i = v.indexOf(":"), provider = ai.defaultProvider, code = v;
+      if (i > 0 && ai.providers[v.slice(0, i)]) { provider = v.slice(0, i); code = v.slice(i + 1); }
+      var c = loadConns();
+      if (c.main && c.main.code === code) return false;   // already here
+      c.main = { provider: provider, code: code, savedAt: new Date().toISOString(), fromPhonePairing: true };
+      if (!dd.store.setJSON(CONN_KEY, c).ok) return false;
+      dd.emit("ai:changed", { connected: true, provider: provider });
+      return true;
+    }
+  });
+
   /* ---------- support diagnostic ---------- */
   if (dd.diag) dd.diag.addSection("AI", function () {
     var c = loadConns().main, m = models();

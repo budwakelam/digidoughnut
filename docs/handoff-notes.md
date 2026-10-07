@@ -24,3 +24,10 @@ Collected as decisions come up; folded into handoff.md later.
 
 - Never refuse a pasted code because of its format: Google decides. Format patterns are only a
   hint for which company a code belongs to.
+
+## Phone pairing / QR (built 2026-10-07, pulled forward from Phase 5 at Oran's request)
+
+- `platform/js/dd.pair.js` + vendored qrcode-generator. Link format `#dd=1~time~id~k<code>~d*<b64 JSON>`;
+  code-only QR on a tiiny address is 41x41. Expires after 10 minutes, one-time id, removed from
+  the address bar on arrival, works when re-scanned into an open tab.
+- Still to do in Phase 5: sync details (s/f pieces), iPhone Home Screen hand-off, Firebase wizard.

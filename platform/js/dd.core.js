@@ -110,6 +110,21 @@
       if (loaded.notice) dd.ui.notice("load", loaded.notice, "warn");
       if (program.mount) program.mount(ctx());
       render();
+      if (dd.pair) {
+        // The program's numbers can ride along in the QR while they're small. Example numbers don't.
+        dd.pair.register({
+          key: "d", label: "numbers", optional: true,
+          give: function () { return (program.pairData === false || meta.example) ? undefined : [program.schemaVersion, data]; },
+          take: function (v) {
+            if (!Array.isArray(v) || v.length !== 2) return false;
+            var body = v[1];
+            if (v[0] < program.schemaVersion) body = program.migrate(body, v[0]);
+            if (!program.validateData(body)) return false;
+            return dd.replaceData(body, { example: false, source: "pair" });
+          }
+        });
+        dd.pair.receive();
+      }
       paintExampleNotice();
       dd.diag.attach();
       if (dd.notes) dd.notes.start();

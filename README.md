@@ -14,6 +14,9 @@ platform/           shared by every program (edit here once, every program gets 
   js/dd.diag.js     triple-click footer support report
   js/dd.ai.js       AI connection: company registry (Google at launch), model picking,
                     tool translation, 30 s / 60 s / 5-round limits, Stop, friendly errors
+  js/dd.pair.js     "Send to my phone": QR with the AI code (+ numbers while small), 10-minute
+                    expiry, one-time id, compact link format
+  vendor/           qrcode-generator 1.4.4 (MIT), embedded in every program
   js/dd.notes.js    weekly DigiDoughnut noticeboard check (help links, labels, notice, model hints)
 noticeboard/        notes.json, served by GitHub Pages; see noticeboard/README.md
 programs/<name>/    one folder per program (PROGRAM-SPECIFIC)
@@ -41,7 +44,8 @@ Buyers never run this.
 ```
 pip install playwright && python3 -m playwright install chromium
 python3 tests/platform_test.py     # platform basics (110 checks)
-python3 tests/ai_test.py           # AI layer + noticeboard against a fake Google (43 checks)
+python3 tests/ai_test.py           # AI layer + noticeboard against a fake Google (59 checks)
+QR_DECODER=path/to/decode.js python3 tests/pair_test.py   # QR made, read back, opened on an emulated iPhone (22 checks)
 ```
 
 `programs/aitest` is an internal page for testing a real Google code (never sold).

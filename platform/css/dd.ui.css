@@ -64,6 +64,14 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
               border-radius:10px;padding:10px;max-height:50vh;overflow:auto;margin:8px 0 0}
 @media (max-width:520px){ .dd-overlay{align-items:flex-end;padding:0} .dd-sheet{border-radius:18px 18px 0 0;padding-bottom:calc(24px + env(safe-area-inset-bottom))} }
 
+/* phone pairing QR */
+.dd-qr{display:flex;justify-content:center;background:#fff;border:2px solid var(--dd-line);border-radius:12px;padding:8px;margin:6px 0}
+.dd-qr svg{display:block;max-width:100%;height:auto}
+.dd-qr-timer{text-align:center;font-size:.85rem;color:var(--dd-muted);margin:4px 0 10px}
+.dd-qr-expired{padding:40px 10px;text-align:center}
+.dd-check{display:flex;gap:8px;align-items:flex-start;font-size:.92rem;margin:6px 0}
+.dd-check input{width:20px;height:20px;margin-top:2px;accent-color:var(--dd-brand)}
+
 /* toast */
 .dd-toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--dd-ink);color:#fff;
           padding:10px 16px;border-radius:12px;font-size:.92rem;z-index:60;box-shadow:0 8px 24px rgba(0,0,0,.2);max-width:calc(100vw - 32px)}

@@ -47,6 +47,7 @@ const DD_PROGRAM = {
       else ui.status(statusId, "err", res.title, res.help);
     };
     $("tStop").addEventListener("click", () => dd.ai.stop());
+    $("tPhone").addEventListener("click", () => dd.pair.open());
 
     // 1. Connect
     $("tConnect").addEventListener("click", async () => {

@@ -48,6 +48,7 @@ const DD_PROGRAM = {
     };
     $("demoAdd").addEventListener("click", add);
     $("demoNew").addEventListener("keydown", (e) => { if (e.key === "Enter") add(); });
+    $("demoPhone").addEventListener("click", () => dd.pair.open());
     $("demoClear").addEventListener("click", async () => {
       const yes = await ctx.ui.confirm("Clear the whole list?", "This removes every item. You can't undo it.", "Yes, clear it", "No, keep it", true);
       if (yes) dd.replaceData(DD_PROGRAM.emptyData(), { example: false, source: "clear" });
