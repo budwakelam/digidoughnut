@@ -19,7 +19,7 @@ URL = f"http://127.0.0.1:{srv.server_address[1]}/aitest.html"
 GOOD = "AIzaSyTEST0123456789abcdefghijklmnopqrs"   # fake, shaped like a Google code
 NOTES_URL = "https://budwakelam.github.io/digidoughnut/noticeboard/notes.json"
 
-MODELS = ["gemini-3.8-flash", "gemini-3.8-flash-tts", "gemini-3.1-pro-preview", "gemini-3.5-flash-lite", "gemma-3-27b-it", "gemini-3.8-live"]
+MODELS = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.1-flash-lite", "gemini-3.8-flash-tts", "gemini-3.1-pro-preview", "gemini-3.5-flash-lite", "gemma-3-27b-it", "gemini-3.8-live"]
 
 class FakeGoogle:
     def __init__(self):
@@ -52,6 +52,9 @@ class FakeGoogle:
         body = json.loads(req.post_data or "{}"); self.calls.append({"model": model, "body": body})
         if s == "retired" and model == "gemini-3.8-flash":
             return self.err(route, 404, "NOT_FOUND", f"models/{model} is not found for API version v1beta, or is not supported for generateContent.")
+        if s == "flash_down" and "lite" not in model:   # this morning: Flash busy or silent, Lite fine
+            if model == "gemini-3.8-flash": return self.err(route, 503, "UNAVAILABLE", "This model is currently experiencing high demand.")
+            return   # never answers
         if s == "busy_main" and model == "gemini-3.8-flash":
             return self.err(route, 503, "UNAVAILABLE", "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.")
         if s == "busy_once" and self.first("busy"): return self.err(route, 503, "UNAVAILABLE", "The model is overloaded. Please try again later.")
@@ -157,6 +160,12 @@ with sync_playwright() as p:
     G.reset("retired"); r = chat(page, "hi")
     check("retired model: quietly moves to the next model", r["ok"] and G.calls[-1]["model"] == "gemini-3.5-flash-lite", json.dumps([c["model"] for c in G.calls]))
     page.evaluate("() => { const k='dd_ai_models_v1', m=JSON.parse(localStorage.getItem(k)); m.google.model='gemini-3.8-flash'; m.google.candidates=['gemini-3.8-flash','gemini-3.5-flash-lite']; m.google.busy={}; localStorage.setItem(k, JSON.stringify(m)); }")
+    page.evaluate("() => { localStorage.removeItem('dd_ai_models_v1'); dd.ai.limits.request = 2500; dd.ai.limits.turn = 6000; }")
+    G.reset("flash_down"); r = chat(page, "add three items")
+    order = [c["model"] for c in G.calls]
+    check("Flash family down (busy + silent): reaches Flash-Lite and answers", r["ok"] and "lite" in order[1], json.dumps(order))
+    check("fallback order alternates Flash / Flash-Lite", page.evaluate("() => dd.ai.rankModels('google', ['gemini-3.8-flash','gemini-3.7-flash','gemini-3.5-flash-lite','gemini-3.1-flash-lite'])").__eq__(["gemini-3.8-flash","gemini-3.5-flash-lite","gemini-3.7-flash","gemini-3.1-flash-lite"]))
+    page.evaluate("() => { const k='dd_ai_models_v1', m=JSON.parse(localStorage.getItem(k)); m.google.busy={}; localStorage.setItem(k, JSON.stringify(m)); }")
     G.reset("busy_main"); r = chat(page, "hi")
     check("main model busy (503): switches to the next model, answers", r["ok"] and [c["model"] for c in G.calls] == ["gemini-3.8-flash", "gemini-3.5-flash-lite"], json.dumps([c["model"] for c in G.calls]))
     G.reset("busy_main"); r = chat(page, "hi")
