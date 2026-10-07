@@ -216,3 +216,21 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
   .dd-pic *,.dd-nudge{animation-duration:.001s !important;animation-delay:0s !important;animation-iteration-count:1 !important}
   .dd-pic-hand{opacity:1 !important;animation:none !important}
 }
+/* the always-open helper chat at the bottom of every setup screen */
+.dd-wiz .dd-wiz-ask{margin-top:14px;background:linear-gradient(135deg,#eef2ff,#f5f3ff);border:2px solid #c7d2fe;border-radius:14px;padding:10px 12px}
+.dd-chat-head{margin:0 0 6px;font-size:.95rem}.dd-chat-head .dd-note{display:block;font-size:.78rem}
+.dd-ask-msgs:empty{display:none}
+.dd-wiz-more{margin:4px 0 0}.dd-wiz-more summary{cursor:pointer;color:var(--dd-brand);font-size:.92rem;padding:4px 0}
+.dd-bars-wrap{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:6px}
+.dd-bars{display:inline-flex;align-items:center;gap:6px}
+.dd-bars-label{font-size:.78rem !important;color:var(--dd-ink) !important;font-weight:600}
+.dd-bars-cells{display:inline-flex;gap:3px}.dd-bars-cells i{width:14px;height:8px;border-radius:3px;background:#e5e7eb}.dd-bars-cells i.on{background:#16a34a}
+/* keep the helper chat in view: it sticks to the bottom of the setup window while the screen scrolls */
+.dd-wiz .dd-wiz-ask{position:sticky;bottom:-24px;z-index:2;box-shadow:0 -6px 18px rgba(30,27,75,.12)}
+.dd-wiz .dd-ask-msgs{max-height:140px}
+@media (max-width:520px){ .dd-wiz .dd-wiz-ask{bottom:calc(-24px - env(safe-area-inset-bottom))} .dd-chat-head .dd-note{display:none} }
+@media (max-width:520px){
+  .dd-wiz .dd-wiz-ask{padding:8px 10px} .dd-chat-head{font-size:.88rem;margin-bottom:4px}
+  .dd-wiz .dd-ask-chips{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+  .dd-wiz .dd-chip{white-space:nowrap;flex:0 0 auto;min-height:32px;padding:4px 10px}
+}

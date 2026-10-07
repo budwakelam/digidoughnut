@@ -116,12 +116,11 @@
       '</div>' +
       '<div class="dd-wiz-help">' +
         '<button class="dd-linkbtn" data-stuck>I\'m stuck</button>' +
-        '<button class="dd-linkbtn" data-ask>Ask a question</button>' +
         (canBack ? '<button class="dd-linkbtn" data-over>Start over</button>' : "") +
         '<button class="dd-linkbtn" data-later>Finish later</button>' +
       '</div>' +
       '<div class="dd-wiz-stuck" id="dd-wiz-stuck" hidden></div>' +
-      '<div class="dd-wiz-ask" id="dd-wiz-ask" hidden></div>';
+      '<div class="dd-wiz-ask" id="dd-wiz-ask"></div>';
     var later = function () { dd.ui.closeSheet(); dd.ui.toast("Saved. Tap Continue in the setup card to pick up here."); };
     var sh = dd.ui.sheet(html, { sticky: true, onClose: function () { setup.paint(); }, onEscape: later,
       onOutside: function () { dd.ui.toast("To close this, tap Finish later or ✕. Your place is saved."); } });
@@ -134,7 +133,7 @@
     if (q("[data-action]")) q("[data-action]").addEventListener("click", function () { sc.action.run(ctxFor(sh)); });
     if (q("[data-next]")) q("[data-next]").addEventListener("click", function () { next(sh); });
     q("[data-stuck]").addEventListener("click", function () { toggleStuck(sh, sc); });
-    q("[data-ask]").addEventListener("click", function () { toggleAsk(sh); });
+    mountChat(sh);
     if (sc.mount) sc.mount(ctxFor(sh));
   }
 
@@ -166,7 +165,7 @@
   /* "I'm stuck": common fixes for THIS screen, plus a link to the picture guide. */
   function toggleStuck(sh, sc) {
     var box = sh.querySelector("#dd-wiz-stuck");
-    box.hidden = !box.hidden; sh.querySelector("#dd-wiz-ask").hidden = true;
+    box.hidden = !box.hidden;
     if (box.hidden) return;
     var fixes = (sc.stuck || []).concat(["Close this and tap Continue later. Your place is saved.", "Nothing you do here can break the program. Every step can be done again."]);
     var guide = sc.guide ? link("guide_" + sc.guide, null) : null;
@@ -175,40 +174,41 @@
   }
 
   /* ---------- "Ask a question": scripted guide first, live AI once the code works ---------- */
-  function toggleAsk(sh) {
-    var box = sh.querySelector("#dd-wiz-ask");
-    box.hidden = !box.hidden; sh.querySelector("#dd-wiz-stuck").hidden = true;
-    if (box.hidden) return;
-    var live = dd.ai && dd.ai.hasCode();
-    box.innerHTML = '<p class="dd-note" style="margin:0 0 6px">' + (live
-        ? "Ask anything about this step. The helper (AI) answers."
-        : "Ask about this step. These are ready-made answers from the setup guide; the AI helper takes over once your code is connected.") + '</p>' +
+  /* The helper chat sits at the bottom of every setup screen, always open (Oran, 2026-10-07):
+     ready-made answers before the code works, the live AI after. The conversation carries on
+     from screen to screen while the page is open. */
+  var chatLog = [];
+  function mountChat(sh) {
+    var box = sh.querySelector("#dd-wiz-ask"), live = dd.ai && dd.ai.hasCode();
+    box.innerHTML = '<div class="dd-chat-head"><span aria-hidden="true">💬</span> <b>' + (live ? "Ask the helper" : "Questions? Ask the setup guide") + '</b>' +
+        '<span class="dd-note">' + (live ? " The AI helper answers." : " Ready-made answers; the AI helper takes over once your code is connected.") + '</span></div>' +
       '<div class="dd-ask-msgs" id="dd-ask-msgs"></div>' +
-      '<div class="dd-ask-row"><input class="dd-input" id="dd-ask-in" placeholder="e.g. Is it really free?" autocomplete="off"><button class="dd-btn small" id="dd-ask-go">Ask</button></div>' +
-      '<div class="dd-ask-chips">' + setup.suggestQuestions(cur.id).map(function (t) { return '<button class="dd-chip">' + esc(t) + '</button>'; }).join("") + '</div>';
-    var input = box.querySelector("#dd-ask-in");
+      '<div class="dd-ask-row"><input class="dd-input" id="dd-ask-in" placeholder="' + (live ? "Ask anything about this step…" : "e.g. Is it really free?") + '" autocomplete="off"><button class="dd-btn small" id="dd-ask-go">Ask</button></div>' +
+      (chatLog.length ? "" : '<div class="dd-ask-chips">' + setup.suggestQuestions(cur.id).map(function (t) { return '<button class="dd-chip">' + esc(t) + '</button>'; }).join("") + '</div>');
+    chatLog.slice(-6).forEach(function (m) { say(box, m.who, m.text, true); });
+    var input = box.querySelector("#dd-ask-in"), go = box.querySelector("#dd-ask-go");
     var send = function (text) {
-      text = (text || input.value).trim(); if (!text) return;
+      text = (text || input.value).trim(); if (!text || go.disabled) return;
       input.value = "";
+      var chips = box.querySelector(".dd-ask-chips"); if (chips) chips.remove();
       say(box, "me", text);
-      var live = dd.ai && dd.ai.hasCode();
-      var wait = live ? say(box, "bot pending", "The helper is thinking…") : null;
-      box.querySelector("#dd-ask-go").disabled = true;
+      var wait = (dd.ai && dd.ai.hasCode()) ? say(box, "bot pending", "The helper is thinking…", "pending") : null;
+      go.disabled = true;
       setup.answer(text, cur).then(function (a) {
         if (wait) wait.remove();
-        box.querySelector("#dd-ask-go").disabled = false;
+        go.disabled = false;
         say(box, a.live ? "bot live" : "bot", a.text);
       });
     };
-    box.querySelector("#dd-ask-go").addEventListener("click", function () { send(); });
+    go.addEventListener("click", function () { send(); });
     input.addEventListener("keydown", function (e) { if (e.key === "Enter") send(); });
     box.querySelectorAll(".dd-chip").forEach(function (c) { c.addEventListener("click", function () { send(c.textContent); }); });
-    input.focus();
   }
-  function say(box, who, text) {
+  function say(box, who, text, noLog) {
+    if (!noLog) { chatLog.push({ who: who, text: text }); if (chatLog.length > 30) chatLog.shift(); }
     var m = document.createElement("div"); m.className = "dd-ask-msg " + who;
     m.textContent = text; box.querySelector("#dd-ask-msgs").appendChild(m);
-    m.scrollIntoView({ block: "nearest" });
+    if (noLog !== true) m.scrollIntoView({ block: "nearest" });   // not when restoring the chat on a new screen
     return m;
   }
 
@@ -232,7 +232,12 @@
       "The buyer is not technical. Answer in 1-3 short sentences, plain words, no jargon. Say 'free access code', not 'API key'. " +
       "Only help with the step they're on. If unsure what a screen shows, say so and suggest the 'I'm stuck' button. " +
       "Facts: the access code is free from Google AI Studio, no credit card. The program keeps the code only in this browser. " +
-      "Nothing they do in setup can break the program; every step can be redone.";
+      "Nothing they do in setup can break the program; every step can be redone." +
+      (cur && /^host/.test(cur.id) ? " Hosting facts: the program is ONE self-contained HTML file. It must be uploaded unchanged, keeping its file name, to an https address, " +
+        "not behind a password. The host must not block outside connections (a Content-Security-Policy with connect-src 'self' breaks the helper; Neocities' free plan does this). " +
+        "Updates: upload the new file with the same name to the same place, because each web address keeps its own saved numbers. If the buyer names a host " +
+        "(Netlify, Cloudflare Pages, Vercel, cPanel, Hostinger, GoDaddy, Bluehost, WordPress, Wix, Squarespace, Google Sites, etc.), give short, numbered steps for that host and say plainly " +
+        "if it can't host a raw HTML file (many site builders can't), then suggest GitHub Pages. Never ask for their passwords." : "");
   };
 
   /* ---------- the scripted question bank (spec 3.8: all must be answered in-wizard) ---------- */
@@ -258,6 +263,11 @@
     { keys: ["github", "repository", "repo"], a: "GitHub is a free place to keep files online, and it can show a file as a web page. Your program file goes there; your numbers and your code never do." },
     { keys: ["public", "who can see"], a: "Public means anyone could look at the program file itself, like any web page. Your numbers and your code are never in the file: they stay on your own devices." },
     { keys: ["not online", "not live", "404", "not found", "isn t there", "still waiting"], a: "GitHub can take up to 10 minutes to put a new site online. Check Settings, Pages: Branch should say main, and Save should have been tapped." },
+    { keys: ["private", "upgrade", "make this repository public", "enable pages"], a: "GitHub only makes free web pages from Public repositories. In your repository: Settings, General, scroll to Danger Zone, Change visibility, Change to public, then confirm." },
+    { keys: ["etsy", "folder", "different address", "wrong address", "github io"], a: "Your address is username.github.io, then the repository's name, then the file. On the waiting step, open \"GitHub shows a different address?\" and paste what GitHub shows." },
+    { keys: ["netlify", "cloudflare", "vercel", "cpanel", "hostinger", "godaddy", "bluehost", "file manager"], a: "Most hosts let you upload a file through a file manager or an upload page: upload this file unchanged and keep its name. For step-by-step help for your exact host, turn on the AI helper (setup step 2), then ask here." },
+    { keys: ["wordpress", "wix", "squarespace", "google sites", "website builder"], a: "Most website builders can't host a whole web page file like this one. If yours won't take it, tap Start over and pick GitHub: it's free and made for this." },
+    { keys: ["https", "http", "secure", "padlock"], a: "https:// means the page is sent securely (the padlock in the address bar). Phones and the helper need it. Most hosts switch it on for free, often called SSL." },
     { keys: ["readme"], a: "Turn on Add README when you create the repository. It's a small text file GitHub needs to start the repository; you can ignore it after that." },
     { keys: ["username", "user name"], a: "On Neocities, your username becomes your web address: username.neocities.org. Letters, numbers and hyphens only. Anything you like, for example yourname-tools." },
     { keys: ["supporter", "5 a month", "card number", "plan"], a: "Pick Free and tap Continue. You don't need the Supporter plan, and you never need to enter a card." },
@@ -269,6 +279,7 @@
     { keys: ["phone", "iphone", "android", "mobile"], a: "Setting up the helper is easiest on a computer. Once it works, Send to my phone moves it over by scanning a code." }
   ];
   setup.suggestQuestions = function (wizardId) {
+    if (wizardId === "host_other") return ["How do I upload it to Netlify?", "Can I use WordPress?", "What does https mean?"];
     if (wizardId === "host_github") return ["Is GitHub really free?", "What does Public mean?", "It's not online yet"];
     if (/^host_neo/.test(wizardId || "")) return ["Which username?", "Do I need Supporter?", "No email came"];
     if (/^host/.test(wizardId || "")) return ["Is it really free?", "Do I need the free trial?", "How long does it stay online?"];
@@ -454,14 +465,21 @@
      Seen on Oran's site; the helper said "no internet". Its wizard stays below for a paid plan
      or a policy change, but isn't offered. When only one service is offered, the choice screen
      is skipped. */
-  setup.hostChoices = ["github", "tiiny"];
+  setup.hostChoices = ["github", "tiiny", "other"];
   function hostChoice() { return setup.hostChoices.length === 1 ? setup.hostChoices[0] : null; }
 
+  /* ease = how easy the setup is, lasting = how little looking-after it needs later (out of 5). */
   var HOSTS = {
-    github: { name: "GitHub", blurb: "Recommended. Free, no ads, never expires, and one account holds all your DigiDoughnut programs. About 10 minutes." },
-    tiiny: { name: "tiiny.host", blurb: "Quicker to set up, but one program per free account, and you log in every 3 months to keep it online." },
-    neocities: { name: "Neocities", blurb: "Free, but its free plan blocks the helper." }
+    github: { name: "GitHub", blurb: "Recommended. Free, no ads, never expires, and one account holds all your DigiDoughnut programs. About 10 minutes.", ease: 3, lasting: 5 },
+    tiiny: { name: "tiiny.host", blurb: "Quicker to set up, but one program per free account, and you log in every 3 months to keep it online. About 5 minutes.", ease: 4, lasting: 2 },
+    other: { name: "My own website or another host", blurb: "Already have web hosting? Put the file there. The helper can give you steps for your host.", ease: 0, lasting: 0 },
+    neocities: { name: "Neocities", blurb: "Free, but its free plan blocks the helper.", ease: 4, lasting: 4 }
   };
+  function bars(label, n) {
+    if (!n) return "";
+    var cells = ""; for (var i = 1; i <= 5; i++) cells += '<i class="' + (i <= n ? "on" : "") + '"></i>';
+    return '<span class="dd-bars"><span class="dd-bars-label">' + esc(label) + '</span><span class="dd-bars-cells" aria-label="' + n + ' out of 5">' + cells + '</span></span>';
+  }
 
   /* Screen 1, shared: why, then pick a service. */
   setup.wizards.host = {
@@ -473,7 +491,8 @@
         body: function () { return '<p>Your phone can\'t open a file that lives on this computer. So first we put the program online, at its own web address, using a free service.</p>' +
           facts + phoneWarn() +
           '<div class="dd-choice">' + setup.hostChoices.map(function (id) { var o = HOSTS[id];
-            return '<button class="dd-choice-btn" data-host="' + id + '"><b>' + esc(o.name) + '</b><span>' + esc(o.blurb) + '</span></button>'; }).join("") +
+            return '<button class="dd-choice-btn" data-host="' + id + '"><b>' + esc(o.name) + '</b><span>' + esc(o.blurb) + '</span>' +
+              (o.ease ? '<span class="dd-bars-wrap">' + bars("Easy to set up", o.ease) + bars("Looks after itself", o.lasting) + '</span>' : "") + '</button>'; }).join("") +
           '</div>' + publicNote; },
         mount: function (c) {
           c.el.querySelectorAll("[data-host]").forEach(function (b) { b.addEventListener("click", function () {
@@ -516,6 +535,8 @@
             : svc === "tiiny"
             ? '<li><b>Log in to tiiny.host at least once every 3 months.</b> That keeps your free page online.</li>' +
               '<li><b>Getting an update?</b> On tiiny.host, use <b>' + esc(L("host_update", "Update")) + '</b> on this same project. Don\'t upload it as a new one.</li>'
+            : svc === "other"
+            ? '<li><b>Getting an update?</b> Upload the new file to the same place with the <b>same file name</b>, replacing the old one, so the address stays the same.</li>'
             : '<li><b>Getting an update?</b> Upload the new file to Neocities with the <b>same file name</b>. It replaces the old one and keeps the same address.</li>') +
           '</ul>' +
           '<p>Last step: in the new tab, open the setup card and tap <b>Send to my phone</b>. On your phone, add it to your Home Screen when it asks.</p>' +
@@ -581,10 +602,22 @@
      from a branch" > main > Save; live within ~10 minutes. Logged-out sign-up screens NOT yet
      seen: labels go through L() so the noticeboard can correct them. */
   function ghUser() { return (state().ghUser || "").toLowerCase(); }
-  setup.githubAddress = function (user) {
-    user = String(user || "").trim().toLowerCase().replace(/^@/, "").replace(/^https?:\/\//, "").replace(/\.github\.io.*$/, "").replace(/^github\.com\//, "").replace(/\/.*$/, "");
+  /* A GitHub username (or a pasted github.io address) -> where this file will be.
+     Repository name: "digidoughnut" by default, so the address is
+     https://<user>.github.io/digidoughnut/<file>. (A repository named exactly <user>.github.io
+     would drop the folder, but buyers find that name confusing: Oran named his "etsy".) Any
+     repository on the same account shares one web address, so programs still share the code. */
+  setup.ghDefaultRepo = "digidoughnut";
+  setup.githubAddress = function (user, repo) {
+    var raw = String(user || "").trim();
+    var m = raw.match(/^(?:https?:\/\/)?([a-z0-9-]+)\.github\.io\/?([^\/?#]*)/i);
+    if (m) { user = m[1]; repo = repo || m[2] || (m[1] + ".github.io"); }
+    else user = raw.toLowerCase().replace(/^@/, "").replace(/^https?:\/\//, "").replace(/^github\.com\//, "").replace(/\/.*$/, "");
+    user = String(user).toLowerCase();
     if (!/^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9])){0,38}$/.test(user)) return null;
-    return { user: user, repo: user + ".github.io", url: "https://" + user + ".github.io/" + encodeURIComponent(fileName()) };
+    repo = String(repo || state().ghRepo || setup.ghDefaultRepo).replace(/^\/+|\/+$/g, "");
+    var root = repo.toLowerCase() === user + ".github.io";
+    return { user: user, repo: repo, url: "https://" + user + ".github.io/" + (root ? "" : encodeURIComponent(repo) + "/") + encodeURIComponent(fileName()) };
   };
   function copyBox(text) {
     return '<div class="dd-copyrow"><span class="dd-filename">' + esc(text) + '</span><button class="dd-btn small ghost" data-copytext="' + esc(text) + '">Copy</button></div>';
@@ -640,13 +673,21 @@
         body: function () { var a = setup.githubAddress(ghUser()) || { repo: "yourname.github.io" };
           return '<p>Tap the button. On GitHub\'s <b>' + esc(L("gh_new_repo", "Create a new repository")) + '</b> page:</p>' +
           '<ol><li>Under <b>' + esc(L("gh_repo_name", "Repository name")) + '</b>, type exactly:' + copyBox(a.repo) + '</li>' +
-          '<li>Under <b>' + esc(L("gh_visibility", "Choose visibility")) + '</b>, keep <b>' + esc(L("gh_public", "Public")) + '</b>.</li>' +
+          '<li>Under <b>' + esc(L("gh_visibility", "Choose visibility")) + '</b>, make sure it says <b>' + esc(L("gh_public", "Public")) + '</b>. <i>Private won\'t work:</i> GitHub only makes free web pages from Public repositories.</li>' +
           '<li>Switch <b>' + esc(L("gh_readme", "Add README")) + '</b> from Off to <b>On</b>.</li>' +
           '<li>Tap <b>' + esc(L("gh_create_repo", "Create repository")) + '</b>.</li></ol>' +
-          '<p><b>You can ignore</b> Owner (it\'s already you), Description, Add .gitignore and Add license.</p>'; },
+          '<p><b>You can ignore</b> Owner (it\'s already you), Description, Add .gitignore and Add license.</p>' +
+          '<p class="dd-note">Already made a repository with a different name? That works too: type its name here instead.</p>' +
+          '<input class="dd-input" id="dd-wiz-repo" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + esc(a.repo) + '">'; },
         mount: wireCopy,
+        check: function (c) {
+          var r = (c.el.querySelector("#dd-wiz-repo").value || "").trim().replace(/^.*\//, "") || setup.ghDefaultRepo;
+          if (!/^[A-Za-z0-9._-]{1,100}$/.test(r)) { c.status("warn", "That repository name has odd characters.", "Use letters, numbers, hyphens or dots, like digidoughnut."); return false; }
+          var s = state(); s.ghRepo = r; saveState(s);
+          var a = setup.githubAddress(ghUser(), r); if (a) hostState(a.url); return true;
+        },
         action: { label: "Open GitHub: new repository", run: function (c) { c.open(link("gh_new", "https://github.com/new")); } },
-        stuck: ["The name must be exactly your username followed by .github.io, all lower case.",
+        stuck: ["Made it Private by mistake? Open the repository, tap Settings (along the top), stay on General, scroll to the very bottom (Danger Zone), tap Change visibility, then Change to public, then I have read and understand these effects, and confirm.",
                 "Already made it before? Then it already exists: tap Next.",
                 "\"Public\" only means the program file can be seen. Your numbers and your code are never in it."], guide: "gh_repo" },
       { title: "Upload this program",
@@ -658,26 +699,40 @@
           '<p><b>You can ignore</b> the boxes for a message or description. Don\'t rename the file: its name becomes part of its address.</p>'; },
         action: { label: "Open my repository", run: function (c) { var a = setup.githubAddress(ghUser()); c.open(a ? "https://github.com/" + a.user + "/" + a.repo : "https://github.com/"); } },
         stuck: ["Can't find the file? On Windows, open File Explorer and look in Downloads. On a Mac, open Finder and look in Downloads.",
-                "You can also drag the file from your folder onto the GitHub page."], guide: "gh_upload" },
+                "You can also drag the file from your folder onto the GitHub page, onto Drag files here to add them to your repository.",
+                "See a Quick setup box instead of your files? Click uploading an existing file in that box."], guide: "gh_upload" },
       { title: "Turn on the website",
         pic: function () { return { kind: "page", site: "Settings · " + L("gh_pages", "Pages"), items: [{ type: "select", label: L("gh_source", "Source"), value: L("gh_deploy_branch", "Deploy from a branch") }, { type: "select", label: L("gh_branch", "Branch"), value: "main" }], btn: L("gh_save", "Save") }; },
         todo: function () { return "Pick <b>" + esc(L("gh_deploy_branch", "Deploy from a branch")) + "</b>, then <b>main</b>, then tap <b>" + esc(L("gh_save", "Save")) + "</b>."; },
         body: function () { return '<p>Tap the button. It opens your repository\'s <b>' + esc(L("gh_pages", "Pages")) + '</b> settings. There:</p>' +
           '<ol><li>Under <b>' + esc(L("gh_source", "Source")) + '</b>, pick <b>' + esc(L("gh_deploy_branch", "Deploy from a branch")) + '</b>.</li>' +
-          '<li>Under <b>' + esc(L("gh_branch", "Branch")) + '</b>, pick <b>main</b>, leave <b>/ (root)</b> as it is, and tap <b>' + esc(L("gh_save", "Save")) + '</b>.</li></ol>' +
+          '<li>Under <b>' + esc(L("gh_branch", "Branch")) + '</b>, change <b>None</b> to <b>main</b>, leave <b>/ (root)</b> as it is, and tap <b>' + esc(L("gh_save", "Save")) + '</b>.</li></ol>' +
+          '<p>It worked when the page says your site is being built from the <b>main</b> branch.</p>' +
           '<p><b>You can ignore</b> custom domains, themes and everything else on that page.</p>' +
           '<p class="dd-note">Already says your site is live? Then it\'s on already: tap Next.</p>'; },
         action: { label: "Open the Pages settings", run: function (c) { var a = setup.githubAddress(ghUser()); c.open(a ? "https://github.com/" + a.user + "/" + a.repo + "/settings/pages" : "https://github.com/"); } },
-        stuck: ["Don't see Settings? It's along the top of your repository, on the right. Pages is in the list on the left.",
+        stuck: ["It says \"Upgrade or make this repository public to enable Pages\"? Your repository is Private. Tap General (top of the list on the left), scroll to the very bottom (Danger Zone), tap Change visibility, then Change to public, then I have read and understand these effects, and confirm. Then come back to Pages.",
+                "Don't see Settings? It's along the top of your repository, on the right. Pages is in the list on the left.",
                 "Branch shows \"None\"? Click it and choose main, then Save."], guide: "gh_pages" },
       { title: "Wait for it to go live",
         pic: { kind: "wait", caption: "GitHub is putting it online…" },
         todo: "Wait a minute or two, then tap Next.",
         body: function () { var a = setup.githubAddress(ghUser());
+          var url = hostState() || (a && a.url) || "";
           return '<p>GitHub takes a few minutes, sometimes up to 10, to put a new website online. Your program\'s address will be:</p>' +
-            (a ? '<p class="dd-filename">' + esc(a.url.replace(/^https:\/\//, "")) + '</p>' : "") +
-            '<p>Tap <b>Next</b> and we\'ll check whether it\'s ready.</p>'; },
+            (url ? '<p class="dd-filename">' + esc(url.replace(/^https:\/\//, "")) + '</p>' : "") +
+            '<p>On your repository\'s page, a <b>green tick next to github-pages</b> (under Deployments, on the right) means it\'s online. Tap <b>Next</b> and we\'ll check too.</p>' +
+            '<details class="dd-wiz-more"><summary>GitHub shows a different address?</summary>' +
+            '<p class="dd-note">Paste the address GitHub shows (Settings, Pages, or the github-pages link). We\'ll add the file name.</p>' +
+            '<input class="dd-input" id="dd-wiz-addr" placeholder="e.g. smith-tools.github.io/etsy/" autocomplete="off" autocapitalize="off" spellcheck="false"></details>'; },
         check: function (c) {
+          var typed = c.el.querySelector("#dd-wiz-addr"), other = typed && typed.value.trim();
+          if (other) {
+            var u = setup.cleanAddress(other);
+            if (!u) { c.status("warn", "That doesn't look like an address.", "It looks like yourname.github.io/something/"); return false; }
+            if (!/\.html?$/i.test(u.split("?")[0])) u = u.replace(/\/?$/, "/") + encodeURIComponent(fileName());
+            hostState(u);
+          }
           var url = hostState(); if (!url) return true;
           c.status("info", "Checking your address…");
           return setup.isLive(url).then(function (live) {
@@ -697,6 +752,41 @@
     return fetch(url, { method: "GET", cache: "no-store", credentials: "omit", signal: ctl.signal })
       .then(function (r) { return r.ok ? true : (r.status === 404 ? false : null); }, function () { return null; })
       .finally(function () { clearTimeout(t); });
+  };
+
+  /* "My own website or another host": general rules, the address, then the shared finish.
+     The live helper gets hosting know-how in its instructions (see setup.helperPrompt). */
+  setup.wizards.host_other = {
+    title: "Put it on your phone · your own host", parent: "host",
+    onDone: function () { dd.ui.toast("Use your new address from now on. Bookmark it!", 4500); },
+    screens: [
+      { title: "Upload it to your host",
+        pic: function () { return { kind: "page", site: "your host's file manager", items: [{ type: "file", value: fileName() }], btn: "Upload" }; },
+        todo: "Upload this program's file to your host, the same way you'd upload any web page.",
+        body: function () { return '<p>Use your host\'s usual way to put a web page online (a file manager, an upload button, or a drag-and-drop page). Upload this file:</p>' +
+          '<p class="dd-filename">' + esc(fileName()) + '</p>' +
+          '<ul><li><b>Don\'t change the file.</b> Upload it exactly as it is, and keep its name.</li>' +
+          '<li>The address must start with <b>https://</b>.</li>' +
+          '<li>Don\'t put it in a password-protected or members-only area.</li></ul>' +
+          '<p class="dd-note">Not sure how on your host? Ask the helper in the box below and say which host you use, for example "How do I upload it to Netlify?". ' +
+          (dd.ai && dd.ai.hasCode() ? "" : "Tip: the AI helper gives step-by-step answers for your exact host once it's turned on (setup step 2).") + '</p>' + phoneWarn(); },
+        stuck: ["Some website builders (WordPress, Wix, Squarespace) don't let you upload a whole web page. If yours won't, pick GitHub instead: tap Start over.",
+                "If the helper later says your website won't let it reach Google, your host blocks outside connections. Pick GitHub instead."], guide: "other_upload" },
+      { title: "Your program's address",
+        pic: { kind: "page", site: "this page", items: [{ type: "field", label: "Your program's address", value: "https://example.com/" }] },
+        todo: "Paste the address where your file is now online.",
+        body: function () { return '<p>Paste the full address of the uploaded file. Open it in a new tab first to make sure it shows the program.</p>' +
+          '<input class="dd-input" id="dd-wiz-addr" placeholder="https://your-site.com/' + esc(fileName()) + '" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + esc(hostState()) + '">'; },
+        mount: function (c) { var i = c.el.querySelector("#dd-wiz-addr"); if (!dd.env.isPhone && !i.value) i.focus(); },
+        check: function (c) {
+          var url = setup.cleanAddress(c.el.querySelector("#dd-wiz-addr").value);
+          if (!url) { c.status("warn", "Paste the address first.", "It starts with https://"); return false; }
+          if (!/^https:/.test(url) && !/^http:\/\/(127\.0\.0\.1|localhost)/.test(url)) { c.status("warn", "That address starts with http://, not https://.", "Phones and the helper need https://. Most hosts can switch it on for free."); return false; }
+          if (url.split("#")[0] === location.href.split("#")[0]) { c.status("warn", "That's the address of this page.", "Paste the address where you uploaded the file."); return false; }
+          hostState(url); return true;
+        },
+        guide: "other_address" }
+    ].concat(finishScreens("other"))
   };
 
   setup.wizards.host_tiiny = {

@@ -80,3 +80,23 @@ Collected as decisions come up; folded into handoff.md later.
   Mandatory 2FA applies to "contributors" (releases, apps, org owners), not a plain upload.
   GitHub's Pages terms forbid running an online business/SaaS on Pages; a buyer hosting a
   personal tool is most likely fine (grey area for business tools like Profit Coach).
+
+## Setup Center, Oran's run of GitHub (2026-10-07, later)
+
+- Oran named his repo "etsy" and made it Private first: Pages then shows "Upgrade or make this
+  repository public to enable Pages" (fix: Settings > General > Danger Zone > Change visibility >
+  Change to public > "I have read and understand these effects"). His site: digidoughnut.github.io/etsy/.
+- Wizard now suggests repo name "digidoughnut" (address <user>.github.io/digidoughnut/<file>),
+  lets the buyer type another name, warns Private won't work, and the wait screen has
+  "GitHub shows a different address?" to paste what GitHub shows. Any repo on one account
+  shares the origin <user>.github.io, so programs still share the helper code.
+- Confirmed labels from Oran's screenshots: upload page "Drag files here to add them to your
+  repository" / "choose your files" / "Commit changes"; empty repo "Quick setup" box with
+  "uploading an existing file"; Pages: Source "Deploy from a branch", Branch "None" -> main,
+  "/ (root)", Save; repo page "Deployments: github-pages" with a green tick when live.
+- Chooser: "Easy to set up" / "Looks after itself" bars (GitHub 3/5 & 5/5, tiiny 4/5 & 2/5) and
+  a third choice "My own website or another host" (general rules + address; the live helper
+  gets hosting facts in its instructions for host-specific steps).
+- Wizards are sticky (a click beside them doesn't close; ✕/Finish later/Esc do), show Continue
+  once opened, have a moving picture + "Your turn" line per screen, and an always-open helper
+  chat stuck to the bottom of the window.
