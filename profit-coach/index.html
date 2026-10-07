@@ -697,6 +697,8 @@ var FB_SDK = "https://www.gstatic.com/firebasejs/12.19.0/";
 var SYNC_LS = "dd_sync_id_v1";
 var syncOn = false, syncRef = null, syncId = null, fb = null;
 var lastRemoteTs = 0, pushTimer = null, lastPushed = null;
+var syncDiag={pushes:0,lastPush:"-",lastPushErr:"-",remoteEvents:0,lastRemote:"-"};
+function syncDbg(m){ syncDiag.lastPushErr=m; }
 
 function loadFb(){
   if(fb) return Promise.resolve(fb);
@@ -758,6 +760,7 @@ function applyRemote(v, force){
   });
   S={lines:lines, tax:(typeof v.tax==="number"?v.tax:20)};
   lastRemoteTs=ts;
+  syncDiag.remoteEvents++; try{ syncDiag.lastRemote=new Date().toLocaleTimeString(); }catch(e){}
   save(); $("taxRange").value=S.tax; render(); snapBaseline();
 }
 function syncDiffPush(){
@@ -775,7 +778,11 @@ function syncDiffPush(){
   if(prev.tax!==S.tax){ u["tax"]=S.tax; changed=true; }
   if(changed){
     u["updatedAt"]=fb.D.serverTimestamp();
-    try{ fb.D.update(syncRef,u); }catch(e){}
+    syncDiag.pushes++;
+    try{
+      fb.D.update(syncRef,u).then(function(){ try{ syncDiag.lastPush=new Date().toLocaleTimeString(); }catch(e){} })
+        .catch(function(e){ syncDbg("push rejected: "+String((e&&e.message)||e)); });
+    }catch(e){ syncDbg("push threw: "+String(e)); }
   }
   snapBaseline();
 }
@@ -788,7 +795,11 @@ function pushFull(){
   if(!syncOn||!syncRef||!fb) return;
   var m={};
   S.lines.forEach(function(l){ m[l.id]={label:l.label,amount:String(l.amount||"0"),type:l.type}; });
-  try{ fb.D.set(syncRef,{lines:m, tax:S.tax, updatedAt: fb.D.serverTimestamp()}); }catch(e){}
+  syncDiag.pushes++;
+  try{
+    fb.D.set(syncRef,{lines:m, tax:S.tax, updatedAt: fb.D.serverTimestamp()}).then(function(){ try{ syncDiag.lastPush=new Date().toLocaleTimeString(); }catch(e){} })
+      .catch(function(e){ syncDbg("full-push rejected: "+String((e&&e.message)||e)); });
+  }catch(e){ syncDbg("full-push threw: "+String(e)); }
   snapBaseline();
 }
 function syncEnable(){
@@ -821,8 +832,8 @@ function syncEnable(){
       fb.D.onValue(dref,function(sn){ applyRemote(sn.val()); });
       syncOn=true; paintSync(); snapBaseline(); pushFull();
       syncMsg("Live sync is <b>on</b>. Scan the \uD83D\uDCF2 QR code on your other device to join these same books — changes appear on both, instantly.");
-    }).catch(function(){ syncMsg("\u26A0\uFE0F Couldn't reach the sync service — check your internet and try again."); });
-  }).catch(function(){ syncMsg("\u26A0\uFE0F Couldn't load the sync service — check your internet and try again."); });
+    }).catch(function(e){ syncDbg("connect failed: "+String((e&&e.message)||e)); syncMsg("\u26A0\uFE0F Couldn't reach the sync service — check your internet and try again."); });
+  }).catch(function(e){ syncDbg("sdk load failed: "+String((e&&e.message)||e)); syncMsg("\u26A0\uFE0F Couldn't load the sync service — check your internet and try again."); });
 }
 function syncDisable(){
   try{ if(syncRef&&fb) fb.D.off(syncRef); }catch(e){}
@@ -867,8 +878,15 @@ $("copyRulesBtn").addEventListener("click",function(){
   if(foot) foot.addEventListener("click",function(){
     n++; clearTimeout(t); t=setTimeout(function(){n=0;},600);
     if(n>=3){ n=0;
-      alert(lastRaw?("Last technical detail ("+lastRaw.when+" · "+lastRaw.where+"):\nHTTP "+lastRaw.status+"\n"+lastRaw.detail)
-                   :"No errors recorded yet — everything's talking fine.");
+      var syncInfo="\n\n--- Sync ---\nState: "+(syncOn?"ON":"off")+
+        "\nLedger: "+(syncId?String(syncId).slice(0,8)+"\u2026":"-")+
+        "\nPushes: "+syncDiag.pushes+
+        "\nLast push ok: "+syncDiag.lastPush+
+        "\nPush problem: "+String(syncDiag.lastPushErr).slice(0,200)+
+        "\nRemote updates received: "+syncDiag.remoteEvents+
+        "\nLast remote: "+syncDiag.lastRemote;
+      alert((lastRaw?("Last technical detail ("+lastRaw.when+" · "+lastRaw.where+"):\nHTTP "+lastRaw.status+"\n"+lastRaw.detail)
+                   :"No errors recorded yet — everything's talking fine.")+syncInfo);
     }
   });
 })();
