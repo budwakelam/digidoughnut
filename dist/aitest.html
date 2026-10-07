@@ -89,6 +89,8 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
 
 /* ===== PROGRAM-SPECIFIC styles ===== */
 .t-row{display:flex;gap:8px}
+.t-speed{white-space:pre-wrap;font-size:.85rem;margin:10px 0 0;background:#f8fafc;border-radius:10px;padding:0}
+.t-speed:not(:empty){padding:10px;border:1px solid var(--dd-line)}
 .t-pill{margin-left:auto;font-size:.78rem;font-weight:700;padding:3px 10px;border-radius:99px}
 .t-pill.on{background:var(--dd-okbg);color:var(--dd-ok)} .t-pill.off{background:#f3f4f6;color:var(--dd-muted)}
 .t-msgs{max-height:260px;overflow:auto;display:flex;flex-direction:column;gap:8px;margin:6px 0 10px}
@@ -119,6 +121,13 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
     <button class="dd-btn ghost small" id="tForget" style="display:none">Forget my code</button>
   </div>
   <div class="dd-status" id="tConnStatus"></div>
+</div>
+
+<div class="dd-card">
+  <h2>Speed check</h2>
+  <p class="dd-note">Times each kind of request, waiting up to 90 seconds each. Takes up to a few minutes if something is slow.</p>
+  <button class="dd-btn t-run" id="tSpeed">Run the speed check</button>
+  <pre class="t-speed" id="tSpeedOut"></pre>
 </div>
 
 <div class="dd-card">
@@ -161,7 +170,7 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
 <div id="dd-layer"></div>     <!-- sheets and toasts render here -->
 
 <script>
-window.DD_BUILD = {"built":"2026-10-07","commit":"ddc6d09","platform":"0.1.0"};
+window.DD_BUILD = {"built":"2026-10-07","commit":"bab1f01","platform":"0.1.0"};
 /* ---- dd.core.js ---- */
 /* ===== DigiDoughnut Platform · dd.core =====
    The `dd` namespace, a tiny event bus, device/page detection, and dd.start(), which boots
@@ -880,7 +889,20 @@ window.DD_BUILD = {"built":"2026-10-07","commit":"ddc6d09","platform":"0.1.0"};
     return null;
   }
 
+  /* Timing log for support: the last 8 requests, newest first. No codes, no content. */
+  var reqLog = [];
+  ai.requestLog = function () { return reqLog.slice(); };
+  function logRequest(url, started, r) {
+    var what = /\/models\?/.test(url) || /\/models$/.test(url.split("?")[0]) ? "list" : "send";
+    var m = url.match(/\/models\/([^:?]+):/);
+    var outcome = r.timeout ? "TIMED OUT" : r.stopped ? "stopped" : r.network ? "no connection" : String(r.status);
+    reqLog.unshift({ at: new Date().toLocaleTimeString(), what: what, model: m ? decodeURIComponent(m[1]) : "", secs: ((Date.now() - started) / 1000).toFixed(1), outcome: outcome });
+    if (reqLog.length > 8) reqLog.length = 8;
+    if (r.timeout) dd.errors.record("ai " + what + (m ? " " + decodeURIComponent(m[1]) : ""), "no answer within " + ((Date.now() - started) / 1000).toFixed(0) + " s");
+  }
+
   function request(url, opts, ms) {
+    var started = Date.now();
     var ctl = new AbortController(); current = ctl;
     var d = ai.drill && drilled(ms, ctl);
     if (d) return d.finally(function () { if (current === ctl) current = null; });
@@ -895,7 +917,8 @@ window.DD_BUILD = {"built":"2026-10-07","commit":"ddc6d09","platform":"0.1.0"};
       if (ctl.timedOut) return { status: -1, timeout: true };
       if (e && e.name === "AbortError") return { status: -1, stopped: true };
       return { status: 0, network: true, error: String(e && e.message || e) };
-    }).finally(function () { clearTimeout(timer); if (current === ctl) current = null; });
+    }).then(function (r) { logRequest(url, started, r); return r; })
+      .finally(function () { clearTimeout(timer); if (current === ctl) current = null; });
   }
 
   /* ---------- the Gemini adapter ---------- */
@@ -1153,6 +1176,29 @@ window.DD_BUILD = {"built":"2026-10-07","commit":"ddc6d09","platform":"0.1.0"};
     });
   };
 
+  /* Speed check (AI test page only): times each kind of request with a generous limit,
+     so we can see what's slow. Resolves [{step, secs, outcome}]. */
+  ai.speedCheck = function (limitMs) {
+    var conn = loadConns().main; if (!conn) return Promise.resolve([{ step: "no code saved", secs: "-", outcome: "-" }]);
+    var p = ai.providers[conn.provider], ad = adapters[p.adapter], out = [], keep = ai.limits.request;
+    ai.limits.request = limitMs || 90000; stopped = false;
+    function timed(step, fn) {
+      var t = Date.now();
+      return fn().then(function (r) { out.push({ step: step, secs: ((Date.now() - t) / 1000).toFixed(1), outcome: r }); },
+                       function (e) { out.push({ step: step, secs: ((Date.now() - t) / 1000).toFixed(1), outcome: "failed: " + (e.type || "?") + (e.status ? " (" + e.status + ")" : "") }); });
+    }
+    var model;
+    return pickModel(conn).then(function (m) { model = m; })
+      .then(function () { return timed("model list", function () { return ad.listModels(p, conn.code).then(function (ids) { return ids.length + " models"; }); }); })
+      .then(function () { return timed("plain answer (" + model + ")", function () {
+        return ad.send(p, conn.code, model, { ms: ai.limits.request, history: [{ role: "user", text: "Say hi in three words." }] }).then(function (r) { return "ok"; }); }); })
+      .then(function () { return timed("tool answer (" + model + ")", function () {
+        return ad.send(p, conn.code, model, { ms: ai.limits.request, history: [{ role: "user", text: "Add apples to my list." }],
+          tools: [{ name: "add_item", description: "Add one item to the list.", params: { text: { type: "string" } } }] })
+          .then(function (r) { return r.calls.length ? "ok, used the tool" : "ok, but answered without the tool"; }); }); })
+      .then(function () { ai.limits.request = keep; return out; }, function (e) { ai.limits.request = keep; out.push({ step: "picking a model", secs: "-", outcome: "failed: " + (e.type || "?") }); return out; });
+  };
+
   /* One-shot text answer without tools (e.g. the scripted guide's "ask anything" fallback). */
   ai.ask = function (prompt, system) {
     return ai.chat({ system: system, history: [{ role: "user", text: prompt }] });
@@ -1175,7 +1221,9 @@ window.DD_BUILD = {"built":"2026-10-07","commit":"ddc6d09","platform":"0.1.0"};
       (ai.providers[c.provider] ? ai.providers[c.provider].label : c.provider) + " code " + mask(c.code) + (c.migrated ? " (moved from older version)" : ""),
       "Model: " + (pm.model || "not picked yet") + (pm.checkedAt ? " · list checked " + new Date(pm.checkedAt).toLocaleDateString() : ""),
       "Candidates: " + ((pm.candidates || []).slice(0, 5).join(", ") || "-")
-    ];
+    ].concat(reqLog.length ? ["Recent requests (newest first):"].concat(reqLog.map(function (q) {
+      return "  " + q.at + " · " + q.what + (q.model ? " " + q.model : "") + " · " + q.secs + " s · " + q.outcome;
+    })) : ["No AI requests yet this visit."]);
   });
 })();
 
@@ -1210,7 +1258,8 @@ window.DD_BUILD = {"built":"2026-10-07","commit":"ddc6d09","platform":"0.1.0"};
   notes.link = function (key, fallback) { var h = data.helpLinks || {}; return h[key] || fallback; };
   /* Button wording by key, falling back to the built-in one. Always plain text. */
   notes.label = function (key, fallback) { var l = data.labels || {}; return l[key] || fallback; };
-  notes.lastChecked = function () { return cached && cached.fetchedAt ? new Date(cached.fetchedAt) : null; };
+  notes.lastChecked = function () { return cached && cached.okAt ? new Date(cached.okAt) : null; };
+  notes.lastTried = function () { return cached && cached.triedAt ? new Date(cached.triedAt) : null; };
 
   /* ---------- validation: anything unexpected is dropped, never trusted ---------- */
   // Text from the file is only ever shown as plain text (never as HTML), so "</>" is safe.
@@ -1261,7 +1310,7 @@ window.DD_BUILD = {"built":"2026-10-07","commit":"ddc6d09","platform":"0.1.0"};
         var clean = notes.validate(raw);
         if (!clean) throw new Error("noticeboard file not in the expected shape");
         data = clean;
-        cached = { fetchedAt: Date.now(), data: clean, dismissed: (cached && cached.dismissed) || [] };
+        cached = { fetchedAt: Date.now(), okAt: Date.now(), triedAt: Date.now(), data: clean, dismissed: (cached && cached.dismissed) || [] };
         dd.store.setJSON(KEY, cached);
         showNotice();
         dd.emit("notes:updated", clean);
@@ -1272,6 +1321,7 @@ window.DD_BUILD = {"built":"2026-10-07","commit":"ddc6d09","platform":"0.1.0"};
         // Try again in a day rather than on every page load.
         cached = cached || { data: {}, dismissed: [] };
         cached.fetchedAt = Date.now() - WEEK + 24 * 3600 * 1000;
+        cached.triedAt = Date.now();
         dd.store.setJSON(KEY, cached);
         return false;
       })
@@ -1295,8 +1345,8 @@ window.DD_BUILD = {"built":"2026-10-07","commit":"ddc6d09","platform":"0.1.0"};
   notes.start = function () { showNotice(); setTimeout(function () { notes.check(false); }, 1500); };
 
   if (dd.diag) dd.diag.addSection("Noticeboard", function () {
-    var d = notes.lastChecked();
-    return ["Last checked: " + (d ? d.toLocaleString() : "never") +
+    var d = notes.lastChecked(), t = notes.lastTried();
+    return ["Last downloaded: " + (d ? d.toLocaleString() : "never") + " · last tried: " + (t ? t.toLocaleString() : "never") +
             " · help links " + Object.keys(data.helpLinks || {}).length +
             " · labels " + Object.keys(data.labels || {}).length +
             (data.notice ? " · notice " + data.notice.id : "")];
@@ -1368,6 +1418,18 @@ const DD_PROGRAM = {
       if (await ui.confirm("Forget your code?", "This program will stop using it. You can paste it again any time.", "Forget it", "Keep it")) {
         dd.ai.forget(); ui.toast("Code forgotten.");
       }
+    });
+
+    // Speed check: what is slow, if anything?
+    $("tSpeed").addEventListener("click", async () => {
+      if (!dd.ai.hasCode()) { $("tSpeedOut").textContent = "Connect your code first."; return; }
+      document.querySelectorAll(".t-run").forEach((b) => (b.disabled = true));
+      $("tStop").style.display = "";
+      $("tSpeedOut").textContent = "Checking… (this can take a while if something is slow)";
+      const rows = await dd.ai.speedCheck(90000);
+      $("tSpeedOut").textContent = rows.map((r) => `${r.step}: ${r.secs} s · ${r.outcome}`).join("\n");
+      document.querySelectorAll(".t-run").forEach((b) => (b.disabled = false));
+      $("tStop").style.display = "none";
     });
 
     // 2. Tools: several calls in ONE reply must all run.

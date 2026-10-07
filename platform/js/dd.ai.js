@@ -130,7 +130,20 @@
     return null;
   }
 
+  /* Timing log for support: the last 8 requests, newest first. No codes, no content. */
+  var reqLog = [];
+  ai.requestLog = function () { return reqLog.slice(); };
+  function logRequest(url, started, r) {
+    var what = /\/models\?/.test(url) || /\/models$/.test(url.split("?")[0]) ? "list" : "send";
+    var m = url.match(/\/models\/([^:?]+):/);
+    var outcome = r.timeout ? "TIMED OUT" : r.stopped ? "stopped" : r.network ? "no connection" : String(r.status);
+    reqLog.unshift({ at: new Date().toLocaleTimeString(), what: what, model: m ? decodeURIComponent(m[1]) : "", secs: ((Date.now() - started) / 1000).toFixed(1), outcome: outcome });
+    if (reqLog.length > 8) reqLog.length = 8;
+    if (r.timeout) dd.errors.record("ai " + what + (m ? " " + decodeURIComponent(m[1]) : ""), "no answer within " + ((Date.now() - started) / 1000).toFixed(0) + " s");
+  }
+
   function request(url, opts, ms) {
+    var started = Date.now();
     var ctl = new AbortController(); current = ctl;
     var d = ai.drill && drilled(ms, ctl);
     if (d) return d.finally(function () { if (current === ctl) current = null; });
@@ -145,7 +158,8 @@
       if (ctl.timedOut) return { status: -1, timeout: true };
       if (e && e.name === "AbortError") return { status: -1, stopped: true };
       return { status: 0, network: true, error: String(e && e.message || e) };
-    }).finally(function () { clearTimeout(timer); if (current === ctl) current = null; });
+    }).then(function (r) { logRequest(url, started, r); return r; })
+      .finally(function () { clearTimeout(timer); if (current === ctl) current = null; });
   }
 
   /* ---------- the Gemini adapter ---------- */
@@ -403,6 +417,29 @@
     });
   };
 
+  /* Speed check (AI test page only): times each kind of request with a generous limit,
+     so we can see what's slow. Resolves [{step, secs, outcome}]. */
+  ai.speedCheck = function (limitMs) {
+    var conn = loadConns().main; if (!conn) return Promise.resolve([{ step: "no code saved", secs: "-", outcome: "-" }]);
+    var p = ai.providers[conn.provider], ad = adapters[p.adapter], out = [], keep = ai.limits.request;
+    ai.limits.request = limitMs || 90000; stopped = false;
+    function timed(step, fn) {
+      var t = Date.now();
+      return fn().then(function (r) { out.push({ step: step, secs: ((Date.now() - t) / 1000).toFixed(1), outcome: r }); },
+                       function (e) { out.push({ step: step, secs: ((Date.now() - t) / 1000).toFixed(1), outcome: "failed: " + (e.type || "?") + (e.status ? " (" + e.status + ")" : "") }); });
+    }
+    var model;
+    return pickModel(conn).then(function (m) { model = m; })
+      .then(function () { return timed("model list", function () { return ad.listModels(p, conn.code).then(function (ids) { return ids.length + " models"; }); }); })
+      .then(function () { return timed("plain answer (" + model + ")", function () {
+        return ad.send(p, conn.code, model, { ms: ai.limits.request, history: [{ role: "user", text: "Say hi in three words." }] }).then(function (r) { return "ok"; }); }); })
+      .then(function () { return timed("tool answer (" + model + ")", function () {
+        return ad.send(p, conn.code, model, { ms: ai.limits.request, history: [{ role: "user", text: "Add apples to my list." }],
+          tools: [{ name: "add_item", description: "Add one item to the list.", params: { text: { type: "string" } } }] })
+          .then(function (r) { return r.calls.length ? "ok, used the tool" : "ok, but answered without the tool"; }); }); })
+      .then(function () { ai.limits.request = keep; return out; }, function (e) { ai.limits.request = keep; out.push({ step: "picking a model", secs: "-", outcome: "failed: " + (e.type || "?") }); return out; });
+  };
+
   /* One-shot text answer without tools (e.g. the scripted guide's "ask anything" fallback). */
   ai.ask = function (prompt, system) {
     return ai.chat({ system: system, history: [{ role: "user", text: prompt }] });
@@ -425,6 +462,8 @@
       (ai.providers[c.provider] ? ai.providers[c.provider].label : c.provider) + " code " + mask(c.code) + (c.migrated ? " (moved from older version)" : ""),
       "Model: " + (pm.model || "not picked yet") + (pm.checkedAt ? " · list checked " + new Date(pm.checkedAt).toLocaleDateString() : ""),
       "Candidates: " + ((pm.candidates || []).slice(0, 5).join(", ") || "-")
-    ];
+    ].concat(reqLog.length ? ["Recent requests (newest first):"].concat(reqLog.map(function (q) {
+      return "  " + q.at + " · " + q.what + (q.model ? " " + q.model : "") + " · " + q.secs + " s · " + q.outcome;
+    })) : ["No AI requests yet this visit."]);
   });
 })();

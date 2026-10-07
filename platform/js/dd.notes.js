@@ -28,7 +28,8 @@
   notes.link = function (key, fallback) { var h = data.helpLinks || {}; return h[key] || fallback; };
   /* Button wording by key, falling back to the built-in one. Always plain text. */
   notes.label = function (key, fallback) { var l = data.labels || {}; return l[key] || fallback; };
-  notes.lastChecked = function () { return cached && cached.fetchedAt ? new Date(cached.fetchedAt) : null; };
+  notes.lastChecked = function () { return cached && cached.okAt ? new Date(cached.okAt) : null; };
+  notes.lastTried = function () { return cached && cached.triedAt ? new Date(cached.triedAt) : null; };
 
   /* ---------- validation: anything unexpected is dropped, never trusted ---------- */
   // Text from the file is only ever shown as plain text (never as HTML), so "</>" is safe.
@@ -79,7 +80,7 @@
         var clean = notes.validate(raw);
         if (!clean) throw new Error("noticeboard file not in the expected shape");
         data = clean;
-        cached = { fetchedAt: Date.now(), data: clean, dismissed: (cached && cached.dismissed) || [] };
+        cached = { fetchedAt: Date.now(), okAt: Date.now(), triedAt: Date.now(), data: clean, dismissed: (cached && cached.dismissed) || [] };
         dd.store.setJSON(KEY, cached);
         showNotice();
         dd.emit("notes:updated", clean);
@@ -90,6 +91,7 @@
         // Try again in a day rather than on every page load.
         cached = cached || { data: {}, dismissed: [] };
         cached.fetchedAt = Date.now() - WEEK + 24 * 3600 * 1000;
+        cached.triedAt = Date.now();
         dd.store.setJSON(KEY, cached);
         return false;
       })
@@ -113,8 +115,8 @@
   notes.start = function () { showNotice(); setTimeout(function () { notes.check(false); }, 1500); };
 
   if (dd.diag) dd.diag.addSection("Noticeboard", function () {
-    var d = notes.lastChecked();
-    return ["Last checked: " + (d ? d.toLocaleString() : "never") +
+    var d = notes.lastChecked(), t = notes.lastTried();
+    return ["Last downloaded: " + (d ? d.toLocaleString() : "never") + " · last tried: " + (t ? t.toLocaleString() : "never") +
             " · help links " + Object.keys(data.helpLinks || {}).length +
             " · labels " + Object.keys(data.labels || {}).length +
             (data.notice ? " · notice " + data.notice.id : "")];

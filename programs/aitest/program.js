@@ -62,6 +62,18 @@ const DD_PROGRAM = {
       }
     });
 
+    // Speed check: what is slow, if anything?
+    $("tSpeed").addEventListener("click", async () => {
+      if (!dd.ai.hasCode()) { $("tSpeedOut").textContent = "Connect your code first."; return; }
+      document.querySelectorAll(".t-run").forEach((b) => (b.disabled = true));
+      $("tStop").style.display = "";
+      $("tSpeedOut").textContent = "Checking… (this can take a while if something is slow)";
+      const rows = await dd.ai.speedCheck(90000);
+      $("tSpeedOut").textContent = rows.map((r) => `${r.step}: ${r.secs} s · ${r.outcome}`).join("\n");
+      document.querySelectorAll(".t-run").forEach((b) => (b.disabled = false));
+      $("tStop").style.display = "none";
+    });
+
     // 2. Tools: several calls in ONE reply must all run.
     const addTool = { name: "add_item", description: "Add one item to the test list.",
       params: { text: { type: "string", description: "The item, a few words" } },
