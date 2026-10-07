@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<!--
+  {{DD_NAME}} {{DD_VERSION}} · a DigiDoughnut program
+  Built {{DD_BUILT}} from the DigiDoughnut Platform. This file is assembled by build.mjs:
+  edit platform/ and programs/<name>/, never this output.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="{{DD_ACCENT}}">
+<meta name="color-scheme" content="light">
+<title>{{DD_TITLE}}</title>
+<style>
+/*{{DD_PLATFORM_CSS}}*/
+/* ===== PROGRAM-SPECIFIC styles ===== */
+/*{{DD_PROGRAM_CSS}}*/
+</style>
+</head>
+<body>
+<noscript><p style="padding:20px;font-family:sans-serif">{{DD_NAME}} needs JavaScript turned on in your browser to work.</p></noscript>
+
+<header class="dd-top" id="dd-top"></header>
+
+<div class="dd-wrap">
+  <div id="dd-notices" aria-live="polite"></div>
+  <div id="dd-setup"></div>   <!-- Setup Center lives here (Phase 3) -->
+  <main id="dd-app">
+<!--{{DD_PROGRAM_BODY}}-->
+  </main>
+</div>
+
+<footer class="dd-footer" id="dd-footer"></footer>
+<div id="dd-layer"></div>     <!-- sheets and toasts render here -->
+
+<script>
+window.DD_BUILD = {{DD_BUILD_JSON}};
+/*{{DD_PLATFORM_JS}}*/
+</script>
+<script>
+/* ===== PROGRAM-SPECIFIC code ===== */
+/*{{DD_PROGRAM_JS}}*/
+</script>
+<script>
+dd.start(typeof DD_PROGRAM !== "undefined" ? DD_PROGRAM : null);
+</script>
+</body>
+</html>

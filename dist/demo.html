@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<!--
+  Demo List 0.1.0 · a DigiDoughnut program
+  Built 2026-10-07 from the DigiDoughnut Platform. This file is assembled by build.mjs:
+  edit platform/ and programs/<name>/, never this output.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#2563eb">
+<meta name="color-scheme" content="light">
+<title>Demo List — A platform test program</title>
+<style>
+/* ===== DigiDoughnut Platform · dd.ui.css =====
+   The shared look, taken from Profit Coach's clean card UI. Every program uses these tokens;
+   programs set only --dd-brand (via DD_PROGRAM.accent) and their own layout. */
+:root{
+  --dd-bg:#f6f8fc; --dd-card:#fff; --dd-ink:#1e2430; --dd-muted:#6b7280; --dd-line:#e5e7eb;
+  --dd-brand:#2563eb; --dd-brand-d:#1d4ed8; --dd-brand-soft:#eef2ff; --dd-brand-soft-d:#e0e7ff;
+  --dd-ok:#15803d; --dd-okbg:#f0fdf4; --dd-okline:#bbf7d0;
+  --dd-bad:#b91c1c; --dd-badbg:#fef2f2; --dd-badline:#fecaca;
+  --dd-warn:#b45309; --dd-warnbg:#fffbeb; --dd-warnline:#fde68a;
+  --dd-radius:14px; --dd-shadow:0 1px 3px rgba(16,24,40,.08);
+  --dd-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-ink);line-height:1.55;
+     padding:0 0 calc(120px + env(safe-area-inset-bottom));-webkit-text-size-adjust:100%}
+
+/* header */
+.dd-top{position:sticky;top:0;z-index:20;background:var(--dd-card);border-bottom:1px solid var(--dd-line);
+        padding:12px 18px;padding-top:calc(12px + env(safe-area-inset-top));display:flex;align-items:center;gap:12px}
+.dd-top h1{font-size:1.15rem;margin:0;line-height:1.2}
+.dd-top .dd-tag{font-size:.8rem;color:var(--dd-muted)}
+.dd-top .dd-spacer{flex:1}
+.dd-top .dd-slot{display:flex;gap:6px;align-items:center}
+
+/* layout + cards */
+.dd-wrap{max-width:760px;margin:0 auto;padding:20px 16px}
+.dd-card{background:var(--dd-card);border-radius:var(--dd-radius);padding:18px;margin:0 0 14px;box-shadow:var(--dd-shadow)}
+.dd-card h2{font-size:1.02rem;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.dd-note{font-size:.85rem;color:var(--dd-muted)}
+
+/* buttons */
+.dd-btn{background:var(--dd-brand);color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:.95rem;
+        font-weight:600;cursor:pointer;font-family:inherit;min-height:44px}
+.dd-btn:hover{background:var(--dd-brand-d)} .dd-btn:disabled{opacity:.55;cursor:default}
+.dd-btn.ghost{background:var(--dd-brand-soft);color:var(--dd-brand)} .dd-btn.ghost:hover{background:var(--dd-brand-soft-d)}
+.dd-btn.danger{background:var(--dd-bad)}
+.dd-btn.small{padding:6px 12px;min-height:34px;font-size:.85rem}
+.dd-linkbtn{background:none;border:none;color:var(--dd-brand);font-size:.88rem;cursor:pointer;padding:6px 8px;font-family:inherit}
+.dd-btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.dd-input{padding:10px 12px;font-size:1rem;border:2px solid var(--dd-line);border-radius:10px;width:100%;font-family:inherit;background:#fff;color:var(--dd-ink)}
+.dd-input:focus{outline:none;border-color:var(--dd-brand)}
+:focus-visible{outline:3px solid var(--dd-brand);outline-offset:2px}
+
+/* status boxes: every message to the buyer goes through one of these */
+.dd-status{margin-top:12px;padding:12px 14px;border-radius:10px;font-size:.92rem;display:none}
+.dd-status.show{display:block}
+.dd-status.ok{background:var(--dd-okbg);color:var(--dd-ok);border:1px solid var(--dd-okline)}
+.dd-status.err{background:var(--dd-badbg);color:var(--dd-bad);border:1px solid var(--dd-badline)}
+.dd-status.warn{background:var(--dd-warnbg);color:var(--dd-warn);border:1px solid var(--dd-warnline)}
+.dd-status.info{background:var(--dd-brand-soft);color:var(--dd-ink);border:1px solid var(--dd-brand-soft-d)}
+
+/* notices (top-of-page banners, e.g. "these are example numbers") */
+.dd-notice{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--dd-brand-soft);border:1px solid var(--dd-brand-soft-d);
+           border-radius:12px;padding:10px 14px;margin:0 0 14px;font-size:.92rem}
+.dd-notice.warn{background:var(--dd-warnbg);border-color:var(--dd-warnline);color:var(--dd-warn)}
+.dd-notice .dd-notice-text{flex:1 1 240px}
+.dd-notice .dd-btnrow{margin:0}
+
+/* sheets (modal dialogs) */
+.dd-overlay{position:fixed;inset:0;background:rgba(17,24,39,.55);z-index:50;display:flex;align-items:center;justify-content:center;padding:18px}
+.dd-sheet{background:#fff;border-radius:18px;max-width:520px;width:100%;padding:24px;max-height:92vh;overflow:auto}
+.dd-sheet h2{margin:0 0 8px;font-size:1.25rem}
+.dd-sheet pre{white-space:pre-wrap;word-break:break-word;font-size:.78rem;background:#f8fafc;border:1px solid var(--dd-line);
+              border-radius:10px;padding:10px;max-height:50vh;overflow:auto;margin:8px 0 0}
+@media (max-width:520px){ .dd-overlay{align-items:flex-end;padding:0} .dd-sheet{border-radius:18px 18px 0 0;padding-bottom:calc(24px + env(safe-area-inset-bottom))} }
+
+/* toast */
+.dd-toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--dd-ink);color:#fff;
+          padding:10px 16px;border-radius:12px;font-size:.92rem;z-index:60;box-shadow:0 8px 24px rgba(0,0,0,.2);max-width:calc(100vw - 32px)}
+
+/* footer: brand line + version; triple-click opens the support diagnostic */
+.dd-footer{max-width:760px;margin:26px auto 0;padding:0 16px;text-align:center;color:var(--dd-muted);font-size:.8rem;user-select:none;-webkit-user-select:none}
+.dd-footer p{margin:2px 0}
+
+/* ===== PROGRAM-SPECIFIC styles ===== */
+.demo-count{margin-left:auto;font-size:.85rem;color:var(--dd-muted);font-weight:600}
+.demo-add{display:flex;gap:8px}
+.demo-row{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--dd-line);cursor:pointer}
+.demo-row input{width:20px;height:20px;accent-color:var(--dd-brand)}
+.demo-row span{flex:1}
+.demo-row.done span{text-decoration:line-through;color:var(--dd-muted)}
+.demo-x{background:#f3f4f6;border:none;border-radius:8px;width:34px;height:34px;cursor:pointer;font-size:1rem;color:var(--dd-muted)}
+.demo-x:hover{background:#fee2e2;color:var(--dd-bad)}
+
+</style>
+</head>
+<body>
+<noscript><p style="padding:20px;font-family:sans-serif">Demo List needs JavaScript turned on in your browser to work.</p></noscript>
+
+<header class="dd-top" id="dd-top"></header>
+
+<div class="dd-wrap">
+  <div id="dd-notices" aria-live="polite"></div>
+  <div id="dd-setup"></div>   <!-- Setup Center lives here (Phase 3) -->
+  <main id="dd-app">
+<!-- PROGRAM-SPECIFIC markup. Goes inside <main id="dd-app">. Use dd-* classes for the shared look. -->
+<div class="dd-card">
+  <h2>📝 My list <span class="demo-count" id="demoCount"></span></h2>
+  <div class="demo-add">
+    <input class="dd-input" id="demoNew" placeholder="Add an item…" autocomplete="off">
+    <button class="dd-btn" id="demoAdd">Add</button>
+  </div>
+  <div class="dd-status" id="demoStatus"></div>
+  <div id="demoList"></div>
+  <div class="dd-btnrow"><button class="dd-btn ghost" id="demoClear">Clear the list</button></div>
+</div>
+<div class="dd-card">
+  <h2>About this page</h2>
+  <p class="dd-note" style="margin:0">This is the DigiDoughnut Platform test program. It checks that saving, example data and upgrades work the same in every program. Your list is saved in this browser only.</p>
+</div>
+
+  </main>
+</div>
+
+<footer class="dd-footer" id="dd-footer"></footer>
+<div id="dd-layer"></div>     <!-- sheets and toasts render here -->
+
+<script>
+window.DD_BUILD = {"built":"2026-10-07","commit":"12d90ae","platform":"0.1.0"};
+/* ---- dd.core.js ---- */
+/* ===== DigiDoughnut Platform · dd.core =====
+   The `dd` namespace, a tiny event bus, device/page detection, and dd.start(), which boots
+   a program. Programs never touch storage or the page skeleton directly: they get a `ctx`
+   with the current data and an update() function. */
+(function () {
+  "use strict";
+  var dd = window.dd = window.dd || {};
+  dd.platformVersion = (window.DD_BUILD && window.DD_BUILD.platform) || "dev";
+
+  /* ---------- event bus ---------- */
+  var handlers = {};
+  dd.on = function (name, fn) { (handlers[name] = handlers[name] || []).push(fn); };
+  dd.emit = function (name, payload) {
+    (handlers[name] || []).forEach(function (fn) {
+      try { fn(payload); } catch (e) { if (dd.errors) dd.errors.record("event:" + name, e); }
+    });
+  };
+
+  /* ---------- detect, don't ask (wizard rule 6) ---------- */
+  var ua = navigator.userAgent || "";
+  // iPadOS reports itself as a Mac; a touch-capable "Mac" is an iPad.
+  var isIOS = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  var isAndroid = /Android/.test(ua);
+  dd.env = {
+    isFile: location.protocol === "file:",
+    isHosted: location.protocol === "https:" || location.protocol === "http:",
+    isIOS: isIOS,
+    isAndroid: isAndroid,
+    isPhone: isIOS || isAndroid || /Mobi/.test(ua),
+    // true when opened from a Home Screen icon rather than a browser tab
+    isStandalone: (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true
+  };
+
+  /* ---------- program contract ---------- */
+  var REQUIRED = ["id", "name", "version", "schemaVersion", "emptyData", "exampleData", "validateData", "migrate", "render"];
+  function checkContract(p) {
+    if (!p) return "DD_PROGRAM is missing";
+    for (var i = 0; i < REQUIRED.length; i++) if (p[REQUIRED[i]] == null) return "DD_PROGRAM." + REQUIRED[i] + " is missing";
+    if (!/^[a-z0-9]+$/.test(p.id)) return "DD_PROGRAM.id must be lowercase letters and digits";
+    return null;
+  }
+
+  /* ---------- the running program ---------- */
+  var program = null, data = null, meta = { example: false };
+
+  function ctx() {
+    return { data: data, update: dd.update, replaceData: dd.replaceData, ui: dd.ui, root: document.getElementById("dd-app"), env: dd.env };
+  }
+  function render() {
+    try { program.render(ctx()); }
+    catch (e) { dd.errors.record("render", e); dd.ui.notice("render-fail", "Something on this page didn't draw properly. Reloading usually fixes it.", "warn"); }
+  }
+  function persist(source) {
+    var res = dd.store.saveData(program, data, meta);
+    if (!res.ok) dd.ui.notice("save-fail", dd.errors.friendly(res.reason).title + " " + dd.errors.friendly(res.reason).help, "warn");
+    else dd.ui.clearNotice("save-fail");
+    dd.emit("change", { data: data, source: source || "local" });
+    return res.ok;
+  }
+
+  /* Change the data. `fn` either edits the data it's given or returns a replacement.
+     Pass {render:false} when the screen already shows the change (typing in a box),
+     so the box doesn't lose focus. */
+  dd.update = function (fn, opts) {
+    opts = opts || {};
+    var out = fn(data);
+    if (out !== undefined) data = out;
+    persist(opts.source);
+    if (opts.render !== false) render();
+    return data;
+  };
+
+  /* Swap in a whole new data set (restore, sync, "start fresh"). Checked before it's used. */
+  dd.replaceData = function (next, opts) {
+    opts = opts || {};
+    if (!program.validateData(next)) return false;
+    data = next;
+    if (opts.example !== undefined) meta.example = !!opts.example;
+    persist(opts.source || "replace");
+    render();
+    paintExampleNotice();
+    return true;
+  };
+
+  dd.getData = function () { return data; };
+  dd.getProgram = function () { return program; };
+  dd.isExample = function () { return meta.example; };
+
+  /* "Works before setup": a first-time buyer sees example data plus one clear way out. */
+  function paintExampleNotice() {
+    if (!meta.example) { dd.ui.clearNotice("example"); return; }
+    dd.ui.notice("example", program.exampleNotice || "You're looking at example numbers so you can try things out.", "info", [
+      { label: "Clear them and start mine", primary: true, onClick: function () {
+          dd.replaceData(program.emptyData(), { example: false, source: "start-fresh" });
+          dd.ui.toast("All clear. It's yours now.");
+        } },
+      { label: "Keep these", onClick: function () { meta.example = false; persist("keep-example"); paintExampleNotice(); } }
+    ]);
+  }
+
+  /* ---------- boot ---------- */
+  dd.start = function (p) {
+    var problem = checkContract(p);
+    if (problem) { bootFailed(problem); return; }
+    program = p;
+    try {
+      dd.ui.mount(program);
+      var loaded = dd.store.loadData(program);
+      data = loaded.data; meta = loaded.meta;
+      if (loaded.notice) dd.ui.notice("load", loaded.notice, "warn");
+      if (program.mount) program.mount(ctx());
+      render();
+      paintExampleNotice();
+      dd.diag.attach();
+      dd.emit("ready", { source: loaded.source });
+    } catch (e) { bootFailed(e); }
+  };
+
+  function bootFailed(why) {
+    if (dd.errors) dd.errors.record("boot", why);
+    var box = document.getElementById("dd-app");
+    if (box) box.innerHTML = '<div class="dd-card"><h2>This page didn\'t start properly</h2>' +
+      '<p>Please reload the page. If it keeps happening, contact DigiDoughnut and we\'ll sort it out.</p></div>';
+    try { dd.diag.attach(); } catch (e) {}
+  }
+})();
+
+/* ---- dd.store.js ---- */
+/* ===== DigiDoughnut Platform · dd.store =====
+   Everything saved in the browser goes through here.
+
+   Storage names (plan, "Template architecture"):
+     shared by every program on the same web address:  dd_<thing>_v1           e.g. dd_ai_connections_v1
+     belonging to one program:                          dd_<program>_<thing>_v1 e.g. dd_profitcoach_data_v1
+
+   Program data is saved inside an envelope so we always know which program and which schema
+   version wrote it:
+     { dd:1, program:"profitcoach", schemaVersion:1, savedAt:"2026-10-06T…", example:false, data:{…} }
+   Data saved without an envelope (the Profit Coach POC) is read as schema version 0 and handed
+   to the program's migrate(). Nothing is ever thrown away: anything we can't read is copied to
+   dd_<program>_data_recovery_v1 first. */
+(function () {
+  "use strict";
+  var dd = window.dd = window.dd || {};
+  var store = dd.store = {};
+
+  store.sharedKey = function (thing) { return "dd_" + thing + "_v1"; };
+  store.programKey = function (programId, thing) { return "dd_" + programId + "_" + thing + "_v1"; };
+
+  /* ---------- safe access: browsers can block or fill storage ---------- */
+  function ls() { try { return window.localStorage; } catch (e) { return null; } }
+
+  store.available = function () {
+    var s = ls(); if (!s) return false;
+    try { s.setItem("dd__probe", "1"); s.removeItem("dd__probe"); return true; } catch (e) { return false; }
+  };
+  store.get = function (key) { var s = ls(); if (!s) return null; try { return s.getItem(key); } catch (e) { return null; } };
+  /* returns {ok:true} or {ok:false, reason:"storage_full"|"storage_blocked"} */
+  store.set = function (key, value) {
+    var s = ls(); if (!s) return { ok: false, reason: "storage_blocked" };
+    try { s.setItem(key, value); return { ok: true }; }
+    catch (e) {
+      var full = e && (e.name === "QuotaExceededError" || e.code === 22 || e.code === 1014);
+      dd.errors.record("store.set", e);
+      return { ok: false, reason: full ? "storage_full" : "storage_blocked" };
+    }
+  };
+  store.remove = function (key) { var s = ls(); if (s) try { s.removeItem(key); } catch (e) {} };
+  store.getJSON = function (key) { var t = store.get(key); if (t == null) return null; try { return JSON.parse(t); } catch (e) { return undefined; } };
+  store.setJSON = function (key, value) { return store.set(key, JSON.stringify(value)); };
+
+  /* ---------- program data ---------- */
+  function keepForRecovery(programId, raw, why) {
+    dd.errors.record("store.recovery", why);
+    store.set(store.programKey(programId, "data_recovery"), typeof raw === "string" ? raw : JSON.stringify(raw));
+  }
+
+  /* Load this program's data. Returns {data, meta:{example}, source, notice?}
+     source: "example" (first visit), "saved", "migrated", "recovered" */
+  store.loadData = function (program) {
+    var key = store.programKey(program.id, "data");
+    var rawText = store.get(key);
+
+    if (rawText == null) {
+      return { data: program.exampleData(), meta: { example: true }, source: "example" };
+    }
+
+    var raw; try { raw = JSON.parse(rawText); } catch (e) { raw = undefined; }
+    var isEnvelope = raw && raw.dd === 1 && "data" in raw;
+    var fromVersion = isEnvelope ? (raw.schemaVersion | 0) : 0;
+    var body = isEnvelope ? raw.data : raw;
+    var example = isEnvelope ? !!raw.example : false;
+    var source = "saved";
+
+    try {
+      // Text that isn't readable data must never reach migrate(): a lenient migrate could
+      // turn it into an empty list and the original would be overwritten on the next save.
+      if (raw === undefined || raw === null || typeof raw !== "object") throw new Error("saved data is not readable");
+      if (isEnvelope && raw.program && raw.program !== program.id) throw new Error("saved by program " + raw.program);
+      if (fromVersion > program.schemaVersion) {
+        // Saved by a NEWER version of this program. Keep a copy, then try to carry on.
+        keepForRecovery(program.id, rawText, "newer schema " + fromVersion);
+      } else if (fromVersion < program.schemaVersion) {
+        body = program.migrate(body, fromVersion);
+        source = "migrated";
+      }
+      if (!program.validateData(body)) throw new Error("validateData said no (from v" + fromVersion + ")");
+    } catch (e) {
+      keepForRecovery(program.id, rawText, e);
+      return {
+        data: program.emptyData(), meta: { example: false }, source: "recovered",
+        notice: "We couldn't read your saved numbers, so we've started a fresh page. Your old numbers are kept safe on this device. Contact DigiDoughnut and we'll help you get them back."
+      };
+    }
+
+    if (source === "migrated") store.saveData(program, body, { example: example });
+    return { data: body, meta: { example: example }, source: source };
+  };
+
+  store.saveData = function (program, data, meta) {
+    var res = store.setJSON(store.programKey(program.id, "data"), {
+      dd: 1, program: program.id, schemaVersion: program.schemaVersion,
+      savedAt: new Date().toISOString(), example: !!(meta && meta.example), data: data
+    });
+    if (res.ok) askToKeepStorage(program);
+    return res;
+  };
+
+  store.dataBytes = function (programId) { var t = store.get(store.programKey(programId, "data")); return t ? t.length : 0; };
+
+  /* ---------- ask the browser to keep our storage ----------
+     Asked once, after the buyer's first real save, so browsers that show a prompt
+     (Firefox) show it at a moment that makes sense. Chrome and Safari decide silently. */
+  store.persisted = "not asked";
+  function askToKeepStorage(program) {
+    if (store.persisted !== "not asked") return;
+    if (!(navigator.storage && navigator.storage.persist)) { store.persisted = "unsupported"; return; }
+    store.persisted = "asking";
+    navigator.storage.persisted().then(function (already) {
+      return already || navigator.storage.persist();
+    }).then(function (granted) { store.persisted = granted ? "yes" : "no"; })
+      .catch(function (e) { store.persisted = "error"; dd.errors.record("store.persist", e); });
+  }
+})();
+
+/* ---- dd.errors.js ---- */
+/* ===== DigiDoughnut Platform · dd.errors =====
+   Every failure the buyer could see is one of a few named types with one friendly message.
+   Raw technical detail is recorded for the support diagnostic only, with codes masked.
+   RULE: buyer-facing text never contains provider wording, JSON, status codes or jargon. */
+(function () {
+  "use strict";
+  var dd = window.dd = window.dd || {};
+  var errors = dd.errors = {};
+
+  /* {company} is filled in with the AI company's friendly name, e.g. "Google". */
+  var TYPES = {
+    // the seven AI error types (plan, "AI connections")
+    offline:       ["You're not connected to the internet.", "Check your Wi-Fi or data, then try again."],
+    bad_code:      ["That code didn't work.", "It may have a typo or a missing piece. Copy it fresh from {company} and paste it again."],
+    not_allowed:   ["That code isn't allowed to do this.", "Make a new code on {company}'s site and paste it here."],
+    out_of_share:  ["You've used today's free share.", "It refills on its own. Try again later or tomorrow."],
+    busy:          ["{company}'s servers are having a busy moment.", "Wait a minute and try again. This usually clears on its own."],
+    timeout:       ["That took too long, so we stopped waiting.", "Tap Try again. If it keeps happening, check your internet."],
+    unexpected:    ["Something unexpected happened.", "Wait a moment and try again."],
+    // platform types
+    storage_full:    ["This browser's storage is full, so your last change wasn't saved.", "Make a backup, then clear some space or old data."],
+    storage_blocked: ["This browser isn't letting the program save.", "Private or incognito windows often block saving. Open the program in a normal window."]
+  };
+
+  errors.types = Object.keys(TYPES);
+
+  /* -> {type, title, help} in plain words */
+  errors.friendly = function (type, vars) {
+    var t = TYPES[type] || TYPES.unexpected;
+    var company = (vars && vars.company) || "the AI company";
+    function fill(s) { return s.replace(/\{company\}/g, company).replace(/^the AI company's/, "The AI company's"); }
+    return { type: TYPES[type] ? type : "unexpected", title: fill(t[0]), help: fill(t[1]) };
+  };
+
+  /* Generic first guess from an HTTP status or a thrown error. AI adapters (Phase 2) refine
+     this with the provider's own error reason. A 400 is NOT "bad code": it usually means a bug
+     on our side, so it maps to "unexpected" (fixes POC problem #6). */
+  errors.classify = function (info) {
+    info = info || {};
+    var name = info.name || (info.error && info.error.name);
+    if (name === "AbortError" || name === "TimeoutError") return "timeout";
+    if (navigator.onLine === false) return "offline";
+    var s = info.status;
+    if (s === 0 || name === "TypeError") return "offline";      // fetch() network failure
+    if (s === 401) return "bad_code";
+    if (s === 403) return "not_allowed";
+    if (s === 429) return "out_of_share";
+    if (s >= 500 && s <= 599) return "busy";
+    return "unexpected";
+  };
+
+  /* Show a friendly message in a status box. kind defaults to "err". */
+  errors.show = function (el, type, vars, kind) {
+    var f = errors.friendly(type, vars);
+    dd.ui.status(el, kind || "err", f.title, f.help);
+    return f;
+  };
+
+  /* ---------- raw detail for support only ---------- */
+  var log = [];
+  // Anything that looks like a code or secret is masked before it's stored.
+  function scrub(s) {
+    return String(s)
+      .replace(/([?&](?:key|api_key|token)=)[^&\s"']+/gi, "$1[hidden]")
+      .replace(/\b(AIza[0-9A-Za-z_\-]{4})[0-9A-Za-z_\-]{20,}/g, "$1…[hidden]")
+      .replace(/\b((?:sk-or-|sk-ant-|sk-|gsk_|xai-)[0-9A-Za-z]{0,2})[0-9A-Za-z_\-]{12,}/g, "$1…[hidden]")
+      .replace(/(Bearer\s+)\S+/gi, "$1[hidden]");
+  }
+  errors.scrub = scrub;
+
+  errors.record = function (where, detail) {
+    var text = detail instanceof Error ? (detail.name + ": " + detail.message) :
+               (typeof detail === "object" && detail !== null) ? safeJson(detail) : String(detail);
+    log.unshift({ when: new Date().toLocaleTimeString(), where: String(where), detail: scrub(text).slice(0, 600) });
+    if (log.length > 10) log.length = 10;
+  };
+  errors.recent = function () { return log.slice(); };
+  function safeJson(o) { try { return JSON.stringify(o); } catch (e) { return String(o); } }
+
+  // Catch anything that slips through so support can see it. The buyer sees nothing scary.
+  window.addEventListener("error", function (e) { errors.record("page", (e && e.message) || "error"); });
+  window.addEventListener("unhandledrejection", function (e) { errors.record("promise", (e && e.reason) || "rejected"); });
+})();
+
+/* ---- dd.ui.js ---- */
+/* ===== DigiDoughnut Platform · dd.ui =====
+   Page frame (header, footer), status boxes, top-of-page notices, sheets, toasts and a
+   friendly confirm(). Programs use these instead of alert()/confirm() so every program
+   looks and behaves the same. */
+(function () {
+  "use strict";
+  var dd = window.dd = window.dd || {};
+  var ui = dd.ui = {};
+
+  ui.$ = function (id) { return document.getElementById(id); };
+  ui.esc = function (s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  };
+
+  /* ---------- frame ---------- */
+  ui.mount = function (program) {
+    if (program.accent) ui.setAccent(program.accent);
+    ui.$("dd-top").innerHTML =
+      '<div><h1>' + ui.esc(program.name) + '</h1>' + (program.tagline ? '<div class="dd-tag">' + ui.esc(program.tagline) + '</div>' : "") + '</div>' +
+      '<div class="dd-spacer"></div><div class="dd-slot" id="dd-top-slot"></div>';
+    ui.$("dd-footer").innerHTML =
+      '<p>Made with care by DigiDoughnut · ' + ui.esc(program.name) + ' ' + ui.esc(program.version) + '</p>' +
+      '<p>Your numbers are stored on this device.</p>';
+  };
+
+  /* Set the program's accent colour, with a darker shade for hover. */
+  ui.setAccent = function (hex) {
+    if (!/^#[0-9a-f]{6}$/i.test(hex)) return;
+    var r = document.documentElement.style;
+    r.setProperty("--dd-brand", hex);
+    r.setProperty("--dd-brand-d", shade(hex, -0.15));
+    r.setProperty("--dd-brand-soft", mix(hex, 0.9));
+    r.setProperty("--dd-brand-soft-d", mix(hex, 0.82));
+  };
+  function rgb(hex) { return [1, 3, 5].map(function (i) { return parseInt(hex.substr(i, 2), 16); }); }
+  function toHex(a) { return "#" + a.map(function (v) { v = Math.max(0, Math.min(255, Math.round(v))); return (v < 16 ? "0" : "") + v.toString(16); }).join(""); }
+  function shade(hex, f) { return toHex(rgb(hex).map(function (v) { return v * (1 + f); })); }
+  function mix(hex, towardWhite) { return toHex(rgb(hex).map(function (v) { return v + (255 - v) * towardWhite; })); }
+
+  /* ---------- status box: kind = ok | err | warn | info ---------- */
+  ui.status = function (el, kind, title, help) {
+    if (typeof el === "string") el = ui.$(el);
+    if (!el) return;
+    el.className = "dd-status show " + kind;
+    el.setAttribute("role", kind === "err" ? "alert" : "status");
+    el.innerHTML = help ? "<b>" + ui.esc(title) + "</b><br>" + ui.esc(help) : ui.esc(title);
+  };
+  ui.clearStatus = function (el) { if (typeof el === "string") el = ui.$(el); if (el) { el.className = "dd-status"; el.textContent = ""; } };
+
+  /* ---------- notices: one per id, shown at the top of the page ---------- */
+  ui.notice = function (id, text, kind, buttons) {
+    var host = ui.$("dd-notices"); if (!host) return;
+    var box = ui.$("dd-notice-" + id);
+    if (!box) { box = document.createElement("div"); box.id = "dd-notice-" + id; host.appendChild(box); }
+    box.className = "dd-notice " + (kind || "info");
+    box.innerHTML = '<div class="dd-notice-text">' + ui.esc(text) + '</div>';
+    if (buttons && buttons.length) {
+      var row = document.createElement("div"); row.className = "dd-btnrow";
+      buttons.forEach(function (b) {
+        var btn = document.createElement("button");
+        btn.className = "dd-btn small" + (b.primary ? "" : " ghost");
+        btn.textContent = b.label;
+        btn.addEventListener("click", b.onClick);
+        row.appendChild(btn);
+      });
+      box.appendChild(row);
+    }
+  };
+  ui.clearNotice = function (id) { var b = ui.$("dd-notice-" + id); if (b) b.remove(); };
+
+  /* ---------- sheet (modal) ----------
+     ui.sheet(html) opens a sheet; returns the sheet element. Esc or tapping outside closes it. */
+  var openSheet = null, lastFocus = null;
+  ui.sheet = function (html, opts) {
+    opts = opts || {};
+    ui.closeSheet();
+    lastFocus = document.activeElement;
+    var overlay = document.createElement("div");
+    overlay.className = "dd-overlay";
+    overlay.innerHTML = '<div class="dd-sheet" role="dialog" aria-modal="true">' + html + '</div>';
+    overlay.addEventListener("click", function (e) { if (e.target === overlay && !opts.sticky) ui.closeSheet(); });
+    ui.$("dd-layer").appendChild(overlay);
+    openSheet = { el: overlay, onClose: opts.onClose };
+    var first = overlay.querySelector("button, input, textarea, select, a[href]");
+    if (first) first.focus();
+    return overlay.firstChild;
+  };
+  ui.closeSheet = function () {
+    if (!openSheet) return;
+    var s = openSheet; openSheet = null;
+    s.el.remove();
+    if (s.onClose) try { s.onClose(); } catch (e) {}
+    if (lastFocus && lastFocus.focus) try { lastFocus.focus(); } catch (e) {}
+  };
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && openSheet) ui.closeSheet(); });
+
+  /* ---------- confirm: friendly Yes/No, returns a Promise<boolean> ---------- */
+  ui.confirm = function (title, body, yesLabel, noLabel, danger) {
+    return new Promise(function (resolve) {
+      var done = false;
+      function finish(v) { if (done) return; done = true; ui.closeSheet(); resolve(v); }
+      var sh = ui.sheet('<h2>' + ui.esc(title) + '</h2>' + (body ? '<p>' + ui.esc(body) + '</p>' : "") +
+        '<div class="dd-btnrow"><button class="dd-btn ghost" data-no>' + ui.esc(noLabel || "No, keep it") + '</button>' +
+        '<button class="dd-btn' + (danger ? " danger" : "") + '" data-yes>' + ui.esc(yesLabel || "Yes") + '</button></div>',
+        { onClose: function () { finish(false); } });
+      sh.querySelector("[data-yes]").addEventListener("click", function () { finish(true); });
+      sh.querySelector("[data-no]").addEventListener("click", function () { finish(false); });
+    });
+  };
+
+  /* ---------- toast: short confirmation that fades out ---------- */
+  var toastTimer = null;
+  ui.toast = function (text, ms) {
+    var old = document.querySelector(".dd-toast"); if (old) old.remove();
+    var t = document.createElement("div");
+    t.className = "dd-toast"; t.setAttribute("role", "status"); t.textContent = text;
+    ui.$("dd-layer").appendChild(t);
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.remove(); }, ms || 2600);
+  };
+
+  /* ---------- formatting helpers ---------- */
+  ui.money = function (n) {
+    n = Number(n) || 0;
+    return (n < 0 ? "-$" : "$") + Math.abs(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  };
+  ui.isoDate = function (d) { d = d || new Date(); var p = function (n) { return (n < 10 ? "0" : "") + n; }; return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()); };
+  ui.uid = function (prefix) {
+    var b = new Uint8Array(6);
+    if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(b); else for (var i = 0; i < 6; i++) b[i] = Math.random() * 256;
+    return (prefix || "i") + Date.now().toString(36) + Array.prototype.map.call(b, function (x) { return (x < 16 ? "0" : "") + x.toString(16); }).join("");
+  };
+})();
+
+/* ---- dd.diag.js ---- */
+/* ===== DigiDoughnut Platform · dd.diag =====
+   Hidden support tool. Triple-click (or triple-tap) the footer to open a report that support
+   can read from one screenshot, with a Copy button. Codes and keys are never shown.
+   Other modules add their own section: dd.diag.addSection("Sync", function () { return ["State: on", ...]; }) */
+(function () {
+  "use strict";
+  var dd = window.dd = window.dd || {};
+  var diag = dd.diag = {};
+  var sections = [];
+
+  diag.addSection = function (title, fn) { sections.push({ title: title, fn: fn }); };
+
+  function core() {
+    var p = dd.getProgram && dd.getProgram();
+    var b = window.DD_BUILD || {};
+    var e = dd.env || {};
+    var out = [];
+    out.push("--- Program ---");
+    out.push((p ? p.name + " " + p.version + " (data v" + p.schemaVersion + ")" : "not started") +
+             " · platform " + (b.platform || "dev") + " · built " + (b.built || "-") + " " + (b.commit || ""));
+    out.push("--- Page ---");
+    out.push((e.isFile ? "Opened from a file on this computer" : "Hosted at " + location.host) +
+             (e.isStandalone ? " · Home Screen app" : " · browser tab"));
+    out.push("--- Device ---");
+    out.push((e.isIOS ? "iPhone/iPad" : e.isAndroid ? "Android" : e.isPhone ? "phone" : "computer") +
+             " · screen " + screen.width + "×" + screen.height + " · " + (navigator.onLine ? "online" : "offline"));
+    out.push(navigator.userAgent);
+    out.push("--- Storage ---");
+    out.push("Saving works: " + (dd.store.available() ? "yes" : "NO") +
+             " · keep-storage request: " + dd.store.persisted +
+             (p ? " · data " + dd.store.dataBytes(p.id) + " bytes" + (dd.isExample() ? " (example)" : "") : ""));
+    if (p && dd.store.get(dd.store.programKey(p.id, "data_recovery")) != null) out.push("A recovery copy of older data is saved on this device.");
+    out.push("--- Last problems (newest first) ---");
+    var log = dd.errors.recent();
+    if (!log.length) out.push("No problems recorded. Everything's talking fine.");
+    log.forEach(function (r) { out.push(r.when + " · " + r.where + " · " + r.detail); });
+    return out;
+  }
+
+  diag.text = function () {
+    var lines = core();
+    sections.forEach(function (s) {
+      lines.push("--- " + s.title + " ---");
+      try { lines = lines.concat(s.fn()); } catch (e) { lines.push("(couldn't read: " + e.message + ")"); }
+    });
+    return dd.errors.scrub(lines.join("\n"));
+  };
+
+  diag.open = function () {
+    var text = diag.text();
+    var sh = dd.ui.sheet('<h2>Support details</h2>' +
+      '<p class="dd-note">If DigiDoughnut support asked for this, take a screenshot or tap Copy and paste it into your message.</p>' +
+      '<pre id="dd-diag-text"></pre>' +
+      '<div class="dd-btnrow"><button class="dd-btn" data-copy>Copy</button><button class="dd-btn ghost" data-close>Close</button></div>');
+    sh.querySelector("#dd-diag-text").textContent = text;
+    sh.querySelector("[data-close]").addEventListener("click", dd.ui.closeSheet);
+    sh.querySelector("[data-copy]").addEventListener("click", function () {
+      copyText(text).then(function (ok) { dd.ui.toast(ok ? "Copied." : "Couldn't copy. A screenshot works too."); });
+    });
+  };
+
+  function copyText(t) {
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t).then(function () { return true; }, fallback);
+    return Promise.resolve(fallback());
+    function fallback() {
+      var ta = document.createElement("textarea"); ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      var ok = false; try { ok = document.execCommand("copy"); } catch (e) {}
+      ta.remove(); return ok;
+    }
+  }
+
+  /* Three clicks/taps on the footer within 600 ms. */
+  var attached = false;
+  diag.attach = function () {
+    if (attached) return;
+    var foot = document.getElementById("dd-footer"); if (!foot) return;
+    if (!foot.textContent.trim()) foot.innerHTML = "<p>Made with care by DigiDoughnut</p>";
+    attached = true;
+    var n = 0, t = null;
+    foot.addEventListener("click", function () {
+      n++; clearTimeout(t); t = setTimeout(function () { n = 0; }, 600);
+      if (n >= 3) { n = 0; diag.open(); }
+    });
+  };
+})();
+
+</script>
+<script>
+/* ===== PROGRAM-SPECIFIC code ===== */
+/* ===== PROGRAM-SPECIFIC: Demo List =====
+   A deliberately tiny program that exercises the platform: first-run example data, saving,
+   a schema upgrade (v1 stored plain strings, v2 stores objects), and the friendly confirm.
+   Copy this folder to start a new program. Everything not in this object comes from the platform. */
+const DD_PROGRAM = {
+  id: "demo",                       // lowercase letters/digits; becomes dd_demo_data_v1
+  name: "Demo List",
+  tagline: "A platform test program",
+  version: "0.1.0",
+  schemaVersion: 2,
+  accent: "#2563eb",
+  exampleNotice: "You're looking at an example list so you can try things out.",
+
+  emptyData() { return { items: [] }; },
+
+  exampleData() {
+    return { items: [
+      { id: "ex1", text: "Buy flour", done: false },
+      { id: "ex2", text: "Book the market table", done: true },
+      { id: "ex3", text: "Print price tags", done: false }
+    ] };
+  },
+
+  // Called before any saved data is used. Return false and the platform keeps a recovery copy.
+  validateData(d) {
+    return !!d && Array.isArray(d.items) && d.items.every((i) =>
+      i && typeof i.id === "string" && typeof i.text === "string" && typeof i.done === "boolean");
+  },
+
+  // Bring data from any older schema up to this one. fromVersion 0 = saved before envelopes existed.
+  migrate(d, fromVersion) {
+    let out = d || { items: [] };
+    if (fromVersion < 2) {
+      out = { items: (out.items || []).map((t, n) => typeof t === "string"
+        ? { id: "m" + n + "_" + Date.now().toString(36), text: t, done: false } : t) };
+    }
+    return out;
+  },
+
+  // Runs once, after the platform frame is ready. Wire up static buttons here.
+  mount(ctx) {
+    const $ = ctx.ui.$;
+    const add = () => {
+      const box = $("demoNew"), text = box.value.trim();
+      if (!text) { ctx.ui.status("demoStatus", "warn", "Type something first."); return; }
+      ctx.update((d) => { d.items.push({ id: ctx.ui.uid("i"), text: text.slice(0, 120), done: false }); });
+      box.value = ""; ctx.ui.clearStatus("demoStatus");
+    };
+    $("demoAdd").addEventListener("click", add);
+    $("demoNew").addEventListener("keydown", (e) => { if (e.key === "Enter") add(); });
+    $("demoClear").addEventListener("click", async () => {
+      const yes = await ctx.ui.confirm("Clear the whole list?", "This removes every item. You can't undo it.", "Yes, clear it", "No, keep it", true);
+      if (yes) dd.replaceData(DD_PROGRAM.emptyData(), { example: false, source: "clear" });
+    });
+  },
+
+  // Draws the screen from ctx.data. Called after every change.
+  render(ctx) {
+    const list = ctx.ui.$("demoList"), esc = ctx.ui.esc;
+    const items = ctx.data.items;
+    ctx.ui.$("demoCount").textContent = items.filter((i) => !i.done).length + " to do";
+    list.innerHTML = items.length ? "" : '<p class="dd-note">Nothing here yet. Add your first item above.</p>';
+    items.forEach((item) => {
+      const row = document.createElement("label");
+      row.className = "demo-row" + (item.done ? " done" : "");
+      row.innerHTML = '<input type="checkbox"' + (item.done ? " checked" : "") + '> <span>' + esc(item.text) +
+                      '</span><button class="demo-x" aria-label="Remove ' + esc(item.text) + '">×</button>';
+      row.querySelector("input").addEventListener("change", (e) =>
+        ctx.update((d) => { d.items.find((i) => i.id === item.id).done = e.target.checked; }));
+      row.querySelector(".demo-x").addEventListener("click", (e) => {
+        e.preventDefault();
+        ctx.update((d) => { d.items = d.items.filter((i) => i.id !== item.id); });
+      });
+      list.appendChild(row);
+    });
+  },
+
+  // Phase 4 (Penny): what the AI sees each turn, and the tools she can use. Not used yet.
+  summarizeForAI(ctx) { return ctx.data.items.map((i) => `${i.id}: ${i.text}${i.done ? " (done)" : ""}`).join("\n"); },
+  tools: [],
+  knowledge: "",
+  suggestions: []
+};
+
+</script>
+<script>
+dd.start(typeof DD_PROGRAM !== "undefined" ? DD_PROGRAM : null);
+</script>
+</body>
+</html>

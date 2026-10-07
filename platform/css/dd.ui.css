@@ -1,0 +1,73 @@
+/* ===== DigiDoughnut Platform · dd.ui.css =====
+   The shared look, taken from Profit Coach's clean card UI. Every program uses these tokens;
+   programs set only --dd-brand (via DD_PROGRAM.accent) and their own layout. */
+:root{
+  --dd-bg:#f6f8fc; --dd-card:#fff; --dd-ink:#1e2430; --dd-muted:#6b7280; --dd-line:#e5e7eb;
+  --dd-brand:#2563eb; --dd-brand-d:#1d4ed8; --dd-brand-soft:#eef2ff; --dd-brand-soft-d:#e0e7ff;
+  --dd-ok:#15803d; --dd-okbg:#f0fdf4; --dd-okline:#bbf7d0;
+  --dd-bad:#b91c1c; --dd-badbg:#fef2f2; --dd-badline:#fecaca;
+  --dd-warn:#b45309; --dd-warnbg:#fffbeb; --dd-warnline:#fde68a;
+  --dd-radius:14px; --dd-shadow:0 1px 3px rgba(16,24,40,.08);
+  --dd-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-ink);line-height:1.55;
+     padding:0 0 calc(120px + env(safe-area-inset-bottom));-webkit-text-size-adjust:100%}
+
+/* header */
+.dd-top{position:sticky;top:0;z-index:20;background:var(--dd-card);border-bottom:1px solid var(--dd-line);
+        padding:12px 18px;padding-top:calc(12px + env(safe-area-inset-top));display:flex;align-items:center;gap:12px}
+.dd-top h1{font-size:1.15rem;margin:0;line-height:1.2}
+.dd-top .dd-tag{font-size:.8rem;color:var(--dd-muted)}
+.dd-top .dd-spacer{flex:1}
+.dd-top .dd-slot{display:flex;gap:6px;align-items:center}
+
+/* layout + cards */
+.dd-wrap{max-width:760px;margin:0 auto;padding:20px 16px}
+.dd-card{background:var(--dd-card);border-radius:var(--dd-radius);padding:18px;margin:0 0 14px;box-shadow:var(--dd-shadow)}
+.dd-card h2{font-size:1.02rem;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.dd-note{font-size:.85rem;color:var(--dd-muted)}
+
+/* buttons */
+.dd-btn{background:var(--dd-brand);color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:.95rem;
+        font-weight:600;cursor:pointer;font-family:inherit;min-height:44px}
+.dd-btn:hover{background:var(--dd-brand-d)} .dd-btn:disabled{opacity:.55;cursor:default}
+.dd-btn.ghost{background:var(--dd-brand-soft);color:var(--dd-brand)} .dd-btn.ghost:hover{background:var(--dd-brand-soft-d)}
+.dd-btn.danger{background:var(--dd-bad)}
+.dd-btn.small{padding:6px 12px;min-height:34px;font-size:.85rem}
+.dd-linkbtn{background:none;border:none;color:var(--dd-brand);font-size:.88rem;cursor:pointer;padding:6px 8px;font-family:inherit}
+.dd-btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.dd-input{padding:10px 12px;font-size:1rem;border:2px solid var(--dd-line);border-radius:10px;width:100%;font-family:inherit;background:#fff;color:var(--dd-ink)}
+.dd-input:focus{outline:none;border-color:var(--dd-brand)}
+:focus-visible{outline:3px solid var(--dd-brand);outline-offset:2px}
+
+/* status boxes: every message to the buyer goes through one of these */
+.dd-status{margin-top:12px;padding:12px 14px;border-radius:10px;font-size:.92rem;display:none}
+.dd-status.show{display:block}
+.dd-status.ok{background:var(--dd-okbg);color:var(--dd-ok);border:1px solid var(--dd-okline)}
+.dd-status.err{background:var(--dd-badbg);color:var(--dd-bad);border:1px solid var(--dd-badline)}
+.dd-status.warn{background:var(--dd-warnbg);color:var(--dd-warn);border:1px solid var(--dd-warnline)}
+.dd-status.info{background:var(--dd-brand-soft);color:var(--dd-ink);border:1px solid var(--dd-brand-soft-d)}
+
+/* notices (top-of-page banners, e.g. "these are example numbers") */
+.dd-notice{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--dd-brand-soft);border:1px solid var(--dd-brand-soft-d);
+           border-radius:12px;padding:10px 14px;margin:0 0 14px;font-size:.92rem}
+.dd-notice.warn{background:var(--dd-warnbg);border-color:var(--dd-warnline);color:var(--dd-warn)}
+.dd-notice .dd-notice-text{flex:1 1 240px}
+.dd-notice .dd-btnrow{margin:0}
+
+/* sheets (modal dialogs) */
+.dd-overlay{position:fixed;inset:0;background:rgba(17,24,39,.55);z-index:50;display:flex;align-items:center;justify-content:center;padding:18px}
+.dd-sheet{background:#fff;border-radius:18px;max-width:520px;width:100%;padding:24px;max-height:92vh;overflow:auto}
+.dd-sheet h2{margin:0 0 8px;font-size:1.25rem}
+.dd-sheet pre{white-space:pre-wrap;word-break:break-word;font-size:.78rem;background:#f8fafc;border:1px solid var(--dd-line);
+              border-radius:10px;padding:10px;max-height:50vh;overflow:auto;margin:8px 0 0}
+@media (max-width:520px){ .dd-overlay{align-items:flex-end;padding:0} .dd-sheet{border-radius:18px 18px 0 0;padding-bottom:calc(24px + env(safe-area-inset-bottom))} }
+
+/* toast */
+.dd-toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--dd-ink);color:#fff;
+          padding:10px 16px;border-radius:12px;font-size:.92rem;z-index:60;box-shadow:0 8px 24px rgba(0,0,0,.2);max-width:calc(100vw - 32px)}
+
+/* footer: brand line + version; triple-click opens the support diagnostic */
+.dd-footer{max-width:760px;margin:26px auto 0;padding:0 16px;text-align:center;color:var(--dd-muted);font-size:.8rem;user-select:none;-webkit-user-select:none}
+.dd-footer p{margin:2px 0}

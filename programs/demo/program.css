@@ -1,0 +1,8 @@
+.demo-count{margin-left:auto;font-size:.85rem;color:var(--dd-muted);font-weight:600}
+.demo-add{display:flex;gap:8px}
+.demo-row{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--dd-line);cursor:pointer}
+.demo-row input{width:20px;height:20px;accent-color:var(--dd-brand)}
+.demo-row span{flex:1}
+.demo-row.done span{text-decoration:line-through;color:var(--dd-muted)}
+.demo-x{background:#f3f4f6;border:none;border-radius:8px;width:34px;height:34px;cursor:pointer;font-size:1rem;color:var(--dd-muted)}
+.demo-x:hover{background:#fee2e2;color:var(--dd-bad)}

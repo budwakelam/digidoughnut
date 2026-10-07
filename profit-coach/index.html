@@ -641,6 +641,12 @@ $("phoneBtn").addEventListener("click",function(){
   st.className="status show ok";
   st.textContent=key? "Scan the code with your phone — your access code is included. Link also copied."
                     : "Heads up: no access code saved on this computer yet, so the QR carries numbers only. Paste your code first for one-scan pairing.";
+  // Sync details only go into the QR when sync is already on. Making the code first and turning
+  // sync on afterwards gives the phone its own separate ledger, so the two devices never meet.
+  if(loadFbConfig()&&!syncOn){
+    st.className="status show warn";
+    st.textContent="Live sync is off, so your phone will get a copy of your numbers but won't stay in step. Turn on Live sync first, then tap Send to my phone again.";
+  }
 });
 function checkMagicLink(){
   if(location.hash.length<2) return;
@@ -695,10 +701,13 @@ function parseFbConfig(text){
 }
 var FB_SDK = "https://www.gstatic.com/firebasejs/12.19.0/";
 var SYNC_LS = "dd_sync_id_v1";
+var SYNC_ON_LS = "dd_sync_on_v1";   // remembers "sync was on" so a page reload doesn't silently stop syncing
 var syncOn = false, syncRef = null, syncId = null, fb = null;
-var lastRemoteTs = 0, pushTimer = null, lastPushed = null;
-var syncDiag={pushes:0,lastPush:"-",lastPushErr:"-",remoteEvents:0,lastRemote:"-"};
+var pushTimer = null, lastPushed = null;
+var syncDiag={pushes:0,acked:0,lastPush:"-",lastPushErr:"-",listenerFires:0,remoteEvents:0,lastRemote:"-",connected:"-",resumed:"no"};
 function syncDbg(m){ syncDiag.lastPushErr=m; }
+function rememberSyncOn(on){ try{ if(on) localStorage.setItem(SYNC_ON_LS,"1"); else localStorage.removeItem(SYNC_ON_LS); }catch(e){} }
+function syncWasOn(){ try{ return localStorage.getItem(SYNC_ON_LS)==="1"; }catch(e){ return false; } }
 
 function loadFb(){
   if(fb) return Promise.resolve(fb);
@@ -747,11 +756,12 @@ function sameAsRemote(v){
     return (typeof v.tax==="number"?v.tax:20)===S.tax;
   }catch(e){ return false; }
 }
-function applyRemote(v, force){
+/* Echo suppression is by CONTENT only. The old timestamp gate (skip if updatedAt <= last seen)
+   could silently drop a real update from the other device when a locally-estimated server
+   timestamp ran ahead of the real one. Comparing content is enough: our own echoes match. */
+function applyRemote(v){
   if(!v||typeof v!=="object") return;
-  var ts=v.updatedAt||0;
-  if(!force&&ts<=lastRemoteTs) return;
-  if(sameAsRemote(v)){ lastRemoteTs=Math.max(lastRemoteTs,ts); return; }
+  if(sameAsRemote(v)) return;
   var lines=[], lm=v.lines||{};
   Object.keys(lm).forEach(function(id){
     var l=lm[id];
@@ -759,7 +769,6 @@ function applyRemote(v, force){
       lines.push({id:id,label:l.label.slice(0,80),amount:String(l.amount==null?"":l.amount),type:(l.type==="in"?"in":"out")});
   });
   S={lines:lines, tax:(typeof v.tax==="number"?v.tax:20)};
-  lastRemoteTs=ts;
   syncDiag.remoteEvents++; try{ syncDiag.lastRemote=new Date().toLocaleTimeString(); }catch(e){}
   save(); $("taxRange").value=S.tax; render(); snapBaseline();
 }
@@ -780,7 +789,7 @@ function syncDiffPush(){
     u["updatedAt"]=fb.D.serverTimestamp();
     syncDiag.pushes++;
     try{
-      fb.D.update(syncRef,u).then(function(){ try{ syncDiag.lastPush=new Date().toLocaleTimeString(); }catch(e){} })
+      fb.D.update(syncRef,u).then(function(){ syncDiag.acked++; try{ syncDiag.lastPush=new Date().toLocaleTimeString(); }catch(e){} })
         .catch(function(e){ syncDbg("push rejected: "+String((e&&e.message)||e)); });
     }catch(e){ syncDbg("push threw: "+String(e)); }
   }
@@ -797,15 +806,17 @@ function pushFull(){
   S.lines.forEach(function(l){ m[l.id]={label:l.label,amount:String(l.amount||"0"),type:l.type}; });
   syncDiag.pushes++;
   try{
-    fb.D.set(syncRef,{lines:m, tax:S.tax, updatedAt: fb.D.serverTimestamp()}).then(function(){ try{ syncDiag.lastPush=new Date().toLocaleTimeString(); }catch(e){} })
+    fb.D.set(syncRef,{lines:m, tax:S.tax, updatedAt: fb.D.serverTimestamp()}).then(function(){ syncDiag.acked++; try{ syncDiag.lastPush=new Date().toLocaleTimeString(); }catch(e){} })
       .catch(function(e){ syncDbg("full-push rejected: "+String((e&&e.message)||e)); });
   }catch(e){ syncDbg("full-push threw: "+String(e)); }
   snapBaseline();
 }
+var syncStarting=false;   // guards against two overlapping enables (reload-resume + QR join)
 function syncEnable(){
-  if(syncOn) return;
+  if(syncOn||syncStarting) return;
+  syncStarting=true;
   var id=syncIdGet();
-  if(!id){ syncMsg("\u26A0\uFE0F This browser blocked the sync ID — sync unavailable here."); return; }
+  if(!id){ syncStarting=false; syncMsg("\u26A0\uFE0F This browser blocked the sync ID — sync unavailable here."); return; }
   syncId=id;
   syncMsg("Connecting to live sync\u2026");
   loadFb().then(function(){
@@ -825,19 +836,21 @@ function syncEnable(){
           if(typeof v.tax==="number") S.tax=v.tax;
           save(); $("taxRange").value=S.tax; render();
         } else {
-          applyRemote(v,true);
+          applyRemote(v);
         }
       }
       syncRef=dref;
-      fb.D.onValue(dref,function(sn){ applyRemote(sn.val()); });
-      syncOn=true; paintSync(); snapBaseline(); pushFull();
+      fb.D.onValue(dref,function(sn){ syncDiag.listenerFires++; applyRemote(sn.val()); },
+        function(e){ syncDbg("listener cancelled: "+String((e&&e.message)||e)); });
+      try{ fb.D.onValue(fb.D.ref(fb.database,".info/connected"),function(c){ syncDiag.connected=c.val()?"yes":"no"; }); }catch(e){}
+      syncStarting=false; syncOn=true; rememberSyncOn(true); paintSync(); snapBaseline(); pushFull();
       syncMsg("Live sync is <b>on</b>. Scan the \uD83D\uDCF2 QR code on your other device to join these same books — changes appear on both, instantly.");
-    }).catch(function(e){ syncDbg("connect failed: "+String((e&&e.message)||e)); syncMsg("\u26A0\uFE0F Couldn't reach the sync service — check your internet and try again."); });
-  }).catch(function(e){ syncDbg("sdk load failed: "+String((e&&e.message)||e)); syncMsg("\u26A0\uFE0F Couldn't load the sync service — check your internet and try again."); });
+    }).catch(function(e){ syncStarting=false; syncDbg("connect failed: "+String((e&&e.message)||e)); syncMsg("\u26A0\uFE0F Couldn't reach the sync service — check your internet and try again."); });
+  }).catch(function(e){ syncStarting=false; syncDbg("sdk load failed: "+String((e&&e.message)||e)); syncMsg("\u26A0\uFE0F Couldn't load the sync service — check your internet and try again."); });
 }
 function syncDisable(){
   try{ if(syncRef&&fb) fb.D.off(syncRef); }catch(e){}
-  syncOn=false; syncRef=null; paintSync();
+  syncOn=false; syncRef=null; rememberSyncOn(false); paintSync();
   syncMsg("Live sync is off. Your numbers stay on this device.");
 }
 
@@ -878,12 +891,16 @@ $("copyRulesBtn").addEventListener("click",function(){
   if(foot) foot.addEventListener("click",function(){
     n++; clearTimeout(t); t=setTimeout(function(){n=0;},600);
     if(n>=3){ n=0;
-      var syncInfo="\n\n--- Sync ---\nState: "+(syncOn?"ON":"off")+
+      var cfg=loadFbConfig();
+      var syncInfo="\n\n--- Sync ---\nState: "+(syncOn?"ON":"off")+" (remembered: "+(syncWasOn()?"on":"off")+", resumed on load: "+syncDiag.resumed+")"+
+        "\nDatabase: "+(cfg?(cfg.projectId||String(cfg.databaseURL).replace(/^https?:\/\//,"").split(".")[0]):"none")+
+        "\nConnected: "+syncDiag.connected+
         "\nLedger: "+(syncId?String(syncId).slice(0,8)+"\u2026":"-")+
-        "\nPushes: "+syncDiag.pushes+
+        "\nPushes sent / confirmed: "+syncDiag.pushes+" / "+syncDiag.acked+
         "\nLast push ok: "+syncDiag.lastPush+
         "\nPush problem: "+String(syncDiag.lastPushErr).slice(0,200)+
-        "\nRemote updates received: "+syncDiag.remoteEvents+
+        "\nListener fired: "+syncDiag.listenerFires+
+        "\nRemote updates applied: "+syncDiag.remoteEvents+
         "\nLast remote: "+syncDiag.lastRemote;
       alert((lastRaw?("Last technical detail ("+lastRaw.when+" · "+lastRaw.where+"):\nHTTP "+lastRaw.status+"\n"+lastRaw.detail)
                    :"No errors recorded yet — everything's talking fine.")+syncInfo);
@@ -894,6 +911,8 @@ load();
 checkMagicLink();
 $("taxRange").value=S.tax;
 render(); paintConn(); paintSync();
+// Resume sync after a reload if it was on before. (A QR join schedules its own enable.)
+if(syncWasOn()&&loadFbConfig()&&!syncOn){ syncDiag.resumed="yes"; syncEnable(); }
 if(needsKey()) showSetup(); else $("overlay").classList.add("hide");
 })();
 </script>
