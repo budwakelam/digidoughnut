@@ -43,24 +43,19 @@
   var CONFIG_KEY = "dd_firebase_config_v1";
 
   /* The rules the buyer pastes into Firebase (Realtime Database, Rules tab). Only a signed-in copy
-     of a program may read or write, only inside /sync/<program>/<32-character ledger>, and only
-     in the shape this module writes. Nothing else in the database can be read. */
+     of a program may read or write, and only inside /sync/<program>/<32-character ledger>. Nothing
+     else in the database can be read. Kept short on purpose (Oran, 2026-10-07): buyers paste it,
+     and the program checks the data's shape itself (validateData) before using anything. */
   sync.rules = JSON.stringify({ rules: { sync: { "$program": { "$ledger": {
     ".read": "auth != null && $ledger.length == 32",
-    ".write": "auth != null && $ledger.length == 32 && $program.matches(/^[a-z0-9]+$/)",
-    meta: { v: { ".validate": "newData.isNumber()" }, schema: { ".validate": "newData.isNumber()" }, "$other": { ".validate": false } },
-    lists: { "$list": { order: { ".validate": "newData.isString() && newData.val().length < 200000" },
-                        items: { "$id": { ".validate": "newData.isString() && newData.val().length < 100000" } },
-                        "$other": { ".validate": false } } },
-    fields: { "$field": { ".validate": "newData.isString() && newData.val().length < 200000" } },
-    "$other": { ".validate": false }
+    ".write": "auth != null && $ledger.length == 32"
   } } } } }, null, 2);
   var program = null, fb = null, app = null, db = null;
   var ledgerRef = null, unsubs = [], pushTimer = null, starting = null;
   var base = null, pend = {}, pendSeq = 0, connectedNow = false, resumeAfterPair = false;
   var state = "off";   // off | connecting | on | problem | newer
   var problem = null;  // friendly error type
-  var diag = { pushes: 0, acked: 0, lastPush: "-", remote: 0, applied: 0, lastRemote: "-", lastError: "-", signedIn: "-", resumed: "no", joined: "-" };
+  var diag = { pushes: 0, acked: 0, lastPush: "-", remote: 0, applied: 0, lastRemote: "-", lastError: "-", signedIn: "-", resumed: "no", joined: "-", reauths: 0 };
 
   function key(thing) { return dd.store.programKey(program.id, thing); }
   function now() { return new Date().toLocaleTimeString(); }
@@ -265,8 +260,20 @@
 
   /* ---------- start / stop ---------- */
   /* Connect this program's ledger. Resolves {ok:true} or {ok:false, type, title, help}. */
+  /* If the database says no, the sign-in may be stale (Firebase's "Auto clean-up" deletes
+     anonymous sign-ins older than 30 days, or the buyer removed it). Sign in afresh and try once more. */
+  var lastReauth = 0;
   sync.start = function (opts) {
     opts = opts || {};
+    return startOnce(opts).then(function (r) {
+      if (r.ok || r.type !== "sync_rules" || opts.reauthed || !app || Date.now() - lastReauth < 60000) return r;
+      lastReauth = Date.now(); diag.reauths++;
+      var auth = fb.U.getAuth(app);
+      return Promise.resolve(fb.U.signOut ? fb.U.signOut(auth) : null).catch(function () {})
+        .then(function () { return startOnce(Object.assign({}, opts, { reauthed: true })); });
+    });
+  };
+  function startOnce(opts) {
     if (starting) return starting;
     var cfg = opts.config || sync.config();
     if (!program || program.sync === false) return Promise.resolve(friendly("unexpected"));
@@ -292,6 +299,7 @@
             var t = fail("listening", e);
             if (!gotFirst) { gotFirst = true; reject({ stage: "listening", e: e }); return; }
             setProblem(t);
+            if (t === "sync_rules") sync.start();
           }));
         }), sync.limits.connect, "first read").catch(function (e) { throw e.stage ? e : { stage: "reading", e: e }; });
       })
@@ -317,7 +325,7 @@
       })
       .finally(function () { starting = null; });
     return starting;
-  };
+  }
 
   function friendly(type) {
     var f = dd.errors.friendly(type, { company: "Firebase" });
@@ -407,7 +415,7 @@
     fb.D.update(ledgerRef, u).then(function () {
       Object.keys(u).forEach(function (p) { if (pend[p] === seq) delete pend[p]; });
       saveBase(); diag.acked++; diag.lastPush = now(); paint();
-    }, function (e) { setProblem(fail("saving", e)); });   // pend keeps the change, so it's sent again
+    }, function (e) { var t = fail("saving", e); setProblem(t); if (t === "sync_rules") sync.start(); });   // pend keeps the change, so it's sent again
     paint();
   }
 
@@ -515,7 +523,7 @@
     return [
       "State: " + state + (problem ? " (" + problem + ")" : "") + " · remembered on: " + (wasOn() ? "yes" : "no") + " · resumed on load: " + diag.resumed,
       "Database: " + (cfg ? cfg.projectId + " · " + String(cfg.databaseURL).replace(/^https:\/\//, "") + (cfg.guessedURL ? " (address guessed)" : "") : "none") +
-        " · SDK " + sync.sdkVersion + " · signed in: " + diag.signedIn + " · connected: " + (connectedNow ? "yes" : "no"),
+        " · SDK " + sync.sdkVersion + " · signed in: " + diag.signedIn + (diag.reauths ? " (signed in again " + diag.reauths + "x)" : "") + " · connected: " + (connectedNow ? "yes" : "no"),
       "Ledger: " + (id ? id.slice(0, 6) + "…" : "-") + " · joined: " + diag.joined + " · base kept: " + (base ? Object.keys(base).length + " paths" : "none"),
       "Pushes sent / confirmed: " + diag.pushes + " / " + diag.acked + " · last confirmed: " + diag.lastPush + (pushTimer ? " · a change is waiting to go" : "") +
         " · unconfirmed: " + Object.keys(pend).length,

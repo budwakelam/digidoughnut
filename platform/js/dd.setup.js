@@ -253,9 +253,11 @@
       "Facts: the access code is free from Google AI Studio, no credit card. The program keeps the code only in this browser. " +
       "Nothing they do in setup can break the program; every step can be redone." +
       (cur && cur.id === "sync" ? " Sync facts: live sync uses the buyer's own free Firebase project (console.firebase.google.com, the free Spark plan, no card). " +
-        "Steps: create a project (any name; Google Analytics and Gemini can be switched off), Authentication > Sign-in method > Anonymous > Enable > Save, " +
-        "Realtime Database > Create Database (United States for Canada/US; Belgium europe-west1 for the UK/Europe) > Start in locked mode, then the Rules tab: replace everything with the rules this program shows and tap Publish, " +
-        "then Project settings > Your apps > the </> web button > any nickname (no Hosting) > Register app, and copy the whole firebaseConfig box. " +
+        "Steps: create a project (any name; Google Analytics and Gemini can be switched off). Left menu, Project shortcuts > Authentication (Get started the first time) > Sign-in method tab > Native providers > Anonymous > switch on Enable > Save; leave Enable Auto clean-up unticked. " +
+        "Left menu, Databases & Storage > Realtime Database (under NoSQL, not Firestore) > Create Database > location United States for Canada/US, Belgium europe-west1 for the UK/Europe > Start in locked mode > Enable. " +
+        "Rules tab (next to Data): select all, delete, paste the rules this program shows, tap Publish. " +
+        "Left menu, Settings > General > Your apps > the </> web button > App nickname anything, Firebase Hosting unticked > Register app > under Add Firebase SDK, the copy icon at the bottom right of the big box with firebaseConfig > Continue to console. " +
+        "Safe to ignore: Gemini cards and Ask Gemini, the Dynamic Links box, the yellow Sign in with Google bar, SMS Multi-factor, Rules playground, npm install, Use a script tag, the AI coding agent box. Never turn on App Check: it blocks the program. " +
         "The setup code is not a password: it only says where the database is. Google may change button names; if what they see differs, believe their screen. Never ask for passwords." : "") +
       (cur && /^host/.test(cur.id) ? " Hosting facts: the program is ONE self-contained HTML file. It must be uploaded unchanged, keeping its file name, to an https address, " +
         "not behind a password. The host must not block outside connections (a Content-Security-Policy with connect-src 'self' breaks the helper; Neocities' free plan does this). " +
@@ -852,9 +854,13 @@
   };
 
   /* ---------- "Keep devices in step" (Phase 5) ----------
-     PROVISIONAL (2026-10-07): the Firebase console screens below are written from Firebase's
-     docs, NOT yet checked against Oran's screenshots of a brand-new project (rule 3). Labels go
-     through L() so the noticeboard can correct them; pictures come once the screenshots are in.
+     Checked against Oran's screenshots, 2026-10-07 (project "etsy", Spark plan): left menu
+     "Project shortcuts" > Authentication (Get started the first time) > Sign-in method >
+     Native providers > Anonymous > Enable > Save; "Databases & Storage" > Realtime Database
+     (under NoSQL) > Create Database > location > Start in locked mode > Enable; Rules tab >
+     Publish; Settings > General > Your apps > </> > App nickname > Register app > Add Firebase
+     SDK (copy icon bottom right of the big box) > Continue to console. NOT yet seen: the
+     create-project screens. Labels go through L() so the noticeboard can correct them.
      Order matters: the database is made BEFORE the web app is registered, so the setup code
      Firebase shows includes the database's address (dd.sync also guesses it if it's missing). */
   function syncLink() { return link("sync_console", "https://console.firebase.google.com/"); }
@@ -870,32 +876,41 @@
           '<ul class="dd-facts"><li>✓ Free (Firebase\'s Spark plan). No credit card.</li><li>✓ About 10 minutes, once. Every DigiDoughnut program on this address shares it.</li><li>✓ Easiest on a computer.</li></ul>' +
           (dd.env.isFile ? '<p class="dd-status show warn">Put the program online first (setup step 3), then do this from its web address.</p>' : ""); } },
       { title: "Make a Firebase project",
-        todo: function () { return "Open Firebase, tap <b>" + esc(L("fb_create", "Create a project")) + "</b>, and follow it to the end."; },
-        body: function () { return '<p>Tap the button. Firebase opens in a new tab. Sign in with your Google account, then tap <b>' + esc(L("fb_create", "Create a project")) + '</b>.</p>' +
+        pic: function () { return { kind: "page", site: "console.firebase.google.com", items: [{ type: "field", label: "Project name", value: "My DigiDoughnut" }], btn: L("fb_continue", "Continue") }; },
+        todo: function () { return "Open Firebase, make a new project, and follow it to the end."; },
+        body: function () { return '<p>Tap the button. Firebase opens in a new tab. Sign in with your Google account, then make a new project.</p>' +
           '<ul><li>Name it anything, like <i>My DigiDoughnut</i>.</li><li>If it offers <b>Gemini</b> or <b>Google Analytics</b>, you can switch them off. You don\'t need them.</li>' +
-          '<li>Tap <b>' + esc(L("fb_continue", "Continue")) + '</b> until it says your project is ready.</li></ul>' +
-          '<p><b>You can ignore</b> anything about plans, billing or upgrading.</p>'; },
+          '<li>Tap <b>' + esc(L("fb_continue", "Continue")) + '</b> until your project opens. It says <b>Spark plan</b> next to its name: that\'s the free one.</li></ul>' +
+          '<p><b>You can ignore</b> the "Next steps with Gemini" cards on the project\'s page, and anything about upgrading.</p>'; },
         action: { label: "Open Firebase", run: function (c) { c.open(syncLink()); } },
-        stuck: ["Already have a Firebase project? You can use it: open it and tap Next."], guide: "sync_project" },
+        stuck: ["Already have a Firebase project? You can use it: open it and tap Next.", "Don't see the menu on the left? Make the window wider, or tap ☰ at the top left."], guide: "sync_project" },
       { title: "Let the program sign in",
+        pic: function () { return { kind: "page", site: "Authentication · " + L("fb_signin_method", "Sign-in method"), items: [{ type: "toggle", label: L("fb_anonymous", "Anonymous") + " · " + L("fb_enable", "Enable") }], btn: L("fb_save", "Save") }; },
         todo: function () { return "Switch on <b>" + esc(L("fb_anonymous", "Anonymous")) + "</b> and tap <b>" + esc(L("fb_save", "Save")) + "</b>."; },
-        body: function () { return '<p>In your project, open <b>' + esc(L("fb_build", "Build")) + '</b> (or <b>All products</b>) and choose <b>' + esc(L("fb_auth", "Authentication")) + '</b>. Tap <b>' + esc(L("fb_get_started", "Get started")) + '</b> if it asks.</p>' +
-          '<ol><li>Open the <b>' + esc(L("fb_signin_method", "Sign-in method")) + '</b> tab.</li><li>Choose <b>' + esc(L("fb_anonymous", "Anonymous")) + '</b>.</li><li>Switch it on and tap <b>' + esc(L("fb_save", "Save")) + '</b>.</li></ol>' +
+        body: function () { return '<ol><li>On the left, under <b>Project shortcuts</b>, click <b>' + esc(L("fb_auth", "Authentication")) + '</b>. The first time, tap <b>' + esc(L("fb_get_started", "Get started")) + '</b>.</li>' +
+          '<li>Open the <b>' + esc(L("fb_signin_method", "Sign-in method")) + '</b> tab.</li>' +
+          '<li>Under <b>Native providers</b>, click <b>' + esc(L("fb_anonymous", "Anonymous")) + '</b>.</li>' +
+          '<li>Switch on <b>' + esc(L("fb_enable", "Enable")) + '</b> and tap <b>' + esc(L("fb_save", "Save")) + '</b>. It then shows <b>Enabled</b>.</li></ol>' +
+          '<p>Leave <b>Enable Auto clean-up</b> unticked.</p>' +
+          '<p><b>You can ignore</b> the box about Firebase Dynamic Links, the yellow "Sign in with Google is recommended" bar (this program doesn\'t use passwords), and SMS Multi-factor / Upgrade to enable.</p>' +
           '<p class="dd-note">This lets your own programs sign in to your database without a password. Nobody gets an account.</p>'; },
-        stuck: ["Can't find Authentication? It's in the list on the left, sometimes under Build or Security."], guide: "sync_auth" },
+        stuck: ["Save is grey? Switch on Enable first.", "Already shows Anonymous: Enabled? Then this step is done: tap Next."], guide: "sync_auth" },
       { title: "Make the database",
-        todo: function () { return "Create a <b>" + esc(L("fb_rtdb", "Realtime Database")) + "</b> in <b>locked mode</b>."; },
-        body: function () { return '<p>Open <b>' + esc(L("fb_rtdb", "Realtime Database")) + '</b> (under Build or Databases) and tap <b>' + esc(L("fb_create_db", "Create Database")) + '</b>.</p>' +
-          '<ul><li><b>Location</b>: <b>United States</b> if you\'re in Canada or the US. In the UK or Europe, <b>Belgium (europe-west1)</b>.</li>' +
-          '<li>Choose <b>' + esc(L("fb_locked", "Start in locked mode")) + '</b>, then <b>' + esc(L("fb_enable", "Enable")) + '</b>.</li></ul>' +
-          '<p class="dd-note">Make sure it\'s <b>Realtime Database</b>, not Firestore.</p>'; },
-        stuck: ["Picked Firestore by mistake? That's fine, just leave it. Open Realtime Database and create that one too."], guide: "sync_db" },
+        pic: function () { return { kind: "page", site: L("fb_rtdb", "Realtime Database"), items: [{ type: "select", label: "Location", value: "United States" }, { type: "check", label: L("fb_locked", "Start in locked mode") }], btn: L("fb_enable_db", "Enable") }; },
+        todo: function () { return "Create a <b>" + esc(L("fb_rtdb", "Realtime Database")) + "</b>: United States, locked mode."; },
+        body: function () { return '<ol><li>On the left, open <b>' + esc(L("fb_db_menu", "Databases & Storage")) + '</b> and click <b>' + esc(L("fb_rtdb", "Realtime Database")) + '</b> (under NoSQL). <i>Not Firestore</i>: that\'s a different database.</li>' +
+          '<li>Tap <b>' + esc(L("fb_create_db", "Create Database")) + '</b>.</li>' +
+          '<li>Location: <b>United States</b> if you\'re in Canada or the US. In the UK or Europe, <b>Belgium (europe-west1)</b>.</li>' +
+          '<li>Choose <b>' + esc(L("fb_locked", "Start in locked mode")) + '</b>, then tap <b>' + esc(L("fb_enable_db", "Enable")) + '</b>.</li></ol>' +
+          '<p><b>You can ignore</b> Ask Gemini. If a banner says <i>Configure App Check</i>, close it with ✕ and <b>don\'t</b> turn App Check on: it would block the program.</p>'; },
+        stuck: ["Picked Firestore by mistake? That's fine, just leave it. Open Realtime Database and create that one too.", "Already made it? Its page shows an address ending in firebaseio.com. Tap Next."], guide: "sync_db" },
       { title: "Paste the rules",
+        pic: function () { return { kind: "page", site: L("fb_rtdb", "Realtime Database") + " · " + L("fb_rules", "Rules"), items: [{ type: "lines" }], btn: L("fb_publish", "Publish") }; },
         todo: function () { return "On the <b>" + esc(L("fb_rules", "Rules")) + "</b> tab, replace everything with these rules and tap <b>" + esc(L("fb_publish", "Publish")) + "</b>."; },
-        body: function () { return '<p>In Realtime Database, open the <b>' + esc(L("fb_rules", "Rules")) + '</b> tab. Select everything in the box, delete it, and paste these instead:</p>' +
+        body: function () { return '<p>On the database\'s page, open the <b>' + esc(L("fb_rules", "Rules")) + '</b> tab (next to Data). Click inside the box, select everything (Ctrl+A, or Cmd+A on a Mac), delete it, and paste these instead:</p>' +
           '<pre class="dd-rules" id="dd-rules"></pre><div class="dd-btnrow"><button class="dd-btn small ghost" data-copyrules>Copy the rules</button></div>' +
           '<p>Then tap <b>' + esc(L("fb_publish", "Publish")) + '</b>.</p>' +
-          '<p class="dd-note">The rules let only signed-in copies of your programs read and write, each in its own private place, and nothing else.</p>'; },
+          '<p class="dd-note">The rules let only signed-in copies of your programs read and write, each at its own secret address, and nothing else.</p>'; },
         mount: function (c) {
           var pre = c.el.querySelector("#dd-rules"); pre.textContent = dd.sync.rules;
           c.el.querySelector("[data-copyrules]").addEventListener("click", function (e) {
@@ -904,15 +919,18 @@
               function () { var r = document.createRange(); r.selectNodeContents(pre); var s = getSelection(); s.removeAllRanges(); s.addRange(r); try { document.execCommand("copy"); b.textContent = "Copied ✓"; } catch (x) {} });
           });
         },
-        stuck: ["Publish greyed out? Click inside the box and type a space, then delete it."], guide: "sync_rules" },
+        stuck: ["Publish greyed out? Click inside the box and type a space, then delete it.", "Rules playground is for testing: you can ignore it."], guide: "sync_rules" },
       { title: "Copy your setup code",
-        todo: function () { return "Register a web app and copy the whole <b>firebaseConfig</b> box."; },
-        body: function () { return '<p>Tap the ⚙️ next to <b>Project Overview</b>, then <b>' + esc(L("fb_project_settings", "Project settings")) + '</b>. Under <b>' + esc(L("fb_your_apps", "Your apps")) + '</b>, tap the web button <b>&lt;/&gt;</b>.</p>' +
-          '<ul><li>Nickname: anything, like <i>My programs</i>.</li><li><b>You can ignore</b> Firebase Hosting. Leave it unticked.</li>' +
-          '<li>Tap <b>' + esc(L("fb_register", "Register app")) + '</b>.</li></ul>' +
-          '<p>Firebase then shows a box of code with <b>firebaseConfig</b> in it. Copy the whole box.</p>' +
-          '<p class="dd-note">Already registered an app? Your setup code is on the same page, under Your apps, then SDK setup and configuration, then Config.</p>'; },
-        stuck: ["Copy everything from const firebaseConfig to the closing };. Extra bits don't matter: the program picks out what it needs."], guide: "sync_config" },
+        pic: function () { return { kind: "page", site: "Add Firebase to your web app", items: [{ type: "field", label: L("fb_nickname", "App nickname"), value: "My programs" }, { type: "code", value: "const firebaseConfig = {", btn: "📋" }], btn: L("fb_register", "Register app") }; },
+        todo: function () { return "Register a web app, then copy the box with <b>firebaseConfig</b> in it."; },
+        body: function () { return '<ol><li>On the left, click <b>' + esc(L("fb_settings", "Settings")) + '</b>, then <b>' + esc(L("fb_general", "General")) + '</b>.</li>' +
+          '<li>Scroll to <b>' + esc(L("fb_your_apps", "Your apps")) + '</b> and click the web button <b>&lt;/&gt;</b>.</li>' +
+          '<li>Type an <b>' + esc(L("fb_nickname", "App nickname")) + '</b>, like <i>My programs</i>. Leave <b>Firebase Hosting</b> unticked. Tap <b>' + esc(L("fb_register", "Register app")) + '</b>.</li>' +
+          '<li>Under <b>' + esc(L("fb_add_sdk", "Add Firebase SDK")) + '</b>, click the copy icon at the <b>bottom right of the big box</b> (the one with <i>firebaseConfig</i> in it).</li>' +
+          '<li>Tap <b>' + esc(L("fb_continue_console", "Continue to console")) + '</b>.</li></ol>' +
+          '<p><b>You can ignore</b> the small <i>npm install firebase</i> box, "Use a &lt;script&gt; tag", and the "register a web app with an AI coding agent" box.</p>' +
+          '<p class="dd-note">Already registered an app? Your setup code is on the same Settings page, under Your apps, then SDK setup and configuration.</p>'; },
+        stuck: ["Copy the whole big box. Extra bits don't matter: the program picks out what it needs.", "The setup code isn't a password: it only says where your database is."], guide: "sync_config" },
       { title: "Paste it here",
         pic: { kind: "page", site: "this page", items: [{ type: "field", label: "Firebase setup code", value: "const firebaseConfig = {" }], btn: "Connect" },
         todo: "Paste the setup code in the box below, then tap Connect.",

@@ -177,10 +177,6 @@ class FakeFirebase:
                 if self.rules_closed or token not in self.tokens: return False, 0
                 for s, _ in changes:
                     if not self._ledger(s): return False, 0
-                trial = json.loads(json.dumps(self.tree))
-                for s, v in changes: trial = _set(trial, s, v)
-                for s, _ in changes:
-                    if not self.valid_ledger(_get(trial, s[:3])): return False, 0
             for s, v in changes: self.tree = _set(self.tree, s, v)
             self.seq += 1; self.writes += 1
             for sp, qu in self.subs:
@@ -219,6 +215,10 @@ export function getAuth(app) {
     app._auth = { app, currentUser: t ? { uid: t, isAnonymous: true } : null, authStateReady: () => Promise.resolve() };
   }
   return app._auth;
+}
+export function signOut(auth) {
+  localStorage.removeItem("fakeauth_" + auth.app.options.apiKey);
+  auth.currentUser = null; auth.app._token = null; return Promise.resolve();
 }
 export async function signInAnonymously(auth) {
   if (window.__fakeOffline) { const e = new Error("Firebase: Error (auth/network-request-failed)."); e.code = "auth/network-request-failed"; throw e; }

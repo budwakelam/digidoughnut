@@ -78,7 +78,7 @@ with sync_playwright() as p:
     check("garbage is refused", page.evaluate("() => [dd.sync.parseConfig('hello'), dd.sync.parseConfig(''), dd.sync.parseConfig('{\"apiKey\":\"x\"}')].every(x => x === null)"))
     rules = page.evaluate("() => JSON.parse(dd.sync.rules)")
     led = rules["rules"]["sync"]["$program"]["$ledger"]
-    check("rules: signed-in only, 32-character ledgers, nothing else readable", "auth != null" in led[".read"] and "length == 32" in led[".write"] and list(rules["rules"].keys()) == ["sync"])
+    check("rules: short, signed-in only, 32-character ledgers, nothing else readable", "auth != null" in led[".read"] and "length == 32" in led[".write"] and list(rules["rules"].keys()) == ["sync"] and len(json.dumps(rules, indent=2).splitlines()) <= 12)
     weird = {"items": [{"id": "a.b/c#1", "text": "x", "n": None, "arr": [1, 2], "o": {"k": ""}}, {"id": "z", "text": "y"}], "title": "t", "count": 0, "empty": [], "tags": ["a", "b"]}
     back = page.evaluate("(d) => dd.sync.fromFlat(dd.sync.toFlat(d))", weird)
     check("round trip keeps nulls, empty text, empty lists, order and odd ids", back == weird, back)
@@ -239,6 +239,13 @@ with sync_playwright() as p:
     check("Sync section: state, database, pushes, remote updates", all(w in d for w in ["--- Sync ---", "State: on", "my-dd", "Pushes sent / confirmed", "Remote updates", "connected: yes"]), d[-900:])
     check("only the first 6 characters of the ledger", ledger(pc)[:6] + "…" in d and ledger(pc) not in d)
     check("Backup section", "--- Backup ---" in d)
+
+    print("A stale sign-in (Firebase's Auto clean-up) heals itself")
+    FB.tokens.clear()
+    add(pc, "After cleanup")
+    check("the database says no, the program signs in again, and the change arrives", wait_items(ph, items(pc)) and "After cleanup" in items(ph), items(ph))
+    check("chip back to In step", wait_chip(pc, "In step"), chip(pc))
+    check("support report notes the fresh sign-in", "signed in again 1x" in pc.evaluate("() => dd.diag.text()"))
 
     print("Turn off, and a reload remembers")
     ph.evaluate("() => dd.sync.stop()")

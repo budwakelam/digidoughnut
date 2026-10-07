@@ -190,3 +190,23 @@ Collected as decisions come up; folded into handoff.md later.
 - STILL TO DO: Oran's screenshots -> verify/fix the wizard + pictures; Oran's PC + iPhone run on
   github.io with his real Firebase project; watch his inbox a few days for any Firebase rules
   email (we expect none with auth != null, but it's unverified).
+
+### Phase 5, Oran's first real run (2026-10-07, 16:37) — PASSED both ways on PC + iPhone (tiiny)
+
+- Firebase project "etsy" (etsy-d95c1, Spark, Realtime Database us-central1). Support report:
+  connected, pushes 1/1, 5 remote updates (2 applied), no problems. Live sync both ways works.
+- Oran: the 46-line rules looked excessive next to his POC's 11. Rules cut to the short version
+  (signed-in + 32-char ledger only); the program checks shape itself with validateData.
+- Wizard screens rewritten from his screenshots (see the comment above setup.wizards.sync):
+  left menu "Project shortcuts > Authentication" (Get started first time) > Sign-in method >
+  Native providers > Anonymous > Enable > Save; "Databases & Storage > Realtime Database"
+  (under NoSQL) > Create Database > United States > Start in locked mode > Enable; Rules tab >
+  Publish; Settings > General > Your apps > </> > App nickname > Register app > Add Firebase SDK
+  > copy icon bottom-right of the big box > Continue to console. The config included
+  databaseURL (database made before the app). Create-project screens still unseen.
+- Ignore lists added: Gemini cards / Ask Gemini, Dynamic Links box, yellow "Sign in with
+  Google is recommended" bar, SMS Multi-factor, Rules playground, npm / script tag, AI coding
+  agent box. Never turn on App Check (it would block the program). Leave Auto clean-up unticked.
+- If the database says no (stale sign-in, e.g. Auto clean-up after 30 days), dd.sync signs out,
+  signs in afresh and tries once (at most once a minute); the report says "signed in again Nx".
+- sync_test: 81 checks (adds the stale sign-in case).
