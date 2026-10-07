@@ -30,7 +30,9 @@
   ai.providers = {
     google: {
       id: "google", label: "Google", adapter: "gemini",
-      codePattern: /^AIza[0-9A-Za-z_\-]{30,}$/,
+      // "AQ." = auth keys, the only kind AI Studio creates since 2026-05-28; "AIza" = older
+      // standard keys, which Google is retiring (rejected from Sept 2026 per Google's notice).
+      codePattern: /^(AQ\.[0-9A-Za-z_.\-]{20,}|AIza[0-9A-Za-z_\-]{30,})$/,
       getCodeUrl: "https://aistudio.google.com/apikey",   // overridable via noticeboard helpLinks.getCode_google
       base: "https://generativelanguage.googleapis.com/v1beta",
       free: true,
