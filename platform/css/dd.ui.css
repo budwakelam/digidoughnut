@@ -133,3 +133,4 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
 .dd-choice-btn:first-child{border-color:var(--dd-brand)}
 .dd-choice-btn:hover{background:var(--dd-brand-soft)}
 .dd-choice-btn b{font-size:1.05rem;color:var(--dd-brand)} .dd-choice-btn span{font-size:.88rem;color:var(--dd-muted)}
+.dd-copyrow{display:flex;gap:8px;align-items:center;margin:6px 0} .dd-copyrow .dd-filename{flex:1;margin:0}

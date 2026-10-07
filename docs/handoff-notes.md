@@ -72,3 +72,11 @@ Collected as decisions come up; folded into handoff.md later.
   -> error type `host_blocked` ("The website hosting this page won't let the helper reach
   Google"), the model search stops at once, and the support report lists blocked addresses.
 - Oran: GitHub Pages (the buyer's own free account) is to be the number one host. Next.
+- GitHub Pages wizard built (first choice; tiiny second; Neocities parked). Buyer's own free
+  account, repo `<username>.github.io`, address `https://<username>.github.io/<file>`, so every
+  DigiDoughnut program they buy shares one address (and one helper code). Steps from GitHub docs
+  2026-10-07; logged-out sign-up/new-repo/upload/Pages screens NOT yet seen: Oran to screenshot.
+  Wizard checks the address is live (Pages allows reading its answers) before moving on.
+  Mandatory 2FA applies to "contributors" (releases, apps, org owners), not a plain upload.
+  GitHub's Pages terms forbid running an online business/SaaS on Pages; a buyer hosting a
+  personal tool is most likely fine (grey area for business tools like Profit Coach).

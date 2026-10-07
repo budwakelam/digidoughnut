@@ -27,7 +27,7 @@
       done: function () { return true; } },
     { id: "ai", title: "Turn on the helper", gives: "The AI helper and every smart feature.", time: "About 2 minutes",
       done: function () { return !!(dd.ai && dd.ai.hasCode()); }, wizard: "ai" },
-    { id: "phone", title: "Put it on your phone", gives: "The same program on your phone, moved over by scanning a code.", time: "About 5 minutes",
+    { id: "phone", title: "Put it on your phone", gives: "The same program on your phone, moved over by scanning a code.", time: "About 10 minutes",
       done: function () { return dd.env.isHosted; }, wizard: "host" },
     { id: "sync", title: "Keep devices in step", gives: "Changes on one device show up on the other.", time: "About 10 minutes",
       done: function () { return !!(dd.sync && dd.sync.isOn && dd.sync.isOn()); }, wizard: "sync" }
@@ -208,7 +208,7 @@
   /* Returns Promise<{text, live}>. Live AI when a code works; otherwise (or if the AI fails)
      the scripted answer. The scripted guide never pretends to be the AI. */
   setup.answer = function (question, where) {
-    var scripted = setup.scriptedAnswer(question);
+    var scripted = setup.scriptedAnswer(question, where && where.id);
     if (!(dd.ai && dd.ai.hasCode())) return Promise.resolve({ text: scripted || setup.noMatch, live: false });
     var wiz = where && where.wiz, sc = wiz && wiz.screens[where.at];
     var context = "The buyer is in the '" + (wiz ? wiz.title : "setup") + "' wizard, on step " + (where ? where.at + 1 : "?") +
@@ -231,6 +231,8 @@
   /* ---------- the scripted question bank (spec 3.8: all must be answered in-wizard) ---------- */
   setup.noMatch = "I don't have a ready answer for that one. Try the \"I'm stuck\" button, or tap Finish later and come back any time.";
   setup.bank = [
+    { keys: ["free", "cost", "pay", "price", "charge", "money"], for: /^host_github/, a: "Yes. GitHub's free plan is all you need: no card, no trial, and your page doesn't expire." },
+    { keys: ["free", "cost", "pay", "price", "charge", "money"], for: /^host_tiiny/, a: "Yes. tiiny.host's free plan is enough for one program. Skip the free trial they offer: it turns into a paid plan." },
     { keys: ["free", "cost", "pay", "price", "charge", "money"], a: "Yes, it's free. Google gives every account a free daily share. If you ever use it up, it refills on its own. You won't be charged." },
     { keys: ["credit card", "card", "billing", "bank"], a: "No credit card needed. If Google ever asks for billing, you've gone somewhere you don't need. Tap Back and use the button on the screen before." },
     { keys: ["account", "gmail", "sign in", "log in", "login", "google account"], a: "Any Google account works, the same one you use for Gmail or YouTube. If you don't have one, Google lets you make one for free." },
@@ -242,10 +244,14 @@
     { keys: ["mistake", "wrong", "messed up", "undo", "break", "broke", "start over"], a: "Nothing can break. Every step can be done again: tap Start over, or Back. Your numbers in the program are never touched by setup." },
     { keys: ["safe", "private", "privacy", "share", "who can see", "secure"], a: "Your code stays in this browser on this device. Your numbers stay here too. When you use the helper, the numbers it needs go to Google to get an answer." },
     { keys: ["ignore", "skip", "terms", "email", "updates", "checkbox", "tick"], a: "Tick the box agreeing to Google's terms (you have to). Any box about emails or news is up to you: you can leave it empty." },
-    { keys: ["long", "time", "how many", "minutes"], a: "About 2 minutes for the helper, 5 for the phone, 10 for sync. You can stop any time and pick up where you left off." },
+    { keys: ["long", "time", "how many", "minutes"], a: "About 2 minutes for the helper, 5 to 10 for the phone, 10 for sync. You can stop any time and pick up where you left off." },
     { keys: ["api", "key", "what is", "access code"], a: "Google calls it an API key. We call it your free access code: it's how the helper gets to use Google's AI for free." },
     { keys: ["tiiny", "tiny host", "neocities", "hosting", "online", "upload", "address", "link", "website"], a: "Neocities or tiiny.host puts your program online for free, so your phone can open it. Your numbers and your code are never uploaded: they stay on your own devices." },
     { keys: ["which one", "neocities or", "difference", "better", "choose", "pick"], a: "Pick Neocities if you're not sure. One free Neocities account holds all your DigiDoughnut programs and shows no ads. tiiny.host holds one program per free account." },
+    { keys: ["github", "repository", "repo"], a: "GitHub is a free place to keep files online, and it can show a file as a web page. Your program file goes there; your numbers and your code never do." },
+    { keys: ["public", "who can see"], a: "Public means anyone could look at the program file itself, like any web page. Your numbers and your code are never in the file: they stay on your own devices." },
+    { keys: ["not online", "not live", "404", "not found", "isn t there", "still waiting"], a: "GitHub can take up to 10 minutes to put a new site online. Check Settings, Pages: Branch should say main, and Save should have been tapped." },
+    { keys: ["readme"], a: "Turn on Add README when you create the repository. It's a small text file GitHub needs to start the repository; you can ignore it after that." },
     { keys: ["username", "user name"], a: "On Neocities, your username becomes your web address: username.neocities.org. Letters, numbers and hyphens only. Anything you like, for example yourname-tools." },
     { keys: ["supporter", "5 a month", "card number", "plan"], a: "Pick Free and tap Continue. You don't need the Supporter plan, and you never need to enter a card." },
     { keys: ["confirmation", "token", "email code", "didn t get", "no email"], a: "Neocities emails you a code: paste it into Email Confirmation Token and tap Confirm Email. No email? Check spam, or tap Resend Confirmation Email." },
@@ -256,17 +262,21 @@
     { keys: ["phone", "iphone", "android", "mobile"], a: "Setting up the helper is easiest on a computer. Once it works, Send to my phone moves it over by scanning a code." }
   ];
   setup.suggestQuestions = function (wizardId) {
+    if (wizardId === "host_github") return ["Is GitHub really free?", "What does Public mean?", "It's not online yet"];
     if (/^host_neo/.test(wizardId || "")) return ["Which username?", "Do I need Supporter?", "No email came"];
     if (/^host/.test(wizardId || "")) return ["Is it really free?", "Do I need the free trial?", "How long does it stay online?"];
     return wizardId === "sync" ? ["Which region?", "Locked or test mode?", "Where's the setup code?"]
                                : ["Is it really free?", "Do I need a credit card?", "What if I make a mistake?"];
   };
-  setup.scriptedAnswer = function (q) {
+  /* Best keyword match. Answers written for one wizard ("for") win inside it and lose elsewhere. */
+  setup.scriptedAnswer = function (q, wizardId) {
+    var wid = wizardId || (cur && cur.id) || "";
     var t = " " + String(q).toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ") + " ";
     var best = null, bestScore = 0;
     setup.bank.forEach(function (e) {
       var score = 0;
       e.keys.forEach(function (k) { if (t.indexOf(" " + k + " ") >= 0 || (k.length > 4 && t.indexOf(k) >= 0)) score += k.split(" ").length; });
+      if (score > 0 && e.for) score += e.for.test(wid) ? 2 : -100;
       if (score > bestScore) { bestScore = score; best = e; }
     });
     if (!best) return null;
@@ -372,7 +382,7 @@
     return "https://" + t + ".neocities.org/" + encodeURIComponent(fileName());
   };
 
-  var facts = '<ul class="dd-facts"><li>✓ Free. No credit card.</li><li>✓ About 5 minutes.</li><li>✓ Your numbers and your code are never uploaded.</li></ul>';
+  var facts = '<ul class="dd-facts"><li>✓ Free. No credit card.</li><li>✓ About 5 to 10 minutes.</li><li>✓ Your numbers and your code are never uploaded.</li></ul>';
   var publicNote = '<p class="dd-note">The page itself can be opened by anyone who has its address, like a shared link. What you type into it stays on each of your own devices.</p>';
   function phoneWarn() { return dd.env.isPhone ? '<p class="dd-status show warn">Do this step on the computer where you saved the program file. Then come back to your phone at the end.</p>' : ""; }
 
@@ -381,8 +391,14 @@
      Seen on Oran's site; the helper said "no internet". Its wizard stays below for a paid plan
      or a policy change, but isn't offered. When only one service is offered, the choice screen
      is skipped. */
-  setup.hostChoices = ["tiiny"];
+  setup.hostChoices = ["github", "tiiny"];
   function hostChoice() { return setup.hostChoices.length === 1 ? setup.hostChoices[0] : null; }
+
+  var HOSTS = {
+    github: { name: "GitHub", blurb: "Recommended. Free, no ads, never expires, and one account holds all your DigiDoughnut programs. About 10 minutes." },
+    tiiny: { name: "tiiny.host", blurb: "Quicker to set up, but one program per free account, and you log in every 3 months to keep it online." },
+    neocities: { name: "Neocities", blurb: "Free, but its free plan blocks the helper." }
+  };
 
   /* Screen 1, shared: why, then pick a service. */
   setup.wizards.host = {
@@ -391,9 +407,8 @@
       { title: "Put it online, for free",
         body: function () { return '<p>Your phone can\'t open a file that lives on this computer. So first we put the program online, at its own web address, using a free service.</p>' +
           facts + phoneWarn() +
-          '<div class="dd-choice">' +
-            '<button class="dd-choice-btn" data-host="neocities"><b>Neocities</b><span>Recommended. One free account holds all your DigiDoughnut programs. No ads.</span></button>' +
-            '<button class="dd-choice-btn" data-host="tiiny"><b>tiiny.host</b><span>Also free, but holds one program per account.</span></button>' +
+          '<div class="dd-choice">' + setup.hostChoices.map(function (id) { var o = HOSTS[id];
+            return '<button class="dd-choice-btn" data-host="' + id + '"><b>' + esc(o.name) + '</b><span>' + esc(o.blurb) + '</span></button>'; }).join("") +
           '</div>' + publicNote; },
         mount: function (c) {
           c.el.querySelectorAll("[data-host]").forEach(function (b) { b.addEventListener("click", function () {
@@ -420,14 +435,16 @@
           c.status(made.left.length ? "warn" : "ok", made.left.length ? "Opened. Your " + made.left.join(" and ") + " were too big to carry, so they stay here for now." : "Opened in a new tab. Check it, then come back here and tap Next.");
         } },
         stuck: ["Nothing opened? Your browser may have blocked the new tab. Allow pop-ups for this page, or tap the button again.",
-                svc === "neocities" ? "Page not found? Check the upload finished, and that your username is right: tap Back to fix it."
+                svc !== "tiiny" ? "Page not found? Check the upload finished, and that your username is right: tap Back to fix it."
                                     : "If the new page looks empty, check the address you pasted: tap Back and fix it."], guide: "host_move" },
       { title: "Bookmark it and keep it",
         body: function () { return '<p class="dd-big-tick">✓</p><p>In the new tab, <b>bookmark the page</b> (Ctrl+D on Windows, Cmd+D on a Mac). Name the bookmark:</p>' +
           '<p class="dd-filename">' + esc(setup.bookmarkName()) + '</p>' +
           '<p>From now on, always open the program from that bookmark.</p>' +
           '<ul><li><b>Same address, same numbers.</b> A different address, or the file on this computer, starts with its own separate numbers.</li>' +
-          (svc === "tiiny"
+          (svc === "github"
+            ? '<li><b>Getting an update?</b> Upload the new file to the same GitHub repository with the <b>same file name</b>. It replaces the old one and keeps the same address.</li>'
+            : svc === "tiiny"
             ? '<li><b>Log in to tiiny.host at least once every 3 months.</b> That keeps your free page online.</li>' +
               '<li><b>Getting an update?</b> On tiiny.host, use <b>' + esc(L("host_update", "Update")) + '</b> on this same project. Don\'t upload it as a new one.</li>'
             : '<li><b>Getting an update?</b> Upload the new file to Neocities with the <b>same file name</b>. It replaces the old one and keeps the same address.</li>') +
@@ -481,6 +498,111 @@
         },
         guide: "neo_address" }
     ].concat(finishScreens("neocities"))
+  };
+
+  /* GitHub Pages (Oran's number one, 2026-10-07): the buyer's own free GitHub account, one
+     repository named <username>.github.io that holds every DigiDoughnut program they buy, at
+     https://<username>.github.io/<file name>. No outside-connection block (checked: the
+     DigiDoughnut noticeboard is on Pages too), no ads, no expiry. Steps from GitHub's docs
+     (2026-10-07): New repository (name <username>.github.io, Public, "Add README" on, "Create
+     repository"); "Add file" > "Upload files" > "Commit changes"; Settings > Pages > "Deploy
+     from a branch" > main > Save; live within ~10 minutes. Logged-out sign-up screens NOT yet
+     seen: labels go through L() so the noticeboard can correct them. */
+  function ghUser() { return (state().ghUser || "").toLowerCase(); }
+  setup.githubAddress = function (user) {
+    user = String(user || "").trim().toLowerCase().replace(/^@/, "").replace(/^https?:\/\//, "").replace(/\.github\.io.*$/, "").replace(/^github\.com\//, "").replace(/\/.*$/, "");
+    if (!/^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9])){0,38}$/.test(user)) return null;
+    return { user: user, repo: user + ".github.io", url: "https://" + user + ".github.io/" + encodeURIComponent(fileName()) };
+  };
+  function copyBox(text) {
+    return '<div class="dd-copyrow"><span class="dd-filename">' + esc(text) + '</span><button class="dd-btn small ghost" data-copytext="' + esc(text) + '">Copy</button></div>';
+  }
+  function wireCopy(c) {
+    c.el.querySelectorAll("[data-copytext]").forEach(function (b) { b.addEventListener("click", function () {
+      var t = b.dataset.copytext;
+      (navigator.clipboard && window.isSecureContext ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { b.textContent = "Copied ✓"; },
+        function () { var r = document.createRange(); r.selectNodeContents(b.previousSibling); var s = getSelection(); s.removeAllRanges(); s.addRange(r); try { document.execCommand("copy"); b.textContent = "Copied ✓"; } catch (e) {} });
+    }); });
+  }
+
+  setup.wizards.host_github = {
+    title: "Put it on your phone · GitHub", parent: "host",
+    onDone: function () { dd.ui.toast("Use your new address from now on. Bookmark it!", 4500); },
+    screens: [
+      { title: "Make a free GitHub account",
+        body: function () { return '<p>GitHub is where people keep files online, and it can show a file as a web page for free. Tap the button to open GitHub\'s sign-up page:</p>' +
+          '<ul><li>Type your <b>email</b>, a <b>password</b>, and a <b>username</b>. The username becomes your web address, so keep it simple, like <i>smith-tools</i>.</li>' +
+          '<li>GitHub may ask you to solve a small picture puzzle, then sends a code to your email. Type it in.</li></ul>' +
+          '<p><b>You can ignore</b> any questions about teams, plans, Copilot or what you\'ll build. Skip them, or pick the free option.</p>' +
+          '<p class="dd-note">Already have GitHub? Just sign in and tap Next.</p>' + phoneWarn(); },
+        action: { label: "Open GitHub sign-up", run: function (c) { c.open(link("gh_signup", "https://github.com/signup")); } },
+        stuck: ["GitHub can also sign you up with your Google account: look for Continue with Google.",
+                "No email code? Check your spam folder. The code expires after a while; ask GitHub to send a new one."], guide: "gh_signup" },
+      { title: "Your GitHub username",
+        body: function () { return '<p>Type the username you picked on GitHub.</p>' +
+          '<input class="dd-input" id="dd-wiz-user" placeholder="e.g. smith-tools" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + esc(state().ghUser || "") + '">' +
+          '<p class="dd-note">It\'s shown when you tap your picture at the top right of GitHub.</p>'; },
+        mount: function (c) { var i = c.el.querySelector("#dd-wiz-user"); if (!dd.env.isPhone && !i.value) i.focus(); },
+        check: function (c) {
+          var a = setup.githubAddress(c.el.querySelector("#dd-wiz-user").value);
+          if (!a) { c.status("warn", "Type your GitHub username first.", "Letters, numbers and single hyphens, like smith-tools."); return false; }
+          var s = state(); s.ghUser = a.user; saveState(s); hostState(a.url); return true;
+        } },
+      { title: "Make a home for your programs",
+        body: function () { var a = setup.githubAddress(ghUser()) || { repo: "yourname.github.io" };
+          return '<p>Tap the button. On GitHub\'s <b>' + esc(L("gh_new_repo", "Create a new repository")) + '</b> page:</p>' +
+          '<ol><li>Under <b>' + esc(L("gh_repo_name", "Repository name")) + '</b>, type exactly:' + copyBox(a.repo) + '</li>' +
+          '<li>Keep it <b>' + esc(L("gh_public", "Public")) + '</b>.</li>' +
+          '<li>Turn on <b>' + esc(L("gh_readme", "Add README")) + '</b>.</li>' +
+          '<li>Tap <b>' + esc(L("gh_create_repo", "Create repository")) + '</b>.</li></ol>' +
+          '<p><b>You can ignore</b> description, template, .gitignore and license.</p>'; },
+        mount: wireCopy,
+        action: { label: "Open GitHub: new repository", run: function (c) { c.open(link("gh_new", "https://github.com/new")); } },
+        stuck: ["The name must be exactly your username followed by .github.io, all lower case.",
+                "Already made it before? Then it already exists: tap Next.",
+                "\"Public\" only means the program file can be seen. Your numbers and your code are never in it."], guide: "gh_repo" },
+      { title: "Upload this program",
+        body: function () { return '<p>On your new repository\'s page, tap <b>' + esc(L("gh_add_file", "Add file")) + '</b>, then <b>' + esc(L("gh_upload", "Upload files")) + '</b>, and choose this file:</p>' +
+          '<p class="dd-filename">' + esc(fileName()) + '</p>' +
+          '<p>Then tap the green <b>' + esc(L("gh_commit", "Commit changes")) + '</b> button at the bottom.</p>' +
+          '<p><b>You can ignore</b> the boxes for a message or description. Don\'t rename the file: its name becomes part of its address.</p>'; },
+        action: { label: "Open my repository", run: function (c) { var a = setup.githubAddress(ghUser()); c.open(a ? "https://github.com/" + a.user + "/" + a.repo : "https://github.com/"); } },
+        stuck: ["Can't find the file? On Windows, open File Explorer and look in Downloads. On a Mac, open Finder and look in Downloads.",
+                "You can also drag the file from your folder onto the GitHub page."], guide: "gh_upload" },
+      { title: "Turn on the website",
+        body: function () { return '<p>Tap the button. It opens your repository\'s <b>' + esc(L("gh_pages", "Pages")) + '</b> settings. There:</p>' +
+          '<ol><li>Under <b>' + esc(L("gh_source", "Source")) + '</b>, pick <b>' + esc(L("gh_deploy_branch", "Deploy from a branch")) + '</b>.</li>' +
+          '<li>Under <b>' + esc(L("gh_branch", "Branch")) + '</b>, pick <b>main</b>, leave <b>/ (root)</b> as it is, and tap <b>' + esc(L("gh_save", "Save")) + '</b>.</li></ol>' +
+          '<p><b>You can ignore</b> custom domains, themes and everything else on that page.</p>' +
+          '<p class="dd-note">Already says your site is live? Then it\'s on already: tap Next.</p>'; },
+        action: { label: "Open the Pages settings", run: function (c) { var a = setup.githubAddress(ghUser()); c.open(a ? "https://github.com/" + a.user + "/" + a.repo + "/settings/pages" : "https://github.com/"); } },
+        stuck: ["Don't see Settings? It's along the top of your repository, on the right. Pages is in the list on the left.",
+                "Branch shows \"None\"? Click it and choose main, then Save."], guide: "gh_pages" },
+      { title: "Wait for it to go live",
+        body: function () { var a = setup.githubAddress(ghUser());
+          return '<p>GitHub takes a few minutes, sometimes up to 10, to put a new website online. Your program\'s address will be:</p>' +
+            (a ? '<p class="dd-filename">' + esc(a.url.replace(/^https:\/\//, "")) + '</p>' : "") +
+            '<p>Tap <b>Next</b> and we\'ll check whether it\'s ready.</p>'; },
+        check: function (c) {
+          var url = hostState(); if (!url) return true;
+          c.status("info", "Checking your address…");
+          return setup.isLive(url).then(function (live) {
+            if (live === false) { c.status("warn", "Not online yet.", "GitHub can take up to 10 minutes. Wait a minute, then tap Next again."); return false; }
+            return true;   // live, or we couldn't tell: carry on, the next screen shows the page itself
+          });
+        },
+        stuck: ["Still not online after 10 minutes? Tap Back and check that Branch is set to main and saved.",
+                "Check the file name on GitHub matches the one shown here exactly."], guide: "gh_wait" }
+    ].concat(finishScreens("github"))
+  };
+
+  /* true = answers, false = not there yet (404), null = couldn't tell. GitHub Pages lets other
+     pages read its answers, so a plain request shows whether the file is online yet. */
+  setup.isLive = function (url) {
+    var ctl = new AbortController(), t = setTimeout(function () { ctl.abort(); }, 8000);
+    return fetch(url, { method: "GET", cache: "no-store", credentials: "omit", signal: ctl.signal })
+      .then(function (r) { return r.ok ? true : (r.status === 404 ? false : null); }, function () { return null; })
+      .finally(function () { clearTimeout(t); });
   };
 
   setup.wizards.host_tiiny = {
