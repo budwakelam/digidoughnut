@@ -62,3 +62,13 @@ Collected as decisions come up; folded into handoff.md later.
   the code + numbers carried in the link (dd.pair.makeLink with base + maxLink 60000), so nothing
   typed into the file version is lost. Hosted card row then offers "Send to my phone".
 - OPEN, Oran's call: free plan holds ONE program per tiiny account (see reply 2026-10-07).
+
+## Hosting findings (2026-10-07, later)
+
+- **Neocities free plan is unusable**: it sends `connect-src 'self' data: blob:` (checked on
+  digidoughnut.neocities.org), so the page can't reach Google, Firebase or the noticeboard. The
+  helper reported "no internet". Its wizard is kept but parked (`setup.hostChoices = ["tiiny"]`).
+- The platform now detects this: a `securitypolicyviolation` within 5 s of a failed request
+  -> error type `host_blocked` ("The website hosting this page won't let the helper reach
+  Google"), the model search stops at once, and the support report lists blocked addresses.
+- Oran: GitHub Pages (the buyer's own free account) is to be the number one host. Next.

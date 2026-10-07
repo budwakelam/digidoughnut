@@ -127,3 +127,9 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
 @media (max-width:520px){ .dd-wiz h2{font-size:1.2rem} .dd-step{align-items:flex-start} }
 .dd-filename{font-family:ui-monospace,Menlo,Consolas,monospace;background:var(--dd-brand-soft);border-radius:8px;padding:8px 10px;word-break:break-all;font-size:.92rem}
 .dd-home-steps{padding-left:22px;margin:8px 0 12px} .dd-home-steps li{margin:0 0 8px}
+.dd-choice{display:flex;flex-direction:column;gap:10px;margin:4px 0 12px}
+.dd-choice-btn{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:2px;background:#fff;border:2px solid var(--dd-line);border-radius:12px;
+               padding:12px 14px;font:inherit;cursor:pointer;min-height:56px;color:var(--dd-ink)}
+.dd-choice-btn:first-child{border-color:var(--dd-brand)}
+.dd-choice-btn:hover{background:var(--dd-brand-soft)}
+.dd-choice-btn b{font-size:1.05rem;color:var(--dd-brand)} .dd-choice-btn span{font-size:.88rem;color:var(--dd-muted)}

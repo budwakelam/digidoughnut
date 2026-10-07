@@ -33,6 +33,7 @@
       done: function () { return !!(dd.sync && dd.sync.isOn && dd.sync.isOn()); }, wizard: "sync" }
   ];
 
+  function inProgress(st, id) { return !!(st.wizards[id] || (id === "host" && (st.wizards.host_neocities || st.wizards.host_tiiny))); }
   setup.doneCount = function () { return setup.steps.filter(function (s) { return s.done(); }).length; };
 
   /* ---------- the card / chip ---------- */
@@ -50,7 +51,7 @@
         : done && s.id === "phone" && dd.env.isPhone ? ""
         : done && s.id === "phone" && dd.pair ? '<button class="dd-btn small ghost" data-phone>📲 Send to my phone</button>' : done
         ? (wiz && wiz.ready !== false && s.id !== "try" ? '<button class="dd-linkbtn" data-start="' + s.wizard + '">Change</button>' : "")
-        : (wiz && wiz.ready !== false ? '<button class="dd-btn small" data-start="' + s.wizard + '">' + (st.wizards[s.wizard] ? "Continue" : "Start") + '</button>'
+        : (wiz && wiz.ready !== false ? '<button class="dd-btn small" data-start="' + s.wizard + '">' + (inProgress(st, s.wizard) ? "Continue" : "Start") + '</button>'
                                       : '<span class="dd-note">Coming soon</span>');
       return '<li class="dd-step' + (done ? " done" : "") + '"><span class="dd-tick" aria-hidden="true">' + (done ? "✓" : i + 1) + '</span>' +
         '<div class="dd-step-text"><b>' + esc(s.title) + '</b><span>' + esc(s.gives) + (done ? "" : " · " + esc(s.time)) + '</span></div>' + btn + '</li>';
@@ -72,6 +73,12 @@
   /* ---------- the wizard ---------- */
   var cur = null;   // {id, wiz, at, context}
   setup.open = function (id, opts) {
+    // "Put it on your phone" picks up inside whichever service the buyer already chose.
+    if (id === "host") {
+      var hs = state(), only = hostChoice();
+      if (only) id = "host_" + only;
+      else if (hs.hostWith && hs.wizards["host_" + hs.hostWith]) id = "host_" + hs.hostWith;
+    }
     var wiz = setup.wizards[id]; if (!wiz || wiz.ready === false || !wiz.screens.length) return;
     var st = state(), at = (st.wizards[id] && st.wizards[id].at) || 0;
     if (at >= wiz.screens.length) at = 0;
@@ -79,29 +86,33 @@
     draw();
   };
   // Screen 1 isn't progress: only remember a place once the buyer has moved past it.
-  function remember() { var s = state(); if (cur.at > 0) s.wizards[cur.id] = { at: cur.at }; else delete s.wizards[cur.id]; saveState(s); }
+  function remember() { var s = state(); if (cur.at > 0 || (cur.wiz.parent && !hostChoice())) s.wizards[cur.id] = { at: cur.at }; else delete s.wizards[cur.id]; saveState(s); }
   function finish() { var s = state(); delete s.wizards[cur.id]; saveState(s); }
 
   function draw() {
     var wiz = cur.wiz, sc = wiz.screens[cur.at], total = wiz.screens.length;
     remember();
-    var dots = wiz.screens.map(function (_, i) { return '<i class="' + (i < cur.at ? "done" : i === cur.at ? "now" : "") + '"></i>'; }).join("");
+    // A wizard reached from a chooser (wiz.parent) counts the chooser as its step 1.
+    var parent = wiz.parent && !hostChoice() ? wiz.parent : null;
+    var off = parent ? 1 : 0, shownAt = cur.at + off, shownTotal = total + off;
+    var dots = Array.apply(null, Array(shownTotal)).map(function (_, i) { return '<i class="' + (i < shownAt ? "done" : i === shownAt ? "now" : "") + '"></i>'; }).join("");
+    var canBack = cur.at > 0 || !!parent;
     var body = typeof sc.body === "function" ? sc.body() : sc.body;
     var html =
-      '<div class="dd-wiz-top"><span class="dd-wiz-name">' + esc(wiz.title) + '</span><span class="dd-wiz-progress">Step ' + (cur.at + 1) + ' of ' + total + '</span></div>' +
+      '<div class="dd-wiz-top"><span class="dd-wiz-name">' + esc(wiz.title) + '</span><span class="dd-wiz-progress">' + (shownTotal > 1 ? 'Step ' + (shownAt + 1) + ' of ' + shownTotal : '') + '</span></div>' +
       '<div class="dd-wiz-dots">' + dots + '</div>' +
       (cur.context && cur.at === 0 ? '<p class="dd-status show info">' + esc(cur.context) + '</p>' : "") +
       '<h2>' + esc(sc.title) + '</h2><div class="dd-wiz-body">' + body + '</div>' +
       (sc.action ? '<div class="dd-btnrow"><button class="dd-btn dd-wiz-big" data-action>' + esc(sc.action.label) + '</button></div>' : "") +
       '<div class="dd-status" id="dd-wiz-status"></div>' +
       '<div class="dd-wiz-nav">' +
-        (cur.at > 0 ? '<button class="dd-btn ghost" data-back>Back</button>' : "") +
+        (canBack ? '<button class="dd-btn ghost" data-back>Back</button>' : "") +
         (sc.next !== false ? '<button class="dd-btn" data-next>' + esc(sc.nextLabel || "Next") + '</button>' : "") +
       '</div>' +
       '<div class="dd-wiz-help">' +
         '<button class="dd-linkbtn" data-stuck>I\'m stuck</button>' +
         '<button class="dd-linkbtn" data-ask>Ask a question</button>' +
-        (cur.at > 0 ? '<button class="dd-linkbtn" data-over>Start over</button>' : "") +
+        (canBack ? '<button class="dd-linkbtn" data-over>Start over</button>' : "") +
         '<button class="dd-linkbtn" data-later>Finish later</button>' +
       '</div>' +
       '<div class="dd-wiz-stuck" id="dd-wiz-stuck" hidden></div>' +
@@ -110,14 +121,20 @@
     sh.classList.add("dd-wiz");
 
     var q = function (sel) { return sh.querySelector(sel); };
-    if (q("[data-back]")) q("[data-back]").addEventListener("click", function () { cur.at--; draw(); });
-    if (q("[data-over]")) q("[data-over]").addEventListener("click", function () { cur.at = 0; draw(); });
+    if (q("[data-back]")) q("[data-back]").addEventListener("click", function () { if (cur.at > 0) { cur.at--; draw(); } else toParent(); });
+    if (q("[data-over]")) q("[data-over]").addEventListener("click", function () { if (parent) toParent(); else { cur.at = 0; draw(); } });
     q("[data-later]").addEventListener("click", function () { dd.ui.closeSheet(); dd.ui.toast("Saved. Tap Continue in the setup card to pick up here."); });
     if (q("[data-action]")) q("[data-action]").addEventListener("click", function () { sc.action.run(ctxFor(sh)); });
     if (q("[data-next]")) q("[data-next]").addEventListener("click", function () { next(sh); });
     q("[data-stuck]").addEventListener("click", function () { toggleStuck(sh, sc); });
     q("[data-ask]").addEventListener("click", function () { toggleAsk(sh); });
     if (sc.mount) sc.mount(ctxFor(sh));
+  }
+
+  /* Leave a sub-wizard for its chooser (e.g. pick a different service). Its place is forgotten. */
+  function toParent() {
+    var s = state(), parent = cur.wiz.parent; delete s.wizards[cur.id]; s.hostWith = null; saveState(s);
+    setup.open(parent);
   }
 
   function ctxFor(sh) {
@@ -227,7 +244,11 @@
     { keys: ["ignore", "skip", "terms", "email", "updates", "checkbox", "tick"], a: "Tick the box agreeing to Google's terms (you have to). Any box about emails or news is up to you: you can leave it empty." },
     { keys: ["long", "time", "how many", "minutes"], a: "About 2 minutes for the helper, 5 for the phone, 10 for sync. You can stop any time and pick up where you left off." },
     { keys: ["api", "key", "what is", "access code"], a: "Google calls it an API key. We call it your free access code: it's how the helper gets to use Google's AI for free." },
-    { keys: ["tiiny", "tiny host", "hosting", "online", "upload", "address", "link", "website"], a: "tiiny.host puts your program online for free, so your phone can open it. Your numbers and your code are never uploaded: they stay on your own devices." },
+    { keys: ["tiiny", "tiny host", "neocities", "hosting", "online", "upload", "address", "link", "website"], a: "Neocities or tiiny.host puts your program online for free, so your phone can open it. Your numbers and your code are never uploaded: they stay on your own devices." },
+    { keys: ["which one", "neocities or", "difference", "better", "choose", "pick"], a: "Pick Neocities if you're not sure. One free Neocities account holds all your DigiDoughnut programs and shows no ads. tiiny.host holds one program per free account." },
+    { keys: ["username", "user name"], a: "On Neocities, your username becomes your web address: username.neocities.org. Letters, numbers and hyphens only. Anything you like, for example yourname-tools." },
+    { keys: ["supporter", "5 a month", "card number", "plan"], a: "Pick Free and tap Continue. You don't need the Supporter plan, and you never need to enter a card." },
+    { keys: ["confirmation", "token", "email code", "didn t get", "no email"], a: "Neocities emails you a code: paste it into Email Confirmation Token and tap Confirm Email. No email? Check spam, or tap Resend Confirmation Email." },
     { keys: ["3 months", "expire", "taken down", "stay online", "disappear", "how long does it stay", "how long will it stay"], a: "On tiiny.host's free plan the page stays online as long as you log in to tiiny.host at least once every 3 months." },
     { keys: ["update", "new version", "upgrade"], a: "To put a new version online, log in to tiiny.host and use Update on the same project. That keeps the same address, so your numbers stay." },
     { keys: ["trial", "free trial", "solo"], a: "You don't need tiiny.host's free trial: tap Skip. The trial turns into a paid plan, and the free plan is all this program needs." },
@@ -235,7 +256,8 @@
     { keys: ["phone", "iphone", "android", "mobile"], a: "Setting up the helper is easiest on a computer. Once it works, Send to my phone moves it over by scanning a code." }
   ];
   setup.suggestQuestions = function (wizardId) {
-    if (wizardId === "host") return ["Is it really free?", "Do I need the free trial?", "How long does it stay online?"];
+    if (/^host_neo/.test(wizardId || "")) return ["Which username?", "Do I need Supporter?", "No email came"];
+    if (/^host/.test(wizardId || "")) return ["Is it really free?", "Do I need the free trial?", "How long does it stay online?"];
     return wizardId === "sync" ? ["Which region?", "Locked or test mode?", "Where's the setup code?"]
                                : ["Is it really free?", "Do I need a credit card?", "What if I make a mistake?"];
   };
@@ -314,11 +336,18 @@
     });
   }
 
-  /* "Put it on your phone": put the file online with tiiny.host (free plan, checked 2026-10-07:
-     1 live project, 3 MB uploads, link stays up while the owner logs in once every 3 months,
-     a small tiiny banner, and a "Start your free trial" popup whose way out is "Skip"; existing
-     projects have an "Update" button that keeps the same address). Then everything set up in
-     the file (code + numbers) is carried to the new address in one link, using dd.pair. */
+  /* ---------- "Put it on your phone" ----------
+     The program file has to be online before a phone can open it. Two free services, checked
+     with Oran 2026-10-07:
+     - Neocities (first choice): one free account holds every DigiDoughnut program, no banner,
+       no ads. Sign up = Username (becomes <name>.neocities.org) + Password + Email + "I am
+       human" + "Create My Site"; then a plan page (Free -> "Continue"; Supporter has card boxes);
+       then "Check your Email" (Email Confirmation Token -> "Confirm Email"); dashboard has
+       "Upload". A file keeps its address: <name>.neocities.org/<file name>.
+     - tiiny.host: 1 project per free account, small banner, log in every 3 months, a
+       "Start your free trial" popup whose way out is "Skip"; "Upload file", "Update".
+     Either way, the last steps carry the code + numbers from the file to the new address in one
+     link (dd.pair), then bookmark it (the page title is the bookmark name). */
   function fileName() {
     try { return decodeURIComponent(location.pathname.split("/").pop()) || "the program file"; } catch (e) { return "the program file"; }
   }
@@ -336,20 +365,133 @@
       return u.href;
     } catch (e) { return null; }
   };
+  /* Neocities: a username (or a pasted address) -> https://<name>.neocities.org/<this file's name> */
+  setup.neocitiesAddress = function (raw) {
+    var t = String(raw || "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/\.neocities\.org$/, "");
+    if (!/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(t)) return null;
+    return "https://" + t + ".neocities.org/" + encodeURIComponent(fileName());
+  };
 
+  var facts = '<ul class="dd-facts"><li>✓ Free. No credit card.</li><li>✓ About 5 minutes.</li><li>✓ Your numbers and your code are never uploaded.</li></ul>';
+  var publicNote = '<p class="dd-note">The page itself can be opened by anyone who has its address, like a shared link. What you type into it stays on each of your own devices.</p>';
+  function phoneWarn() { return dd.env.isPhone ? '<p class="dd-status show warn">Do this step on the computer where you saved the program file. Then come back to your phone at the end.</p>' : ""; }
+
+  /* Which services the wizard offers. Neocities is PARKED (2026-10-07): its free plan sends
+     "connect-src 'self'", so a page there can't reach Google, Firebase or the noticeboard.
+     Seen on Oran's site; the helper said "no internet". Its wizard stays below for a paid plan
+     or a policy change, but isn't offered. When only one service is offered, the choice screen
+     is skipped. */
+  setup.hostChoices = ["tiiny"];
+  function hostChoice() { return setup.hostChoices.length === 1 ? setup.hostChoices[0] : null; }
+
+  /* Screen 1, shared: why, then pick a service. */
   setup.wizards.host = {
     title: "Put it on your phone",
-    onDone: function () { dd.ui.toast("Use your new address from now on. Bookmark it!", 4500); },
     screens: [
       { title: "Put it online, for free",
-        body: function () { return '<p>Your phone can\'t open a file that lives on this computer. So first we put the program online, at its own web address, using a free service called <b>tiiny.host</b>.</p>' +
-          '<ul class="dd-facts"><li>✓ Free. No credit card.</li><li>✓ About 5 minutes.</li><li>✓ Your numbers and your code are never uploaded.</li></ul>' +
-          (dd.env.isPhone ? '<p class="dd-status show warn">Do this step on the computer where you saved the program file. Then come back to your phone at the end.</p>' : "") +
-          '<p class="dd-note">The page itself can be opened by anyone who has its address, like a shared link. What you type into it stays on each of your own devices.</p>'; } },
+        body: function () { return '<p>Your phone can\'t open a file that lives on this computer. So first we put the program online, at its own web address, using a free service.</p>' +
+          facts + phoneWarn() +
+          '<div class="dd-choice">' +
+            '<button class="dd-choice-btn" data-host="neocities"><b>Neocities</b><span>Recommended. One free account holds all your DigiDoughnut programs. No ads.</span></button>' +
+            '<button class="dd-choice-btn" data-host="tiiny"><b>tiiny.host</b><span>Also free, but holds one program per account.</span></button>' +
+          '</div>' + publicNote; },
+        mount: function (c) {
+          c.el.querySelectorAll("[data-host]").forEach(function (b) { b.addEventListener("click", function () {
+            var s = state(); s.hostWith = b.dataset.host; saveState(s);
+            setup.open("host_" + b.dataset.host);
+          }); });
+        },
+        next: false }
+    ]
+  };
+
+  /* The last three screens, shared by both services. */
+  function finishScreens(svc) {
+    return [
+      { title: "Move your setup across",
+        body: function () {
+          var url = hostState(), host = url; try { host = new URL(url).host + new URL(url).pathname; } catch (e) {}
+          return '<p>Tap the button. Your program opens at <b>' + esc(host) + '</b>' + (dd.ai && dd.ai.hasCode() ? ', with your free access code' : '') +
+            (dd.isExample && !dd.isExample() ? ' and your numbers' : '') + ' already in it.</p>' +
+            '<p class="dd-note">The button works for 10 minutes. If it runs out, just tap it again.</p>'; },
+        action: { label: "Open my program at its new address", run: function (c) {
+          var made = dd.pair.makeLink({ base: hostState(), includeCode: true, maxLink: 60000 });
+          c.open(made.link);
+          c.status(made.left.length ? "warn" : "ok", made.left.length ? "Opened. Your " + made.left.join(" and ") + " were too big to carry, so they stay here for now." : "Opened in a new tab. Check it, then come back here and tap Next.");
+        } },
+        stuck: ["Nothing opened? Your browser may have blocked the new tab. Allow pop-ups for this page, or tap the button again.",
+                svc === "neocities" ? "Page not found? Check the upload finished, and that your username is right: tap Back to fix it."
+                                    : "If the new page looks empty, check the address you pasted: tap Back and fix it."], guide: "host_move" },
+      { title: "Bookmark it and keep it",
+        body: function () { return '<p class="dd-big-tick">✓</p><p>In the new tab, <b>bookmark the page</b> (Ctrl+D on Windows, Cmd+D on a Mac). Name the bookmark:</p>' +
+          '<p class="dd-filename">' + esc(setup.bookmarkName()) + '</p>' +
+          '<p>From now on, always open the program from that bookmark.</p>' +
+          '<ul><li><b>Same address, same numbers.</b> A different address, or the file on this computer, starts with its own separate numbers.</li>' +
+          (svc === "tiiny"
+            ? '<li><b>Log in to tiiny.host at least once every 3 months.</b> That keeps your free page online.</li>' +
+              '<li><b>Getting an update?</b> On tiiny.host, use <b>' + esc(L("host_update", "Update")) + '</b> on this same project. Don\'t upload it as a new one.</li>'
+            : '<li><b>Getting an update?</b> Upload the new file to Neocities with the <b>same file name</b>. It replaces the old one and keeps the same address.</li>') +
+          '</ul>' +
+          '<p>Last step: in the new tab, open the setup card and tap <b>Send to my phone</b>. On your phone, add it to your Home Screen when it asks.</p>' +
+          (svc === "tiiny" ? '<p class="dd-note">You can ignore the small tiiny.host banner on your page.</p>' : ""); },
+        nextLabel: "Done" }
+    ];
+  }
+
+  setup.wizards.host_neocities = {
+    title: "Put it on your phone · Neocities", parent: "host",
+    onDone: function () { dd.ui.toast("Use your new address from now on. Bookmark it!", 4500); },
+    screens: [
+      { title: "Make a free Neocities account",
+        body: function () { return '<p>Tap the button. Neocities opens in a new tab. Under <b>' + esc(L("neo_signup", "Sign up for free")) + '</b>:</p>' +
+          '<ul><li><b>Username</b>: this becomes your web address, like <i>yourname</i>.neocities.org. Letters, numbers and hyphens only. Write it down.</li>' +
+          '<li><b>Password</b> and <b>Email</b>.</li>' +
+          '<li>Tick <b>' + esc(L("neo_human", "I am human")) + '</b>. It may ask you to tap a picture: that\'s normal.</li>' +
+          '<li>Tap <b>' + esc(L("neo_create", "Create My Site")) + '</b>.</li></ul>' +
+          '<p><b>You can ignore</b> Tags. Leave it empty.</p>' + phoneWarn(); },
+        action: { label: "Open Neocities", run: function (c) { c.open(link("host_neocities", "https://neocities.org/")); } },
+        stuck: ["Already have a Neocities account? Tap Sign In at the top right, then skip ahead with Next.",
+                "Username taken? Try adding a word or a number, like yourname-tools."], guide: "neo_signup" },
+      { title: "Pick the free plan",
+        body: function () { return '<p>Neocities shows two plans. Under <b>Free</b>, tap <b>' + esc(L("neo_free_continue", "Continue")) + '</b>.</p>' +
+          '<p><b>You can ignore</b> the Supporter plan and its card boxes. You don\'t need them.</p>'; },
+        stuck: ["Didn't see the plans? That's fine. Tap Next."], guide: "neo_plan" },
+      { title: "Confirm your email",
+        body: function () { return '<p>Neocities emails you a code. Open that email, copy the code, paste it into <b>' + esc(L("neo_token", "Email Confirmation Token")) + '</b>, and tap <b>' + esc(L("neo_confirm", "Confirm Email")) + '</b>.</p>' +
+          '<p><b>You can ignore</b> the rules box above it. This program is your own private tool, which is fine there.</p>'; },
+        stuck: ["No email after a few minutes? Check your spam folder, or tap Resend Confirmation Email."], guide: "neo_email" },
+      { title: "Upload this program",
+        body: function () { return '<p>Go to your Neocities <b>dashboard</b>. (If you see a page about learning to make websites, tap <b>' + esc(L("neo_dashboard", "Head to your dashboard")) + '</b>.)</p>' +
+          '<p>Tap <b>' + esc(L("neo_upload", "Upload")) + '</b> and choose this file:</p>' +
+          '<p class="dd-filename">' + esc(fileName()) + '</p>' +
+          '<p class="dd-note">It\'s wherever you saved it from Etsy, often the Downloads folder.</p>' +
+          '<p><b>You can ignore</b> index.html and the other files Neocities made for you. Leave them alone.</p>'; },
+        stuck: ["Can't find the file? On Windows, open File Explorer and look in Downloads. On a Mac, open Finder and look in Downloads.",
+                "Don't rename the file. Its name becomes part of its address."], guide: "neo_upload" },
+      { title: "Your Neocities username",
+        body: function () { var s = state(); return '<p>Type the username you picked when you signed up.</p>' +
+          '<input class="dd-input" id="dd-wiz-addr" placeholder="e.g. smith-tools" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + esc(s.neoUser || "") + '">' +
+          '<p class="dd-note">It\'s at the top right of Neocities, and in your site\'s address: <i>username</i>.neocities.org.</p>'; },
+        mount: function (c) { var i = c.el.querySelector("#dd-wiz-addr"); if (!dd.env.isPhone && !i.value) i.focus(); },
+        check: function (c) {
+          var raw = c.el.querySelector("#dd-wiz-addr").value, url = setup.neocitiesAddress(raw);
+          if (!url) { c.status("warn", "Type your Neocities username first.", "Letters, numbers and hyphens only, like smith-tools."); return false; }
+          var s = state(); s.neoUser = raw.trim(); saveState(s);
+          hostState(url); return true;
+        },
+        guide: "neo_address" }
+    ].concat(finishScreens("neocities"))
+  };
+
+  setup.wizards.host_tiiny = {
+    title: "Put it on your phone · tiiny.host", parent: "host",
+    onDone: function () { dd.ui.toast("Use your new address from now on. Bookmark it!", 4500); },
+    screens: [
       { title: "Open tiiny.host and sign up",
-        body: function () { return '<p>Tap the button. tiiny.host opens in a new tab. Sign up for free, with your email or your Google account.</p>' +
+        body: function () { return (hostChoice() ? '<p>Your phone can\'t open a file that lives on this computer. So first we put the program online, at its own web address, using a free service called <b>tiiny.host</b>.</p>' + facts + publicNote : "") +
+          '<p>Tap the button. tiiny.host opens in a new tab. Sign up for free, with your email or your Google account.</p>' +
           '<p>If tiiny.host offers a free trial, tap <b>' + esc(L("host_skip_trial", "Skip")) + '</b>. You don\'t need it.</p>' +
-          '<p><b>You can ignore</b> anything about upgrading, custom domains, analytics or teams.</p>'; },
+          '<p><b>You can ignore</b> anything about upgrading, custom domains, analytics or teams.</p>' + phoneWarn(); },
         action: { label: "Open tiiny.host", run: function (c) { c.open(link("host_open", "https://tiiny.host/")); } },
         stuck: ["Already have a tiiny.host account? Just log in.", "If a big \"Start free trial\" button appears, look below it for Skip. The trial turns into a paid plan, so skip it."], guide: "host_open" },
       { title: "Upload this program",
@@ -369,32 +511,10 @@
           if (url.split("#")[0] === location.href.split("#")[0]) { c.status("warn", "That's the address of this page.", "Paste the new address that tiiny.host gave you."); return false; }
           hostState(url); return true;
         },
-        stuck: ["On tiiny.host, the address is shown as a link. Copy it, or click the link and copy the address from the top of your browser.", "It's also listed under Live Projects when you log in to tiiny.host."], guide: "host_address" },
-      { title: "Move your setup across",
-        body: function () {
-          var url = hostState(), host = url; try { host = new URL(url).host; } catch (e) {}
-          return '<p>Tap the button. Your program opens at <b>' + esc(host) + '</b>' + (dd.ai && dd.ai.hasCode() ? ', with your free access code' : '') +
-            (dd.isExample && !dd.isExample() ? ' and your numbers' : '') + ' already in it.</p>' +
-            '<p class="dd-note">The button works for 10 minutes. If it runs out, just tap it again.</p>'; },
-        action: { label: "Open my program at its new address", run: function (c) {
-          var made = dd.pair.makeLink({ base: hostState(), includeCode: true, maxLink: 60000 });
-          c.open(made.link);
-          c.status(made.left.length ? "warn" : "ok", made.left.length ? "Opened. Your " + made.left.join(" and ") + " were too big to carry, so they stay here for now." : "Opened in a new tab. Check it, then come back here and tap Next.");
-        } },
-        stuck: ["Nothing opened? Your browser may have blocked the new tab. Allow pop-ups for this page, or tap the button again.",
-                "If the new page looks empty, check the address you pasted: tap Back and fix it."], guide: "host_move" },
-      { title: "Bookmark it and keep it",
-        body: function () { return '<p class="dd-big-tick">✓</p><p>In the new tab, <b>bookmark the page</b> (Ctrl+D on Windows, Cmd+D on a Mac). Name the bookmark:</p>' +
-          '<p class="dd-filename">' + esc(setup.bookmarkName()) + '</p>' +
-          '<p>From now on, always open the program from that bookmark.</p>' +
-          '<ul><li><b>Same address, same numbers.</b> A different address, or the file on this computer, starts with its own separate numbers.</li>' +
-          '<li><b>Log in to tiiny.host at least once every 3 months.</b> That keeps your free page online.</li>' +
-          '<li><b>Getting an update?</b> On tiiny.host, use <b>' + esc(L("host_update", "Update")) + '</b> on this same project. Don\'t upload it as a new one.</li></ul>' +
-          '<p>Last step: in the new tab, open the setup card and tap <b>Send to my phone</b>. On your phone, add it to your Home Screen when it asks.</p>' +
-          '<p class="dd-note">You can ignore the small tiiny.host banner on your page.</p>'; },
-        nextLabel: "Done" }
-    ]
+        stuck: ["On tiiny.host, the address is shown as a link. Copy it, or click the link and copy the address from the top of your browser.", "It's also listed under Live Projects when you log in to tiiny.host."], guide: "host_address" }
+    ].concat(finishScreens("tiiny"))
   };
+
   setup.wizards.sync = { title: "Keep devices in step", ready: false, screens: [] };   // Phase 5 sync + Firebase wizard
 
   /* ---------- bookmark name + Home Screen ----------

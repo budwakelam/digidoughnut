@@ -191,7 +191,12 @@
     }).catch(function (e) {
       if (ctl.timedOut) return { status: -1, timeout: true };
       if (e && e.name === "AbortError") return { status: -1, stopped: true };
-      return { status: 0, network: true, error: String(e && e.message || e) };
+      // Blocked by the hosting website, or really offline? The browser's notice can arrive a
+      // moment after the failure, so give it a beat before deciding.
+      return new Promise(function (res) { setTimeout(res, 150); }).then(function () {
+        if (dd.errors.blockedRecently(url)) return { status: 0, network: true, blocked: true, error: "blocked by this website's security rule" };
+        return { status: 0, network: true, error: String(e && e.message || e) };
+      });
     }).then(function (r) { logRequest(url, started, r, entry); return r; })
       .finally(function () { clearTimeout(timer); if (current === ctl) current = null; });
   }
@@ -280,6 +285,7 @@
     problem: function (r, where) {
       if (r.stopped) return { type: "stopped" };
       if (r.timeout) return { type: "timeout" };
+      if (r.blocked) return { type: "host_blocked", raw: r.error };
       if (r.network) return { type: "offline", raw: r.error };
       var err = (r.body && r.body.error) || {};
       var msg = String(err.message || r.text || "");
@@ -399,7 +405,7 @@
         return tryModels(list, i + 1);
       }, function (e) {
         // A bad code, no internet or Stop won't get better with another model: stop here.
-        if (e.type === "bad_code" || e.type === "offline" || e.type === "stopped" || e.type === "not_allowed" && !e.rediscover) throw e;
+        if (e.type === "bad_code" || e.type === "offline" || e.type === "host_blocked" || e.type === "stopped" || e.type === "not_allowed" && !e.rediscover) throw e;
         lastProblem = e; failed[model] = Date.now() + BUSY_MS;
         dd.errors.record("ai.connect", model + " " + describe(e) + (list[i + 1] ? ", trying " + list[i + 1] : ""));
         return tryModels(list, i + 1);
@@ -462,7 +468,7 @@
         });
       }, function (e) {
         // Problems no other model can fix: stop and explain.
-        if (e.type === "stopped" || e.type === "bad_code" || e.type === "offline" || (e.type === "not_allowed" && !e.rediscover)) throw e;
+        if (e.type === "stopped" || e.type === "bad_code" || e.type === "offline" || e.type === "host_blocked" || (e.type === "not_allowed" && !e.rediscover)) throw e;
         // Anything else (busy, silent, retired, this model's daily share used up, a model-
         // specific refusal): note it and try the next model. Every model, until one answers.
         lastProblem = e;

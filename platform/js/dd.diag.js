@@ -30,6 +30,8 @@
              " · keep-storage request: " + dd.store.persisted +
              (p ? " · data " + dd.store.dataBytes(p.id) + " bytes" + (dd.isExample() ? " (example)" : "") : ""));
     if (p && dd.store.get(dd.store.programKey(p.id, "data_recovery")) != null) out.push("A recovery copy of older data is saved on this device.");
+    var blocked = dd.errors.blockedList ? dd.errors.blockedList() : [];
+    if (blocked.length) out.push("This website BLOCKS outside connections: " + blocked.map(function (v) { return v.origin; }).filter(function (o, i, a) { return a.indexOf(o) === i; }).join(", "));
     out.push("--- Last problems (newest first) ---");
     var log = dd.errors.recent();
     if (!log.length) out.push("No problems recorded. Everything's talking fine.");

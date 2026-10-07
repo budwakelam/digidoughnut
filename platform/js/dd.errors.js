@@ -11,6 +11,8 @@
   var TYPES = {
     // the seven AI error types (plan, "AI connections")
     offline:       ["You're not connected to the internet.", "Check your Wi-Fi or data, then try again."],
+    // The website hosting the page forbids talking to other websites (e.g. Neocities' free plan).
+    host_blocked:  ["The website hosting this page won't let the helper reach {company}.", "Open the program from a different web address (see Setup, step 3), or contact DigiDoughnut and we'll help."],
     bad_code:      ["That code didn't work.", "It may have a typo or a missing piece. Copy it fresh from {company} and paste it again."],
     not_allowed:   ["That code isn't allowed to do this.", "Make a new code on {company}'s site and paste it here."],
     out_of_share:  ["You've used today's free share.", "It refills on its own. Try again later or tomorrow."],
@@ -97,6 +99,23 @@
   };
   errors.recent = function () { return log.slice(); };
   function safeJson(o) { try { return JSON.stringify(o); } catch (e) { return String(o); } }
+
+  /* Pages can be blocked from talking to other websites by the site that hosts them (a
+     "content security policy"). The browser then reports it like a dropped connection, so we
+     listen for the browser's own notice and tell the two apart. */
+  var violations = [];
+  errors.blockedRecently = function (url, withinMs) {
+    var origin; try { origin = new URL(url).origin; } catch (e) { return false; }
+    var since = Date.now() - (withinMs || 5000);
+    return violations.some(function (v) { return v.at >= since && v.origin === origin; });
+  };
+  errors.blockedList = function () { return violations.slice(0, 5); };
+  document.addEventListener("securitypolicyviolation", function (e) {
+    var origin = ""; try { origin = new URL(e.blockedURI).origin; } catch (x) { origin = String(e.blockedURI || ""); }
+    violations.unshift({ at: Date.now(), origin: origin, directive: e.effectiveDirective || e.violatedDirective || "" });
+    if (violations.length > 20) violations.length = 20;
+    errors.record("page security rule", "this website blocks " + origin + " (" + (e.effectiveDirective || "") + ")");
+  });
 
   // Catch anything that slips through so support can see it. The buyer sees nothing scary.
   window.addEventListener("error", function (e) { errors.record("page", (e && e.message) || "error"); });
