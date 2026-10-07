@@ -126,3 +126,4 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
 .dd-chip{background:#fff;border:1px solid var(--dd-brand-soft-d);color:var(--dd-brand);border-radius:99px;padding:6px 12px;font:inherit;font-size:.85rem;cursor:pointer;min-height:36px}
 @media (max-width:520px){ .dd-wiz h2{font-size:1.2rem} .dd-step{align-items:flex-start} }
 .dd-filename{font-family:ui-monospace,Menlo,Consolas,monospace;background:var(--dd-brand-soft);border-radius:8px;padding:8px 10px;word-break:break-all;font-size:.92rem}
+.dd-home-steps{padding-left:22px;margin:8px 0 12px} .dd-home-steps li{margin:0 0 8px}

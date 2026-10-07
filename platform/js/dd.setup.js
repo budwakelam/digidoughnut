@@ -46,7 +46,9 @@
     }
     var rows = setup.steps.map(function (s, i) {
       var done = s.done(), wiz = s.wizard && setup.wizards[s.wizard];
-      var btn = done && s.id === "phone" && dd.pair ? '<button class="dd-btn small ghost" data-phone>📲 Send to my phone</button>' : done
+      var btn = done && s.id === "phone" && needsHomeScreen() ? '<button class="dd-btn small" data-home>Add to Home Screen</button>'
+        : done && s.id === "phone" && dd.env.isPhone ? ""
+        : done && s.id === "phone" && dd.pair ? '<button class="dd-btn small ghost" data-phone>📲 Send to my phone</button>' : done
         ? (wiz && wiz.ready !== false && s.id !== "try" ? '<button class="dd-linkbtn" data-start="' + s.wizard + '">Change</button>' : "")
         : (wiz && wiz.ready !== false ? '<button class="dd-btn small" data-start="' + s.wizard + '">' + (st.wizards[s.wizard] ? "Continue" : "Start") + '</button>'
                                       : '<span class="dd-note">Coming soon</span>');
@@ -57,6 +59,7 @@
       '<p class="dd-note" style="margin:0 0 8px">Each step is optional. Do them in any order, any time.</p><ol class="dd-steps">' + rows + '</ol>' +
       '<div class="dd-btnrow"><button class="dd-linkbtn" id="dd-setup-fold">Hide this for now</button></div></div>';
     var ph = host.querySelector("[data-phone]"); if (ph) ph.addEventListener("click", function () { dd.pair.open(); });
+    var hs = host.querySelector("[data-home]"); if (hs) hs.addEventListener("click", setup.showHomeScreen);
     host.querySelectorAll("[data-start]").forEach(function (b) { b.addEventListener("click", function () { setup.open(b.dataset.start); }); });
     document.getElementById("dd-setup-fold").addEventListener("click", function () { var s = state(); s.folded = true; saveState(s); setup.paint(); });
   };
@@ -228,6 +231,7 @@
     { keys: ["3 months", "expire", "taken down", "stay online", "disappear", "how long does it stay", "how long will it stay"], a: "On tiiny.host's free plan the page stays online as long as you log in to tiiny.host at least once every 3 months." },
     { keys: ["update", "new version", "upgrade"], a: "To put a new version online, log in to tiiny.host and use Update on the same project. That keeps the same address, so your numbers stay." },
     { keys: ["trial", "free trial", "solo"], a: "You don't need tiiny.host's free trial: tap Skip. The trial turns into a paid plan, and the free plan is all this program needs." },
+    { keys: ["home screen", "icon", "app", "bookmark", "shortcut"], a: "Bookmark it on your computer and add it to your Home Screen on your phone. Then it opens like an app, always from the same address, so your numbers are always there." },
     { keys: ["phone", "iphone", "android", "mobile"], a: "Setting up the helper is easiest on a computer. Once it works, Send to my phone moves it over by scanning a code." }
   ];
   setup.suggestQuestions = function (wizardId) {
@@ -380,23 +384,54 @@
         stuck: ["Nothing opened? Your browser may have blocked the new tab. Allow pop-ups for this page, or tap the button again.",
                 "If the new page looks empty, check the address you pasted: tap Back and fix it."], guide: "host_move" },
       { title: "Bookmark it and keep it",
-        body: function () { return '<p class="dd-big-tick">✓</p><p>In the new tab, <b>bookmark the page</b> (Ctrl+D on Windows, Cmd+D on a Mac). From now on, always open the program from that address.</p>' +
+        body: function () { return '<p class="dd-big-tick">✓</p><p>In the new tab, <b>bookmark the page</b> (Ctrl+D on Windows, Cmd+D on a Mac). Name the bookmark:</p>' +
+          '<p class="dd-filename">' + esc(setup.bookmarkName()) + '</p>' +
+          '<p>From now on, always open the program from that bookmark.</p>' +
           '<ul><li><b>Same address, same numbers.</b> A different address, or the file on this computer, starts with its own separate numbers.</li>' +
           '<li><b>Log in to tiiny.host at least once every 3 months.</b> That keeps your free page online.</li>' +
           '<li><b>Getting an update?</b> On tiiny.host, use <b>' + esc(L("host_update", "Update")) + '</b> on this same project. Don\'t upload it as a new one.</li></ul>' +
-          '<p>Last step: in the new tab, open the setup card and tap <b>Send to my phone</b>.</p>' +
+          '<p>Last step: in the new tab, open the setup card and tap <b>Send to my phone</b>. On your phone, add it to your Home Screen when it asks.</p>' +
           '<p class="dd-note">You can ignore the small tiiny.host banner on your page.</p>'; },
         nextLabel: "Done" }
     ]
   };
   setup.wizards.sync = { title: "Keep devices in step", ready: false, screens: [] };   // Phase 5 sync + Firebase wizard
 
+  /* ---------- bookmark name + Home Screen ----------
+     Phones: a page added to the Home Screen opens like an app, and iPhones keep its saved
+     numbers. Safari (and Chrome on iPhone, which uses Safari's engine) can clear a website's
+     saved data when it hasn't been opened for about a week, unless it's on the Home Screen. */
+  setup.bookmarkName = function () { return (program ? program.name : "My program") + " · DigiDoughnut"; };
+  setup.homeScreenSteps = function () {
+    if (dd.env.isIOS) return ["Tap the <b>Share</b> button (a square with an arrow pointing up). In Safari it's at the bottom of the screen; in Chrome it's at the top, next to the address.",
+                              "Scroll down and tap <b>" + esc(L("home_ios_add", "Add to Home Screen")) + "</b>.",
+                              "Keep the name <b>" + esc(program ? program.name : "") + "</b>, then tap <b>" + esc(L("home_ios_confirm", "Add")) + "</b>."];
+    return ["Tap the browser menu (the three dots <b>⋮</b>, top right).",
+            "Tap <b>" + esc(L("home_android_add", "Add to Home screen")) + "</b> (some phones say <b>Install app</b>).",
+            "Keep the name <b>" + esc(program ? program.name : "") + "</b>, then tap <b>" + esc(L("home_android_confirm", "Add")) + "</b>."];
+  };
+  setup.showHomeScreen = function () {
+    var sh = dd.ui.sheet('<h2>Add it to your Home Screen</h2>' +
+      '<p>Then it opens like an app, and your phone keeps your numbers safe.</p>' +
+      '<ol class="dd-home-steps">' + setup.homeScreenSteps().map(function (t) { return "<li>" + t + "</li>"; }).join("") + '</ol>' +
+      (dd.env.isIOS ? '<p class="dd-note">Why it matters: an iPhone can clear a website\'s saved data if you don\'t open it for about a week. Programs on the Home Screen are kept.</p>' : "") +
+      '<p class="dd-note">From now on, open it from the Home Screen icon.</p>' +
+      '<div class="dd-btnrow"><button class="dd-btn" data-close>Got it</button></div>');
+    sh.querySelector("[data-close]").addEventListener("click", dd.ui.closeSheet);
+    var s = state(); s.homeShown = Date.now(); saveState(s);
+  };
+  function needsHomeScreen() { return dd.env.isPhone && dd.env.isHosted && !dd.env.isStandalone; }
+
   /* ---------- start ---------- */
   setup.start = function (p) {
     program = p;
     setup.paint();
     dd.on("ai:changed", setup.paint);
-    dd.on("pair:received", setup.paint);
+    dd.on("pair:received", function () {
+      setup.paint();
+      // Just arrived on the phone by QR: the best moment to add it to the Home Screen.
+      if (needsHomeScreen()) setTimeout(setup.showHomeScreen, 1200);
+    });
   };
 
   if (dd.diag) dd.diag.addSection("Setup", function () {

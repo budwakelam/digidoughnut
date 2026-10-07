@@ -48,7 +48,7 @@ def suite(browser, device_name, device, mode):
     check("example notice is shown", page.locator("#dd-notice-example").is_visible())
     check("nothing saved until the buyer acts", page.evaluate(f"() => localStorage.getItem('{KEY}')") is None)
     check("footer has brand line + version", "Made with care by DigiDoughnut · Demo List 0.1.0" in page.inner_text("#dd-footer"))
-    check("page title", page.title() == "Demo List — A platform test program", page.title())
+    check("page title is the bookmark name", page.title() == "Demo List · DigiDoughnut", page.title())
     page.screenshot(path=os.path.join(SHOTS, f"{device_name}-{mode}-first-run.png"), full_page=True)
 
     # 2. Saving
