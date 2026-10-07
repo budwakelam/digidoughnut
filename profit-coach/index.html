@@ -155,6 +155,39 @@
       <button class="btn ghost" id="syncBtn" style="display:none;">&#x1F504; Live sync: off</button>
     </div>
     <p class="note" id="syncNote" style="display:none;"></p>
+    <div id="syncSetup" style="display:none;margin-top:10px;padding:12px;border:2px dashed var(--line);border-radius:12px;">
+      <p style="font-weight:700;margin:0 0 6px;">Connect your own free database</p>
+      <p class="note" style="margin:0 0 8px;">Live sync uses a free Google Firebase database <b>that belongs to you</b> — your numbers live in your own Google account, and nobody else can see them. Free, no credit card. One-time setup, about 5 minutes:</p>
+      <ol class="note" style="margin:0 0 8px;padding-left:20px;line-height:1.6;">
+        <li>Go to <b>console.firebase.google.com</b> and sign in with your Google account.</li>
+        <li>Click <b>Add project</b>, name it anything (like "My Profit Coach"), keep going — when it asks about Google Analytics, turn it <b>off</b>.</li>
+        <li>Left menu: <b>Build &rarr; Realtime Database &rarr; Create Database</b>. Pick United States, choose <b>"Start in locked mode"</b>, click Enable.</li>
+        <li>Click the <b>Rules</b> tab, replace everything with the code below, click <b>Publish</b>.</li>
+        <li>Click the <b>gear &#9881;&#65039; &rarr; Project settings</b>. Under "Your apps" click the <b>&lt;/&gt;</b> icon, nickname it anything, <b>Register app</b> (skip Hosting).</li>
+        <li>Copy the whole block of setup code it shows you.</li>
+        <li>Paste it below and tap <b>Save</b>. Done — the database is yours.</li>
+      </ol>
+      <p class="note" style="margin:0 0 4px;">Step 4 code — tap the button to copy it:</p>
+      <textarea id="fbRules" readonly rows="10" style="width:100%;font-size:.72rem;font-family:monospace;" onclick="this.select()">{
+  "rules": {
+    "sync": {
+      "$sid": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['tax', 'updatedAt'])"
+      }
+    }
+  }
+}</textarea>
+      <div class="btnrow"><button class="btn ghost" id="copyRulesBtn">&#x1F4CB; Copy the step-4 code</button></div>
+      <p class="note" style="margin:8px 0 4px;">Paste your setup code from step 6 here:</p>
+      <textarea id="fbConfigPaste" rows="6" placeholder="Paste the firebaseConfig block here…" style="width:100%;font-size:.8rem;font-family:monospace;"></textarea>
+      <div class="btnrow">
+        <button class="btn" id="saveFbBtn">Save</button>
+        <button class="btn ghost" id="forgetFbBtn">Forget</button>
+      </div>
+      <p class="note" id="fbSetupMsg" style="display:none;"></p>
+    </div>
     <details class="faq"><summary>How does the smart stuff work?</summary>
       <p class="note">The AI features use <b>your own free Google code</b> — the one you pasted during setup. Your code and your numbers never leave your computer except to talk to Google's servers. No subscription, no card, free allowance resets daily.</p>
     </details>
@@ -591,6 +624,8 @@ $("phoneBtn").addEventListener("click",function(){
   var qrParts=[dataPart];
   if(key) qrParts.push("k="+encodeURIComponent(key));
   if(syncOn&&syncId) qrParts.push("s="+encodeURIComponent(syncId));
+  var fbCfg=loadFbConfig();
+  if(syncOn&&fbCfg) qrParts.push("f="+encodeURIComponent(JSON.stringify(fbCfg)));
   var qrUrl=base+"#"+qrParts.join("&");  // numbers + code + sync secret
   $("phoneLink").value=linkUrl;
   try{
@@ -619,9 +654,11 @@ function checkMagicLink(){
     }
     var k=h.get("k");
     if(k){ try{ localStorage.setItem(LS_KEY,k); }catch(e){} modelCache=null; paintConn(); gotKey=true; }
+    var fbp=h.get("f");
+    if(fbp){ var pcfg=parseFbConfig(fbp); if(pcfg){ try{ localStorage.setItem(FB_LS,JSON.stringify(pcfg)); }catch(e){} } }
     var sid=h.get("s");
     if(sid){ try{ localStorage.setItem(SYNC_LS,sid); }catch(e){}
-      setTimeout(function(){ if(FIREBASE_CONFIG&&!syncOn) syncEnable(); },2000); }
+      setTimeout(function(){ if(loadFbConfig()&&!syncOn) syncEnable(); },2000); }
   }catch(e){}
   if(changed){
     save();
@@ -635,15 +672,27 @@ function checkMagicLink(){
 }
 
 /* ---------- live sync (opt-in, Firebase Realtime Database) ---------- */
-var FIREBASE_CONFIG = {
-  apiKey: "AIzaSyBLgQV0ElaYnB-c7uv-xx1Ywsw4etdA1DU",
-  authDomain: "digidoughnut-sync.firebaseapp.com",
-  databaseURL: "https://digidoughnut-sync-default-rtdb.firebaseio.com",
-  projectId: "digidoughnut-sync",
-  storageBucket: "digidoughnut-sync.firebasestorage.app",
-  messagingSenderId: "258011744011",
-  appId: "1:258011744011:web:a653a986107acd14ca840e"
-};
+var FB_LS="dd_firebase_config_v1";
+function loadFbConfig(){
+  try{
+    var t=localStorage.getItem(FB_LS); if(!t) return null;
+    var j=JSON.parse(t);
+    return (j&&j.databaseURL&&j.apiKey)? j:null;
+  }catch(e){ return null; }
+}
+/* accepts the firebaseConfig block as pasted from the Firebase console:
+   strict JSON, or the JS-object form with unquoted keys */
+function parseFbConfig(text){
+  var cfg=null;
+  try{ var j=JSON.parse(text); if(j&&j.databaseURL&&j.apiKey) cfg=j; }catch(e){}
+  if(!cfg){
+    cfg={};
+    var re=(/(["']?)(apiKey|authDomain|databaseURL|projectId|storageBucket|messagingSenderId|appId)\1\s*:\s*["']([^"']+)["']/g), m;
+    while((m=re.exec(text))){ cfg[m[2]]=m[3]; }
+    if(!(cfg.databaseURL&&cfg.apiKey)) cfg=null;
+  }
+  return cfg;
+}
 var FB_SDK = "https://www.gstatic.com/firebasejs/12.19.0/";
 var SYNC_LS = "dd_sync_id_v1";
 var syncOn = false, syncRef = null, syncId = null, fb = null;
@@ -653,7 +702,7 @@ function loadFb(){
   if(fb) return Promise.resolve(fb);
   return Promise.all([import(FB_SDK+"firebase-app.js"), import(FB_SDK+"firebase-database.js")]).then(function(m){
     var A=m[0], D=m[1];
-    var app=A.getApps().length? A.getApps()[0] : A.initializeApp(FIREBASE_CONFIG);
+    var app=A.getApps().length? A.getApps()[0] : A.initializeApp(loadFbConfig());
     fb={D:D, database:D.getDatabase(app)};
     return fb;
   });
@@ -676,7 +725,6 @@ function syncMsg(msg){
 }
 function paintSync(){
   var b=$("syncBtn");
-  if(!FIREBASE_CONFIG){ b.style.display="none"; return; }
   b.style.display="";
   b.textContent = syncOn? "\uD83D\uDD04 Live sync: on" : "\uD83D\uDD04 Live sync: off";
 }
@@ -783,7 +831,37 @@ function syncDisable(){
 }
 
 /* ---------- boot ---------- */
-$("syncBtn").addEventListener("click",function(){ if(syncOn) syncDisable(); else syncEnable(); });
+$("syncBtn").addEventListener("click",function(){
+  if(syncOn){ syncDisable(); return; }
+  if(!loadFbConfig()){
+    var p=$("syncSetup");
+    p.style.display=(p.style.display==="none"?"block":"none");
+    return;
+  }
+  syncEnable();
+});
+$("saveFbBtn").addEventListener("click",function(){
+  var msg=$("fbSetupMsg"); msg.style.display="block";
+  var cfg=parseFbConfig($("fbConfigPaste").value.trim());
+  if(!cfg){ msg.innerHTML="\u26A0\uFE0F That didn't look like Firebase setup code — copy the whole block from step 6 and try again."; return; }
+  try{ localStorage.setItem(FB_LS,JSON.stringify(cfg)); }
+  catch(e){ msg.innerHTML="\u26A0\uFE0F This browser wouldn't save it."; return; }
+  msg.innerHTML="\u2705 Saved! Your database is connected — tap \uD83D\uDD04 Live sync to turn it on.";
+  $("fbConfigPaste").value="";
+  paintSync();
+});
+$("forgetFbBtn").addEventListener("click",function(){
+  try{ localStorage.removeItem(FB_LS); }catch(e){}
+  if(syncOn) syncDisable();
+  var msg=$("fbSetupMsg"); msg.style.display="block";
+  msg.innerHTML="Sync setup forgotten. Your numbers stay on this device.";
+  paintSync();
+});
+$("copyRulesBtn").addEventListener("click",function(){
+  var t=$("fbRules"); t.select();
+  try{ document.execCommand("copy"); }catch(e){}
+  if(navigator.clipboard) navigator.clipboard.writeText(t.value).catch(function(){});
+});
 (function(){
   var n=0,t=null,foot=document.querySelector("footer");
   if(foot) foot.addEventListener("click",function(){
