@@ -46,7 +46,7 @@
     }
     var rows = setup.steps.map(function (s, i) {
       var done = s.done(), wiz = s.wizard && setup.wizards[s.wizard];
-      var btn = done
+      var btn = done && s.id === "phone" && dd.pair ? '<button class="dd-btn small ghost" data-phone>📲 Send to my phone</button>' : done
         ? (wiz && wiz.ready !== false && s.id !== "try" ? '<button class="dd-linkbtn" data-start="' + s.wizard + '">Change</button>' : "")
         : (wiz && wiz.ready !== false ? '<button class="dd-btn small" data-start="' + s.wizard + '">' + (st.wizards[s.wizard] ? "Continue" : "Start") + '</button>'
                                       : '<span class="dd-note">Coming soon</span>');
@@ -56,6 +56,7 @@
     host.innerHTML = '<div class="dd-card dd-setup-card"><h2>Set up ' + esc(program.name) + ' <span class="dd-setup-count">' + n + ' of ' + total + ' done</span></h2>' +
       '<p class="dd-note" style="margin:0 0 8px">Each step is optional. Do them in any order, any time.</p><ol class="dd-steps">' + rows + '</ol>' +
       '<div class="dd-btnrow"><button class="dd-linkbtn" id="dd-setup-fold">Hide this for now</button></div></div>';
+    var ph = host.querySelector("[data-phone]"); if (ph) ph.addEventListener("click", function () { dd.pair.open(); });
     host.querySelectorAll("[data-start]").forEach(function (b) { b.addEventListener("click", function () { setup.open(b.dataset.start); }); });
     document.getElementById("dd-setup-fold").addEventListener("click", function () { var s = state(); s.folded = true; saveState(s); setup.paint(); });
   };
@@ -74,7 +75,8 @@
     cur = { id: id, wiz: wiz, at: at, context: opts && opts.context };
     draw();
   };
-  function remember() { var s = state(); s.wizards[cur.id] = { at: cur.at }; saveState(s); }
+  // Screen 1 isn't progress: only remember a place once the buyer has moved past it.
+  function remember() { var s = state(); if (cur.at > 0) s.wizards[cur.id] = { at: cur.at }; else delete s.wizards[cur.id]; saveState(s); }
   function finish() { var s = state(); delete s.wizards[cur.id]; saveState(s); }
 
   function draw() {
@@ -222,9 +224,14 @@
     { keys: ["ignore", "skip", "terms", "email", "updates", "checkbox", "tick"], a: "Tick the box agreeing to Google's terms (you have to). Any box about emails or news is up to you: you can leave it empty." },
     { keys: ["long", "time", "how many", "minutes"], a: "About 2 minutes for the helper, 5 for the phone, 10 for sync. You can stop any time and pick up where you left off." },
     { keys: ["api", "key", "what is", "access code"], a: "Google calls it an API key. We call it your free access code: it's how the helper gets to use Google's AI for free." },
+    { keys: ["tiiny", "tiny host", "hosting", "online", "upload", "address", "link", "website"], a: "tiiny.host puts your program online for free, so your phone can open it. Your numbers and your code are never uploaded: they stay on your own devices." },
+    { keys: ["3 months", "expire", "taken down", "stay online", "disappear", "how long does it stay", "how long will it stay"], a: "On tiiny.host's free plan the page stays online as long as you log in to tiiny.host at least once every 3 months." },
+    { keys: ["update", "new version", "upgrade"], a: "To put a new version online, log in to tiiny.host and use Update on the same project. That keeps the same address, so your numbers stay." },
+    { keys: ["trial", "free trial", "solo"], a: "You don't need tiiny.host's free trial: tap Skip. The trial turns into a paid plan, and the free plan is all this program needs." },
     { keys: ["phone", "iphone", "android", "mobile"], a: "Setting up the helper is easiest on a computer. Once it works, Send to my phone moves it over by scanning a code." }
   ];
   setup.suggestQuestions = function (wizardId) {
+    if (wizardId === "host") return ["Is it really free?", "Do I need the free trial?", "How long does it stay online?"];
     return wizardId === "sync" ? ["Which region?", "Locked or test mode?", "Where's the setup code?"]
                                : ["Is it really free?", "Do I need a credit card?", "What if I make a mistake?"];
   };
@@ -303,7 +310,85 @@
     });
   }
 
-  setup.wizards.host = { title: "Put it on your phone", ready: false, screens: [] };   // next: tiiny.host wizard
+  /* "Put it on your phone": put the file online with tiiny.host (free plan, checked 2026-10-07:
+     1 live project, 3 MB uploads, link stays up while the owner logs in once every 3 months,
+     a small tiiny banner, and a "Start your free trial" popup whose way out is "Skip"; existing
+     projects have an "Update" button that keeps the same address). Then everything set up in
+     the file (code + numbers) is carried to the new address in one link, using dd.pair. */
+  function fileName() {
+    try { return decodeURIComponent(location.pathname.split("/").pop()) || "the program file"; } catch (e) { return "the program file"; }
+  }
+  function hostState(v) { var s = state(); if (v !== undefined) { s.hostUrl = v; saveState(s); } return s.hostUrl || ""; }
+  /* Tidy a pasted address. Returns a full https address, or null if it isn't one. */
+  setup.cleanAddress = function (raw) {
+    var t = String(raw || "").trim().replace(/^["'<]+|["'>]+$/g, "");
+    if (!t) return null;
+    if (!/^[a-z]+:\/\//i.test(t)) t = "https://" + t;
+    try {
+      var u = new URL(t);
+      if (u.protocol !== "https:" && u.protocol !== "http:") return null;
+      if (!/\./.test(u.hostname) || /\s/.test(t)) return null;
+      u.hash = "";
+      return u.href;
+    } catch (e) { return null; }
+  };
+
+  setup.wizards.host = {
+    title: "Put it on your phone",
+    onDone: function () { dd.ui.toast("Use your new address from now on. Bookmark it!", 4500); },
+    screens: [
+      { title: "Put it online, for free",
+        body: function () { return '<p>Your phone can\'t open a file that lives on this computer. So first we put the program online, at its own web address, using a free service called <b>tiiny.host</b>.</p>' +
+          '<ul class="dd-facts"><li>✓ Free. No credit card.</li><li>✓ About 5 minutes.</li><li>✓ Your numbers and your code are never uploaded.</li></ul>' +
+          (dd.env.isPhone ? '<p class="dd-status show warn">Do this step on the computer where you saved the program file. Then come back to your phone at the end.</p>' : "") +
+          '<p class="dd-note">The page itself can be opened by anyone who has its address, like a shared link. What you type into it stays on each of your own devices.</p>'; } },
+      { title: "Open tiiny.host and sign up",
+        body: function () { return '<p>Tap the button. tiiny.host opens in a new tab. Sign up for free, with your email or your Google account.</p>' +
+          '<p>If tiiny.host offers a free trial, tap <b>' + esc(L("host_skip_trial", "Skip")) + '</b>. You don\'t need it.</p>' +
+          '<p><b>You can ignore</b> anything about upgrading, custom domains, analytics or teams.</p>'; },
+        action: { label: "Open tiiny.host", run: function (c) { c.open(link("host_open", "https://tiiny.host/")); } },
+        stuck: ["Already have a tiiny.host account? Just log in.", "If a big \"Start free trial\" button appears, look below it for Skip. The trial turns into a paid plan, so skip it."], guide: "host_open" },
+      { title: "Upload this program",
+        body: function () { return '<p>On tiiny.host, tap <b>' + esc(L("host_upload", "Upload file")) + '</b> and choose this file:</p>' +
+          '<p class="dd-filename">' + esc(fileName()) + '</p>' +
+          '<p class="dd-note">It\'s wherever you saved it from Etsy, often the Downloads folder.</p>' +
+          '<p><b>You can ignore</b> options for passwords, domains or names. The address tiiny.host picks is fine.</p>'; },
+        stuck: ["Can't find the file? On Windows, open File Explorer and look in Downloads. On a Mac, open Finder and look in Downloads.",
+                "If tiiny.host says you've used your free project, the free plan holds one program at a time. Contact DigiDoughnut and we'll help."], guide: "host_upload" },
+      { title: "Copy your new address",
+        body: function () { return '<p>When the upload finishes, tiiny.host shows your program\'s new address. It ends in <b>.tiiny.site</b>. Copy it, then paste it here.</p>' +
+          '<input class="dd-input" id="dd-wiz-addr" placeholder="e.g. something-12.tiiny.site" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + esc(hostState()) + '">'; },
+        mount: function (c) { var i = c.el.querySelector("#dd-wiz-addr"); if (!dd.env.isPhone && !i.value) i.focus(); },
+        check: function (c) {
+          var url = setup.cleanAddress(c.el.querySelector("#dd-wiz-addr").value);
+          if (!url) { c.status("warn", "Paste your new address first.", "It looks something like something-12.tiiny.site."); return false; }
+          if (url.split("#")[0] === location.href.split("#")[0]) { c.status("warn", "That's the address of this page.", "Paste the new address that tiiny.host gave you."); return false; }
+          hostState(url); return true;
+        },
+        stuck: ["On tiiny.host, the address is shown as a link. Copy it, or click the link and copy the address from the top of your browser.", "It's also listed under Live Projects when you log in to tiiny.host."], guide: "host_address" },
+      { title: "Move your setup across",
+        body: function () {
+          var url = hostState(), host = url; try { host = new URL(url).host; } catch (e) {}
+          return '<p>Tap the button. Your program opens at <b>' + esc(host) + '</b>' + (dd.ai && dd.ai.hasCode() ? ', with your free access code' : '') +
+            (dd.isExample && !dd.isExample() ? ' and your numbers' : '') + ' already in it.</p>' +
+            '<p class="dd-note">The button works for 10 minutes. If it runs out, just tap it again.</p>'; },
+        action: { label: "Open my program at its new address", run: function (c) {
+          var made = dd.pair.makeLink({ base: hostState(), includeCode: true, maxLink: 60000 });
+          c.open(made.link);
+          c.status(made.left.length ? "warn" : "ok", made.left.length ? "Opened. Your " + made.left.join(" and ") + " were too big to carry, so they stay here for now." : "Opened in a new tab. Check it, then come back here and tap Next.");
+        } },
+        stuck: ["Nothing opened? Your browser may have blocked the new tab. Allow pop-ups for this page, or tap the button again.",
+                "If the new page looks empty, check the address you pasted: tap Back and fix it."], guide: "host_move" },
+      { title: "Bookmark it and keep it",
+        body: function () { return '<p class="dd-big-tick">✓</p><p>In the new tab, <b>bookmark the page</b> (Ctrl+D on Windows, Cmd+D on a Mac). From now on, always open the program from that address.</p>' +
+          '<ul><li><b>Same address, same numbers.</b> A different address, or the file on this computer, starts with its own separate numbers.</li>' +
+          '<li><b>Log in to tiiny.host at least once every 3 months.</b> That keeps your free page online.</li>' +
+          '<li><b>Getting an update?</b> On tiiny.host, use <b>' + esc(L("host_update", "Update")) + '</b> on this same project. Don\'t upload it as a new one.</li></ul>' +
+          '<p>Last step: in the new tab, open the setup card and tap <b>Send to my phone</b>.</p>' +
+          '<p class="dd-note">You can ignore the small tiiny.host banner on your page.</p>'; },
+        nextLabel: "Done" }
+    ]
+  };
   setup.wizards.sync = { title: "Keep devices in step", ready: false, screens: [] };   // Phase 5 sync + Firebase wizard
 
   /* ---------- start ---------- */

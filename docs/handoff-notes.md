@@ -49,3 +49,16 @@ Collected as decisions come up; folded into handoff.md later.
   "Turn on the helper" wizard complete and tested (tests/setup_test.py, 68 checks).
 - Oran's decisions: Firebase wizard waits for Phase 5 ("Coming soon" until then). Real
   iPhone+PC sync via QR passed. Gate tester comes at the end; for now Oran tests each round.
+
+## Phase 3, round 2 (2026-10-07): "Put it on your phone"
+
+- Oran's real run of round 1 passed (PC + iPhone).
+- tiiny.host checked live 2026-10-07 (pricing page + Oran's logged-in dashboard): free plan =
+  1 active project, 3 MB uploads, 5,000 visits/month, tiiny banner; link stays online while the
+  owner logs in once every 3 months; a "Start your free trial" popup (Solo, turns paid after
+  7 days) whose way out is "Skip"; projects have "Upload file" and "Update" (keeps the address).
+  Logged-out sign-up and upload screens NOT seen yet: Oran to screenshot.
+- Wizard: 6 screens. After upload, the buyer pastes the new address and one button opens it with
+  the code + numbers carried in the link (dd.pair.makeLink with base + maxLink 60000), so nothing
+  typed into the file version is lost. Hosted card row then offers "Send to my phone".
+- OPEN, Oran's call: free plan holds ONE program per tiiny account (see reply 2026-10-07).

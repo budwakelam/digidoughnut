@@ -64,9 +64,14 @@
   pair._unpack = unpack;
   function baseUrl() { return location.href.split("#")[0]; }
 
-  /* Build the link. opts = {includeCode:true}. Returns {link, included:[keys], left:[labels]} */
+  /* Build the link. opts = {includeCode:true, base:"https://…" (default: this page),
+     maxLink: characters (default: small enough for a simple QR)}.
+     Returns {link, included:[keys], left:[labels]}. The Setup Center uses base + a large
+     maxLink to carry everything from the file on the computer to its new web address. */
   pair.makeLink = function (opts) {
     opts = opts || {};
+    var base = (opts.base || baseUrl()).split("#")[0], max = opts.maxLink || MAX_LINK;
+    function link(payload) { return base + "#dd=" + pack(payload); }
     var payload = { v: 1, t: Math.floor(Date.now() / 1000).toString(36), i: newId() };
     var included = [], left = [];
     // Small, essential pieces first; the program's numbers last (they're the optional extra).
@@ -74,14 +79,13 @@
       var v; try { v = p.give(opts); } catch (e) { dd.errors.record("pair.give:" + p.key, e); }
       if (v === undefined || v === null) return;
       payload[p.key] = v;
-      if (p.optional && link(payload).length > MAX_LINK) { delete payload[p.key]; left.push(p.label); return; }
+      if (p.optional && link(payload).length > max) { delete payload[p.key]; left.push(p.label); return; }
       included.push(p.key);
     });
     var out = link(payload);
     last.made = { at: new Date().toLocaleTimeString(), size: out.length, parts: included.join(",") || "none" };
     return { link: out, included: included, left: left, expiresAt: (parseInt(payload.t, 36) + LIFE_S) * 1000 };
   };
-  function link(payload) { return baseUrl() + "#dd=" + pack(payload); }
 
   /* ---------- QR drawing (vendored qrcode-generator, fixed cell size: never scalable:true) ---------- */
   pair.qrSvg = function (text, maxPx) {

@@ -116,7 +116,9 @@
 
   if (dd.diag) dd.diag.addSection("Noticeboard", function () {
     var d = notes.lastChecked(), t = notes.lastTried();
+    var next = cached && cached.fetchedAt ? new Date(cached.fetchedAt + WEEK) : null;
     return ["Last downloaded: " + (d ? d.toLocaleString() : "never") + " · last tried: " + (t ? t.toLocaleString() : "never") +
+            " · next check: " + (next ? (next < new Date() ? "on this visit" : next.toLocaleString()) : "on this visit") +
             " · help links " + Object.keys(data.helpLinks || {}).length +
             " · labels " + Object.keys(data.labels || {}).length +
             (data.notice ? " · notice " + data.notice.id : "")];
