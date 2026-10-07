@@ -1,0 +1,14 @@
+{
+  "format": "digidoughnut-noticeboard",
+  "version": 1,
+  "updated": "2026-10-07",
+  "status": "placeholder — real content arrives with the Phase 2/3 build. Programs check this file weekly for help links, notices, model hints, key-format patterns, and button-label corrections (platform spec section 3.9).",
+  "notices": [],
+  "model_hints": {
+    "preferred": null,
+    "retired": []
+  },
+  "key_patterns": [],
+  "help_links": {},
+  "button_labels": {}
+}
