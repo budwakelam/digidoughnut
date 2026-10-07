@@ -138,3 +138,9 @@ Collected as decisions come up; folded into handoff.md later.
   The QR sheet now always says what it carries and why anything stays behind (example data,
   or too big for one square -> step 4 will move it). Programs name their data with
   `dataLabel` (demo: "list").
+- Slow Penny on Oran's iPhone (tiiny, 2026-10-07 2:48 PM): three models in a row gave NO answer
+  for 12 s each, then gemini-flash-lite-latest answered in 2.8 s (39.6 s turn). dd.ai.chat now
+  RACES: a model silent for `limits.hedge` (6 s) gets the next model asked alongside it (up to
+  3 at once); the first answer wins, the rest are cancelled (`inflight` list; Stop aborts all).
+  The winner is remembered and asked first next time. Logged as "also asking <model>".
+  connect() is still sequential (12 s per model). helper_test: 79 checks.

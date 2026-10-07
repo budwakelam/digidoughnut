@@ -21,7 +21,10 @@
 
   // request: one model, when it's the last one left · perModel: one model while others remain
   // turn: everything the helper does for one message · rounds: tool round-trips per message
-  ai.limits = { request: 30000, perModel: 12000, turn: 90000, rounds: 5 };   // tests shrink these
+  // hedge: a model silent this long while others remain gets company: the next model is asked
+  // too, and whichever answers first wins (Oran's phone, 2026-10-07: three silent models in a
+  // row cost 36 s at 12 s each; now each costs about 6 s, and a slow-but-working one still counts).
+  ai.limits = { request: 30000, perModel: 12000, hedge: 6000, turn: 90000, rounds: 5 };   // tests shrink these
   var CONN_KEY = "dd_ai_connections_v1", MODELS_KEY = "dd_ai_models_v1", LEGACY_KEY = "dd_gemini_key_v1";
   var RECHECK_MS = 7 * 24 * 3600 * 1000;
   var BUSY_MS = 10 * 60 * 1000;   // a model that just failed is tried last for 10 minutes
@@ -139,8 +142,9 @@
   };
 
   /* ---------- low-level request with timeout + Stop ---------- */
-  var current = null;   // the AbortController of the request in flight
-  ai.stop = function () { stopped = true; if (current) try { current.abort(); } catch (e) {} };
+  var current = null;   // the AbortController of the newest request in flight
+  var inflight = [];    // every request in flight (two models can be asked at once)
+  ai.stop = function () { stopped = true; inflight.slice().forEach(function (c) { try { c.abort(); } catch (e) {} }); };
   var stopped = false;
 
   /* Test drills (AI test page only): while ai.drill is set, every request behaves as if
@@ -176,11 +180,13 @@
     if (r.timeout) dd.errors.record("ai " + what + (m ? " " + decodeURIComponent(m[1]) : ""), "no answer within " + ((Date.now() - started) / 1000).toFixed(0) + " s");
   }
 
-  function request(url, opts, ms) {
+  function request(url, opts, ms, holder) {
     var started = Date.now(), entry = logStart(url);
-    var ctl = new AbortController(); current = ctl;
+    var ctl = new AbortController(); current = ctl; inflight.push(ctl);
+    if (holder) holder.ctl = ctl;
+    var gone = function () { inflight = inflight.filter(function (c) { return c !== ctl; }); };
     var d = ai.drill && drilled(ms, ctl);
-    if (d) return d.then(function (r) { logRequest(url, started, r, entry); return r; }).finally(function () { if (current === ctl) current = null; });
+    if (d) return d.then(function (r) { logRequest(url, started, r, entry); return r; }).finally(function () { gone(); if (current === ctl) current = null; });
     var timer = setTimeout(function () { ctl.timedOut = true; ctl.abort(); }, ms);
     opts.signal = ctl.signal;
     return fetch(url, opts).then(function (res) {
@@ -198,7 +204,7 @@
         return { status: 0, network: true, error: String(e && e.message || e) };
       });
     }).then(function (r) { logRequest(url, started, r, entry); return r; })
-      .finally(function () { clearTimeout(timer); if (current === ctl) current = null; });
+      .finally(function () { gone(); clearTimeout(timer); if (current === ctl) current = null; });
   }
 
   /* ---------- the Gemini adapter ---------- */
@@ -265,7 +271,7 @@
       if (tools) body.tools = tools;
       if (req.forceTool) body.toolConfig = { functionCallingConfig: { mode: "ANY", allowedFunctionNames: [req.forceTool] } };
       return request(p.base + "/models/" + encodeURIComponent(model) + ":generateContent",
-        { method: "POST", headers: adapters.gemini.headers(code), body: JSON.stringify(body) }, req.ms).then(function (r) {
+        { method: "POST", headers: adapters.gemini.headers(code), body: JSON.stringify(body) }, req.ms, req.holder).then(function (r) {
         if (!r.ok) throw adapters.gemini.problem(r, "send");
         var cand = r.body && r.body.candidates && r.body.candidates[0];
         var parts = (cand && cand.content && cand.content.parts) || [];
@@ -440,14 +446,56 @@
     function left() { return ai.limits.turn - (Date.now() - started); }
     function untried() { return queue.filter(function (id) { return !tried[id]; }); }
 
+    function fatal(e) { return e.type === "stopped" || e.type === "bad_code" || e.type === "offline" || e.type === "host_blocked" || (e.type === "not_allowed" && !e.rediscover); }
+
+    /* Ask `first`; if it stays silent, ask the next model as well (up to 3 at once). The first
+       answer wins and the others are cancelled. A model that fails hands over to the next. */
+    function race(first) {
+      return new Promise(function (resolve, reject) {
+        var live = 0, done = false, holders = [], hedge = null;
+        var hedgeMs = Math.min(ai.limits.hedge, ai.limits.perModel);
+        function finish(fn, v, keep) {
+          done = true; clearInterval(hedge);
+          holders.forEach(function (h) { if (h !== keep && h.ctl) try { h.ctl.abort(); } catch (e) {} });
+          fn(v);
+        }
+        function go(m) {
+          tried[m] = true; live++;
+          var h = {}; holders.push(h);
+          ad.send(p, conn.code, m, { system: req.system, history: history, tools: req.tools, ms: Math.min(ai.limits.request, left()), model: m, holder: h })
+            .then(function (res) { live--; if (!done) finish(resolve, { model: m, res: res }, h); },
+                  function (e) {
+                    live--; if (done) return;
+                    if (fatal(e)) return finish(reject, e);
+                    // busy, silent, retired, out of share, refused: note it, hand over
+                    lastProblem = e; markBusy(conn.provider, m);
+                    var next = untried()[0];
+                    if (next && left() > 3000) {
+                      status("retrying");
+                      dd.errors.record("ai.switch", m + " " + describe(e) + ", trying " + next);
+                      go(next);
+                    } else if (!live) finish(reject, e);
+                  });
+        }
+        go(first);
+        hedge = setInterval(function () {
+          if (done || stopped) return;
+          var next = untried()[0];
+          if (live < 3 && next && left() > 3000) {
+            status("retrying");
+            dd.errors.record("ai.switch", "no answer yet after " + (hedgeMs / 1000) + " s, also asking " + next);
+            go(next);
+          }
+        }, hedgeMs);
+      });
+    }
+
     function step(model) {
       if (stopped) return Promise.reject({ type: "stopped" });
-      tried[model] = true;
-      // A silent model gets a short wait while other models are still left to try.
-      var ms = Math.min(untried().length ? ai.limits.perModel : ai.limits.request, left());
       if (left() <= 1000) return Promise.reject(lastProblem || { type: "timeout", raw: "turn budget used up" });
       status(rounds ? "working" : "thinking");
-      return ad.send(p, conn.code, model, { system: req.system, history: history, tools: req.tools, ms: ms, model: model }).then(function (res) {
+      return race(model).then(function (win) {
+        var res = win.res; model = win.model;
         history.push({ role: "model", text: res.text, calls: res.calls, raw: res.raw });
         if (!res.calls.length) { rememberWorking(conn.provider, model); return { ok: true, text: res.text, history: history, calls: ran, model: model }; }
         if (++rounds > ai.limits.rounds) { rememberWorking(conn.provider, model); return { ok: true, text: res.text || "", history: history, calls: ran, model: model, cappedRounds: true }; }
@@ -464,21 +512,13 @@
           });
         }, Promise.resolve()).then(function () {
           history.push({ role: "tool", results: results });
+          // The next round goes to the model that just answered (it holds the thread), but it
+          // may be raced too: tried[] only limits which OTHER models can join.
+          tried[model] = false;
           return step(model);
         });
       }, function (e) {
-        // Problems no other model can fix: stop and explain.
-        if (e.type === "stopped" || e.type === "bad_code" || e.type === "offline" || e.type === "host_blocked" || (e.type === "not_allowed" && !e.rediscover)) throw e;
-        // Anything else (busy, silent, retired, this model's daily share used up, a model-
-        // specific refusal): note it and try the next model. Every model, until one answers.
-        lastProblem = e;
-        markBusy(conn.provider, model);
-        var next = untried()[0];
-        if (next && left() > 3000) {
-          status("retrying");
-          dd.errors.record("ai.switch", model + " " + describe(e) + ", trying " + next);
-          return step(next);
-        }
+        if (fatal(e)) throw e;
         // Every model we knew about failed. Google may have added new ones: look once.
         if (!refreshed && left() > 5000) {
           refreshed = true;

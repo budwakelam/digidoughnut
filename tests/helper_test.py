@@ -22,7 +22,7 @@ GOOD = "AQ.Ab8RN6TESTfake0123456789abcdefGHIJKLmnop"
 
 class FakeGoogle:
     """Answers like a model with tools: reads the person's words and calls the demo's tools."""
-    def __init__(self): self.sent = []; self.down = False; self.hanging = []
+    def __init__(self): self.sent = []; self.down = False; self.hanging = []; self.silent = set(); self.models = []
     def handle(self, route):
         req = route.request; cors = {"Access-Control-Allow-Origin": "*"}
         if req.method == "OPTIONS":
@@ -39,6 +39,9 @@ class FakeGoogle:
         if "toolConfig" in body:
             return calls(("confirm_ready", {"word": "ready"}))
         self.sent.append(body)
+        model = req.url.split("/models/")[1].split(":")[0]; self.models.append(model)
+        if model in self.silent:
+            self.hanging.append(route); return
         if self.down:
             return route.fulfill(status=503, content_type="application/json", headers=cors, body=json.dumps({"error": {"code": 503, "status": "UNAVAILABLE", "message": "high demand"}}))
         last = body["contents"][-1]
@@ -222,6 +225,25 @@ with sync_playwright() as p:
     send(page, "add rice")
     check("works on the phone", "rice" in items(page))
     page.screenshot(path=os.path.join(SHOTS, "helper-iphone.png"), full_page=True)
+    check("no page errors", not errs, errs)
+    ctx.close()
+
+    print("\n== a silent model: the next one is asked too, first answer wins ==")
+    ctx, page, errs = fresh(code=True)
+    page.evaluate("() => { dd.ai.limits.hedge = 1500; }")
+    send(page, "hello")   # picks models, remembers the first that answers
+    first = G.models[-1]
+    G.silent = {first}; G.models.clear()
+    import time; t0 = time.time()
+    m = send(page, "add kiwi")
+    took = time.time() - t0
+    check("Penny still answers", "kiwi" in items(page), m.inner_text())
+    check("in about the hedge time, not the full wait", took < 6, f"{took:.1f}s")
+    check("two models were asked", len(set(G.models)) >= 2 and G.models[0] == first, G.models)
+    check("the one that answered goes first next time", page.evaluate("() => JSON.parse(localStorage.getItem('dd_ai_models_v1')).google.model") != first)
+    rep = page.evaluate("() => dd.diag.text()")
+    check("the report says it asked another model", "also asking" in rep)
+    G.silent = set()
     check("no page errors", not errs, errs)
     ctx.close()
 
