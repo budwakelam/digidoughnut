@@ -24,6 +24,11 @@ Collected as decisions come up; folded into handoff.md later.
 
 - Never refuse a pasted code because of its format: Google decides. Format patterns are only a
   hint for which company a code belongs to.
+- Since 2026-05-28 AI Studio creates only "auth keys" (start "AQ."); older "AIza" standard keys
+  are being retired. Oran's AQ. key is proven from a web page (file, tiiny, iPhone) with the
+  x-goog-api-key header on the native endpoint. Note: AQ. keys are reported NOT to work on
+  Google's OpenAI-compatible endpoint, so keep using the native Gemini endpoint.
+- Setup copy must not promise any code prefix.
 
 ## Phone pairing / QR (built 2026-10-07, pulled forward from Phase 5 at Oran's request)
 
