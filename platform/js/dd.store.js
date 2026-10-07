@@ -104,7 +104,17 @@
      Asked once, after the buyer's first real save, so browsers that show a prompt
      (Firefox) show it at a moment that makes sense. Chrome and Safari decide silently. */
   store.persisted = "not asked";
+  // On load, report what the browser already decided (from an earlier visit), so the
+  // diagnostic doesn't say "not asked" just because nothing was saved on this visit yet.
+  try {
+    if (navigator.storage && navigator.storage.persisted) {
+      navigator.storage.persisted().then(function (already) {
+        if (store.persisted === "not asked") store.persisted = already ? "yes" : "not yet";
+      }, function () {});
+    } else { store.persisted = "unsupported"; }
+  } catch (e) {}
   function askToKeepStorage(program) {
+    if (store.persisted === "not yet") store.persisted = "not asked";
     if (store.persisted !== "not asked") return;
     if (!(navigator.storage && navigator.storage.persist)) { store.persisted = "unsupported"; return; }
     store.persisted = "asking";

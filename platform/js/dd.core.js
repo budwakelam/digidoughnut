@@ -88,7 +88,7 @@
 
   /* "Works before setup": a first-time buyer sees example data plus one clear way out. */
   function paintExampleNotice() {
-    if (!meta.example) { dd.ui.clearNotice("example"); return; }
+    if (!meta.example || program.showExampleNotice === false) { dd.ui.clearNotice("example"); return; }
     dd.ui.notice("example", program.exampleNotice || "You're looking at example numbers so you can try things out.", "info", [
       { label: "Clear them and start mine", primary: true, onClick: function () {
           dd.replaceData(program.emptyData(), { example: false, source: "start-fresh" });
@@ -112,6 +112,7 @@
       render();
       paintExampleNotice();
       dd.diag.attach();
+      if (dd.notes) dd.notes.start();
       dd.emit("ready", { source: loaded.source });
     } catch (e) { bootFailed(e); }
   };

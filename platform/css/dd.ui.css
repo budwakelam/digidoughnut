@@ -71,3 +71,4 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
 /* footer: brand line + version; triple-click opens the support diagnostic */
 .dd-footer{max-width:760px;margin:26px auto 0;padding:0 16px;text-align:center;color:var(--dd-muted);font-size:.8rem;user-select:none;-webkit-user-select:none}
 .dd-footer p{margin:2px 0}
+.dd-footer .dd-foot-link{font-size:inherit;padding:0 2px;text-decoration:underline;color:var(--dd-muted)}

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  Demo List 0.1.0 · a DigiDoughnut program
+  AI Test 0.2.0 · a DigiDoughnut program
   Built 2026-10-07 from the DigiDoughnut Platform. This file is assembled by build.mjs:
   edit platform/ and programs/<name>/, never this output.
 -->
@@ -8,9 +8,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#2563eb">
+<meta name="theme-color" content="#7c3aed">
 <meta name="color-scheme" content="light">
-<title>Demo List — A platform test program</title>
+<title>AI Test — Checks the AI connection</title>
 <style>
 /* ===== DigiDoughnut Platform · dd.ui.css =====
    The shared look, taken from Profit Coach's clean card UI. Every program uses these tokens;
@@ -88,19 +88,19 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
 .dd-footer .dd-foot-link{font-size:inherit;padding:0 2px;text-decoration:underline;color:var(--dd-muted)}
 
 /* ===== PROGRAM-SPECIFIC styles ===== */
-.demo-count{margin-left:auto;font-size:.85rem;color:var(--dd-muted);font-weight:600}
-.demo-add{display:flex;gap:8px}
-.demo-row{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--dd-line);cursor:pointer}
-.demo-row input{width:20px;height:20px;accent-color:var(--dd-brand)}
-.demo-row span{flex:1}
-.demo-row.done span{text-decoration:line-through;color:var(--dd-muted)}
-.demo-x{background:#f3f4f6;border:none;border-radius:8px;width:34px;height:34px;cursor:pointer;font-size:1rem;color:var(--dd-muted)}
-.demo-x:hover{background:#fee2e2;color:var(--dd-bad)}
+.t-row{display:flex;gap:8px}
+.t-pill{margin-left:auto;font-size:.78rem;font-weight:700;padding:3px 10px;border-radius:99px}
+.t-pill.on{background:var(--dd-okbg);color:var(--dd-ok)} .t-pill.off{background:#f3f4f6;color:var(--dd-muted)}
+.t-msgs{max-height:260px;overflow:auto;display:flex;flex-direction:column;gap:8px;margin:6px 0 10px}
+.t-msg{max-width:85%;padding:9px 12px;border-radius:14px;font-size:.92rem}
+.t-msg.me{align-self:flex-end;background:var(--dd-brand);color:#fff}
+.t-msg.bot{align-self:flex-start;background:#f3f4f6}
+.t-stop{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom));z-index:30;box-shadow:0 6px 18px rgba(0,0,0,.2)}
 
 </style>
 </head>
 <body>
-<noscript><p style="padding:20px;font-family:sans-serif">Demo List needs JavaScript turned on in your browser to work.</p></noscript>
+<noscript><p style="padding:20px;font-family:sans-serif">AI Test needs JavaScript turned on in your browser to work.</p></noscript>
 
 <header class="dd-top" id="dd-top"></header>
 
@@ -108,21 +108,51 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
   <div id="dd-notices" aria-live="polite"></div>
   <div id="dd-setup"></div>   <!-- Setup Center lives here (Phase 3) -->
   <main id="dd-app">
-<!-- PROGRAM-SPECIFIC markup. Goes inside <main id="dd-app">. Use dd-* classes for the shared look. -->
 <div class="dd-card">
-  <h2>📝 My list <span class="demo-count" id="demoCount"></span></h2>
-  <div class="demo-add">
-    <input class="dd-input" id="demoNew" placeholder="Add an item…" autocomplete="off">
-    <button class="dd-btn" id="demoAdd">Add</button>
+  <h2>1. Connect your Google code <span class="t-pill off" id="tConn">Not connected</span></h2>
+  <div class="t-row">
+    <input class="dd-input" id="tCode" placeholder="Paste your free access code" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button class="dd-btn t-run" id="tConnect">Connect</button>
   </div>
-  <div class="dd-status" id="demoStatus"></div>
-  <div id="demoList"></div>
-  <div class="dd-btnrow"><button class="dd-btn ghost" id="demoClear">Clear the list</button></div>
+  <div class="dd-btnrow">
+    <button class="dd-btn ghost small" id="tGetCode">Get a free code from Google</button>
+    <button class="dd-btn ghost small" id="tForget" style="display:none">Forget my code</button>
+  </div>
+  <div class="dd-status" id="tConnStatus"></div>
 </div>
+
 <div class="dd-card">
-  <h2>About this page</h2>
-  <p class="dd-note" style="margin:0">This is the DigiDoughnut Platform test program. It checks that saving, example data and upgrades work the same in every program. Your list is saved in this browser only.</p>
+  <h2>2. Tool test</h2>
+  <p class="dd-note">Asks the AI to add three items in one go. Pass = all three appear.</p>
+  <button class="dd-btn t-run" id="tTools">Run the tool test</button>
+  <p class="dd-note" style="margin:10px 0 0">List: <span id="tItems"></span></p>
+  <div class="dd-status" id="tToolStatus"></div>
 </div>
+
+<div class="dd-card">
+  <h2>3. Chat</h2>
+  <p class="dd-note">Try: "Add eggs to my list", then "what did you just add?" It should remember.</p>
+  <div class="t-msgs" id="tMsgs"></div>
+  <div class="t-row">
+    <input class="dd-input" id="tChatIn" placeholder="Type a message…" autocomplete="off">
+    <button class="dd-btn t-run" id="tSend">Send</button>
+  </div>
+  <div class="dd-btnrow"><button class="dd-btn ghost small" id="tClearChat">Clear chat</button></div>
+  <div class="dd-status" id="tChatStatus"></div>
+</div>
+
+<div class="dd-card">
+  <h2>4. Problem drills</h2>
+  <p class="dd-note">Each button makes the next request pretend to fail, so you can see the friendly message a buyer would get.</p>
+  <div class="dd-btnrow">
+    <button class="dd-btn ghost t-run" data-drill="out_of_share">Out of free share</button>
+    <button class="dd-btn ghost t-run" data-drill="timeout">Too slow (5 s)</button>
+    <button class="dd-btn ghost t-run" data-drill="offline">No internet</button>
+  </div>
+  <div class="dd-status" id="tDrillStatus"></div>
+</div>
+
+<button class="dd-btn danger t-stop" id="tStop" style="display:none">Stop</button>
 
   </main>
 </div>
@@ -1276,88 +1306,119 @@ window.DD_BUILD = {"built":"2026-10-07","commit":"ddc6d09","platform":"0.1.0"};
 </script>
 <script>
 /* ===== PROGRAM-SPECIFIC code ===== */
-/* ===== PROGRAM-SPECIFIC: Demo List =====
-   A deliberately tiny program that exercises the platform: first-run example data, saving,
-   a schema upgrade (v1 stored plain strings, v2 stores objects), and the friendly confirm.
-   Copy this folder to start a new program. Everything not in this object comes from the platform. */
+/* ===== PROGRAM-SPECIFIC: AI Test (internal, never sold) =====
+   The Phase 2 gate page. Connect a real Google code, then check: one real tool call,
+   several tool calls in one reply, a chat that remembers, and the friendly messages for
+   "out of free share", "took too long" and "no internet". */
 const DD_PROGRAM = {
-  id: "demo",                       // lowercase letters/digits; becomes dd_demo_data_v1
-  name: "Demo List",
-  tagline: "A platform test program",
-  version: "0.1.0",
-  schemaVersion: 2,
-  accent: "#2563eb",
-  exampleNotice: "You're looking at an example list so you can try things out.",
+  id: "aitest",
+  name: "AI Test",
+  tagline: "Checks the AI connection",
+  version: "0.2.0",
+  schemaVersion: 1,
+  accent: "#7c3aed",
+  showExampleNotice: false,
 
   emptyData() { return { items: [] }; },
+  exampleData() { return { items: [] }; },
+  validateData(d) { return !!d && Array.isArray(d.items); },
+  migrate(d) { return d; },
 
-  exampleData() {
-    return { items: [
-      { id: "ex1", text: "Buy flour", done: false },
-      { id: "ex2", text: "Book the market table", done: true },
-      { id: "ex3", text: "Print price tags", done: false }
-    ] };
-  },
-
-  // Called before any saved data is used. Return false and the platform keeps a recovery copy.
-  validateData(d) {
-    return !!d && Array.isArray(d.items) && d.items.every((i) =>
-      i && typeof i.id === "string" && typeof i.text === "string" && typeof i.done === "boolean");
-  },
-
-  // Bring data from any older schema up to this one. fromVersion 0 = saved before envelopes existed.
-  migrate(d, fromVersion) {
-    let out = d || { items: [] };
-    if (fromVersion < 2) {
-      out = { items: (out.items || []).map((t, n) => typeof t === "string"
-        ? { id: "m" + n + "_" + Date.now().toString(36), text: t, done: false } : t) };
-    }
-    return out;
-  },
-
-  // Runs once, after the platform frame is ready. Wire up static buttons here.
   mount(ctx) {
-    const $ = ctx.ui.$;
-    const add = () => {
-      const box = $("demoNew"), text = box.value.trim();
-      if (!text) { ctx.ui.status("demoStatus", "warn", "Type something first."); return; }
-      ctx.update((d) => { d.items.push({ id: ctx.ui.uid("i"), text: text.slice(0, 120), done: false }); });
-      box.value = ""; ctx.ui.clearStatus("demoStatus");
+    const $ = ctx.ui.$, ui = ctx.ui;
+    let history = [];
+
+    const paintConn = () => {
+      const c = dd.ai.connection();
+      $("tConn").textContent = c ? `Connected to ${c.label} (code ${c.hint})` : "Not connected";
+      $("tConn").className = "t-pill " + (c ? "on" : "off");
+      $("tForget").style.display = c ? "" : "none";
     };
-    $("demoAdd").addEventListener("click", add);
-    $("demoNew").addEventListener("keydown", (e) => { if (e.key === "Enter") add(); });
-    $("demoClear").addEventListener("click", async () => {
-      const yes = await ctx.ui.confirm("Clear the whole list?", "This removes every item. You can't undo it.", "Yes, clear it", "No, keep it", true);
-      if (yes) dd.replaceData(DD_PROGRAM.emptyData(), { example: false, source: "clear" });
+    paintConn();
+    dd.on("ai:changed", paintConn);
+
+    // Busy state: "Still working…" after 10 seconds, with a Stop button the whole time.
+    let slowTimer = null;
+    const busy = (on, statusId) => {
+      document.querySelectorAll(".t-run").forEach((b) => (b.disabled = on));
+      $("tStop").style.display = on ? "" : "none";
+      clearTimeout(slowTimer);
+      if (on) {
+        ui.status(statusId, "info", "Working on it…");
+        slowTimer = setTimeout(() => ui.status(statusId, "info", "Still working…", "Tap Stop if you'd rather not wait."), 10000);
+      }
+    };
+    const showResult = (statusId, res, okTitle) => {
+      busy(false);
+      if (res.ok) ui.status(statusId, "ok", okTitle(res));
+      else if (res.stopped) ui.status(statusId, "warn", "Stopped. Nothing else will happen.");
+      else ui.status(statusId, "err", res.title, res.help);
+    };
+    $("tStop").addEventListener("click", () => dd.ai.stop());
+
+    // 1. Connect
+    $("tConnect").addEventListener("click", async () => {
+      busy(true, "tConnStatus");
+      const res = await dd.ai.connect($("tCode").value);
+      showResult("tConnStatus", res, (r) => `Connected to ${r.label}. The test tool call worked.`);
+      if (res.ok) $("tCode").value = "";
     });
+    $("tGetCode").addEventListener("click", () => window.open(dd.ai.getCodeLink("google"), "_blank", "noopener"));
+    $("tForget").addEventListener("click", async () => {
+      if (await ui.confirm("Forget your code?", "This program will stop using it. You can paste it again any time.", "Forget it", "Keep it")) {
+        dd.ai.forget(); ui.toast("Code forgotten.");
+      }
+    });
+
+    // 2. Tools: several calls in ONE reply must all run.
+    const addTool = { name: "add_item", description: "Add one item to the test list.",
+      params: { text: { type: "string", description: "The item, a few words" } },
+      run: (args) => { ctx.update((d) => { d.items.push({ id: ui.uid("t"), text: String(args.text || "item").slice(0, 60) }); }); return { ok: true, message: "Added " + args.text }; } };
+    $("tTools").addEventListener("click", async () => {
+      ctx.update((d) => { d.items = []; });
+      busy(true, "tToolStatus");
+      const res = await dd.ai.chat({ system: "You manage a list. Always use add_item, once per item.",
+        history: [{ role: "user", text: "Add these three items to my list: apples, bread, milk." }], tools: [addTool] });
+      const n = ctx.data.items.length;
+      showResult("tToolStatus", res, () => n === 3 ? "Pass: all 3 items were added." : `Only ${n} of 3 items were added.`);
+      if (res.ok && n !== 3) ui.status("tToolStatus", "warn", `Only ${n} of 3 items were added.`, "Run it again. If it keeps happening, send the support details.");
+    });
+
+    // 3. Chat that remembers (real turns, not one text blob).
+    const say = (who, text) => { const d = document.createElement("div"); d.className = "t-msg " + who; d.textContent = text; $("tMsgs").appendChild(d); $("tMsgs").scrollTop = 1e9; };
+    const send = async () => {
+      const text = $("tChatIn").value.trim(); if (!text) return;
+      $("tChatIn").value = ""; say("me", text);
+      busy(true, "tChatStatus");
+      const res = await dd.ai.chat({ system: "You are a friendly helper. Short answers, plain words.",
+        history: history.concat({ role: "user", text }), tools: [addTool] });
+      busy(false); ui.clearStatus("tChatStatus");
+      if (res.ok) { history = res.history.slice(-40); say("bot", res.text || "Done."); }
+      else if (res.stopped) say("bot", "Okay, I stopped.");
+      else say("bot", res.title + " " + res.help);
+    };
+    $("tSend").addEventListener("click", send);
+    $("tChatIn").addEventListener("keydown", (e) => { if (e.key === "Enter") send(); });
+    $("tClearChat").addEventListener("click", () => { history = []; $("tMsgs").innerHTML = ""; });
+
+    // 4. Problem drills: the next request pretends to fail, so we can see the friendly message.
+    document.querySelectorAll("[data-drill]").forEach((b) => b.addEventListener("click", async () => {
+      dd.ai.drill = b.dataset.drill;
+      if (b.dataset.drill === "timeout") dd.ai.limits.request = 5000;   // don't make Oran wait 30 s
+      busy(true, "tDrillStatus");
+      const res = await dd.ai.chat({ history: [{ role: "user", text: "Say hello." }] });
+      dd.ai.limits.request = 30000;
+      showResult("tDrillStatus", res, () => "That worked normally (the drill didn't trigger).");
+    }));
   },
 
-  // Draws the screen from ctx.data. Called after every change.
   render(ctx) {
-    const list = ctx.ui.$("demoList"), esc = ctx.ui.esc;
-    const items = ctx.data.items;
-    ctx.ui.$("demoCount").textContent = items.filter((i) => !i.done).length + " to do";
-    list.innerHTML = items.length ? "" : '<p class="dd-note">Nothing here yet. Add your first item above.</p>';
-    items.forEach((item) => {
-      const row = document.createElement("label");
-      row.className = "demo-row" + (item.done ? " done" : "");
-      row.innerHTML = '<input type="checkbox"' + (item.done ? " checked" : "") + '> <span>' + esc(item.text) +
-                      '</span><button class="demo-x" aria-label="Remove ' + esc(item.text) + '">×</button>';
-      row.querySelector("input").addEventListener("change", (e) =>
-        ctx.update((d) => { d.items.find((i) => i.id === item.id).done = e.target.checked; }));
-      row.querySelector(".demo-x").addEventListener("click", (e) => {
-        e.preventDefault();
-        ctx.update((d) => { d.items = d.items.filter((i) => i.id !== item.id); });
-      });
-      list.appendChild(row);
-    });
+    const list = ctx.ui.$("tItems");
+    list.textContent = ctx.data.items.length ? ctx.data.items.map((i) => "• " + i.text).join("   ") : "(empty)";
   },
 
-  // Phase 4 (Penny): what the AI sees each turn, and the tools she can use. Not used yet.
-  summarizeForAI(ctx) { return ctx.data.items.map((i) => `${i.id}: ${i.text}${i.done ? " (done)" : ""}`).join("\n"); },
-  tools: [],
-  knowledge: "",
-  suggestions: []
+  summarizeForAI() { return ""; },
+  tools: [], knowledge: "", suggestions: []
 };
 
 </script>

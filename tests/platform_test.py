@@ -37,7 +37,9 @@ def suite(browser, device_name, device, mode):
     errors, requests = [], []
     page.on("pageerror", lambda e: errors.append(str(e)))
     page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
-    page.on("request", lambda r: requests.append(r.url) if not r.url.startswith(("file:", "http://127.0.0.1", "data:")) else None)
+    # The weekly noticeboard check is the only outside request allowed (and it's optional).
+    ctx.route("https://budwakelam.github.io/**", lambda r: r.fulfill(status=404, body="", headers={"Access-Control-Allow-Origin": "*"}))
+    page.on("request", lambda r: requests.append(r.url) if not r.url.startswith(("file:", "http://127.0.0.1", "data:", "https://budwakelam.github.io/digidoughnut/noticeboard/")) else None)
     url = URLS[mode]
     page.goto(url); page.evaluate("() => localStorage.clear()"); page.reload()
 
@@ -110,7 +112,7 @@ def suite(browser, device_name, device, mode):
         page.keyboard.press("Escape")
 
     check("no page or console errors", not errors, "; ".join(errors[:3]))
-    check("no outside network requests (works offline)", not requests, ", ".join(requests[:3]))
+    check("no outside requests except the noticeboard", not requests, ", ".join(requests[:3]))
     ctx.close()
 
 def blocked_storage(browser):

@@ -12,7 +12,7 @@ import { readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync } from 
 import { execSync } from "node:child_process";
 
 // Platform files, in load order. Add new modules here (dd.ai, dd.setup, ... in later phases).
-const PLATFORM_JS = ["dd.core.js", "dd.store.js", "dd.errors.js", "dd.ui.js", "dd.diag.js"];
+const PLATFORM_JS = ["dd.core.js", "dd.store.js", "dd.errors.js", "dd.ui.js", "dd.diag.js", "dd.ai.js", "dd.notes.js"];
 const PLATFORM_CSS = ["dd.ui.css"];
 const WARN_BYTES = 500 * 1024;          // plan target: under 500 KB
 const MAX_BYTES = 3 * 1024 * 1024;      // tiiny.host free upload limit

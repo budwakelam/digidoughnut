@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "helpLinks": {
+    "getCode_google": "https://aistudio.google.com/apikey"
+  },
+  "labels": {},
+  "modelHints": {
+    "google": { "prefer": [], "avoid": [] }
+  },
+  "codePatterns": {}
+}

@@ -22,7 +22,25 @@
       '<div class="dd-spacer"></div><div class="dd-slot" id="dd-top-slot"></div>';
     ui.$("dd-footer").innerHTML =
       '<p>Made with care by DigiDoughnut · ' + ui.esc(program.name) + ' ' + ui.esc(program.version) + '</p>' +
-      '<p>Your numbers are stored on this device.</p>';
+      '<p>Your numbers are stored on this device. <button class="dd-linkbtn dd-foot-link" id="dd-privacy-link">Privacy</button></p>';
+    var link = ui.$("dd-privacy-link");
+    link.addEventListener("click", function (e) { e.stopPropagation(); ui.privacy(); });
+  };
+
+  /* "What this program connects to": every outside connection, in plain words.
+     Oran's rule: no silent phone-home, so the noticeboard check is spelled out here. */
+  ui.privacy = function () {
+    var p = dd.getProgram ? dd.getProgram() : null, name = p ? p.name : "This program";
+    var ai = dd.ai && dd.ai.providers && dd.ai.providers.google;
+    var sh = ui.sheet('<h2>What ' + ui.esc(name) + ' connects to</h2>' +
+      '<p><b>Your numbers</b> are stored in this browser, on this device. DigiDoughnut never sees them.</p>' +
+      '<p><b>The helper.</b> When you use an AI feature, your question and the numbers it needs go to Google, using your own free access code. ' +
+        (ai ? ui.esc(ai.privacyNote) : "") + '</p>' +
+      '<p><b>Live sync</b> (only if you turn it on) keeps a copy in your own private Firebase database that only you can open.</p>' +
+      '<p><b>The DigiDoughnut noticeboard.</b> Once a week, ' + ui.esc(name) + ' checks the DigiDoughnut noticeboard for updated help links and notices. ' +
+        'It only downloads a small file. Your numbers, your code and anything you type are never sent.</p>' +
+      '<div class="dd-btnrow"><button class="dd-btn" data-close>Close</button></div>');
+    sh.querySelector("[data-close]").addEventListener("click", ui.closeSheet);
   };
 
   /* Set the program's accent colour, with a darker shade for hover. */

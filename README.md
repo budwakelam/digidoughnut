@@ -12,6 +12,10 @@ platform/           shared by every program (edit here once, every program gets 
   js/dd.errors.js   friendly error types, masked support log
   js/dd.ui.js       header/footer, status boxes, notices, sheets, confirm, toast
   js/dd.diag.js     triple-click footer support report
+  js/dd.ai.js       AI connection: company registry (Google at launch), model picking,
+                    tool translation, 30 s / 60 s / 5-round limits, Stop, friendly errors
+  js/dd.notes.js    weekly DigiDoughnut noticeboard check (help links, labels, notice, model hints)
+noticeboard/        notes.json, served by GitHub Pages; see noticeboard/README.md
 programs/<name>/    one folder per program (PROGRAM-SPECIFIC)
   program.js        the DD_PROGRAM object (id, name, version, data, render, …)
   program.html      the program's screen markup
@@ -36,8 +40,11 @@ Buyers never run this.
 
 ```
 pip install playwright && python3 -m playwright install chromium
-python3 tests/platform_test.py
+python3 tests/platform_test.py     # platform basics (110 checks)
+python3 tests/ai_test.py           # AI layer + noticeboard against a fake Google (43 checks)
 ```
+
+`programs/aitest` is an internal page for testing a real Google code (never sold).
 
 Runs on desktop and an emulated iPhone, from a file and from a web address. Emulation is not
 a real iPhone: every phase gate is still tested on a real iPhone from a tiiny.host link.
