@@ -52,6 +52,8 @@ class FakeGoogle:
         body = json.loads(req.post_data or "{}"); self.calls.append({"model": model, "body": body})
         if s == "retired" and model == "gemini-3.8-flash":
             return self.err(route, 404, "NOT_FOUND", f"models/{model} is not found for API version v1beta, or is not supported for generateContent.")
+        if s == "busy_main" and model == "gemini-3.8-flash":
+            return self.err(route, 503, "UNAVAILABLE", "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.")
         if s == "busy_once" and self.first("busy"): return self.err(route, 503, "UNAVAILABLE", "The model is overloaded. Please try again later.")
         if s == "minute_once" and self.first("minute"):
             return self.err(route, 429, "RESOURCE_EXHAUSTED", "You exceeded your current quota.",
@@ -154,6 +156,13 @@ with sync_playwright() as p:
     print("\n== problems become friendly ==")
     G.reset("retired"); r = chat(page, "hi")
     check("retired model: quietly moves to the next model", r["ok"] and G.calls[-1]["model"] == "gemini-3.5-flash-lite", json.dumps([c["model"] for c in G.calls]))
+    page.evaluate("() => { const k='dd_ai_models_v1', m=JSON.parse(localStorage.getItem(k)); m.google.model='gemini-3.8-flash'; m.google.candidates=['gemini-3.8-flash','gemini-3.5-flash-lite']; m.google.busy={}; localStorage.setItem(k, JSON.stringify(m)); }")
+    G.reset("busy_main"); r = chat(page, "hi")
+    check("main model busy (503): switches to the next model, answers", r["ok"] and [c["model"] for c in G.calls] == ["gemini-3.8-flash", "gemini-3.5-flash-lite"], json.dumps([c["model"] for c in G.calls]))
+    G.reset("busy_main"); r = chat(page, "hi")
+    check("busy model remembered: next turn skips it", r["ok"] and [c["model"] for c in G.calls] == ["gemini-3.5-flash-lite"], json.dumps([c["model"] for c in G.calls]))
+    check("support details list the busy model", "Busy right now: gemini-3.8-flash" in page.evaluate("() => dd.diag.text()"))
+    page.evaluate("() => { const k='dd_ai_models_v1', m=JSON.parse(localStorage.getItem(k)); m.google.busy={}; localStorage.setItem(k, JSON.stringify(m)); }")
     G.reset("busy_once"); r = chat(page, "hi")
     check("Google busy once: retried, buyer sees an answer", r["ok"] and len(G.calls) == 2)
     G.reset("minute_once"); r = chat(page, "hi")
@@ -172,7 +181,7 @@ with sync_playwright() as p:
     check("timeout recorded in support details with seconds", "TIMED OUT" in diag and "no answer within" in diag, diag[-400:])
     G.reset()
     rows = page.evaluate("() => dd.ai.speedCheck(5000)")
-    check("speed check times list, plain and tool answers", len(rows) == 3 and rows[2]["outcome"].startswith("ok"), json.dumps(rows))
+    check("speed check times list, plain and tool answers", len(rows) >= 3 and rows[-1]["outcome"].startswith("ok") and rows[-1]["step"].startswith("tool answer"), json.dumps(rows))
     G.reset("loop"); r = chat(page, "add stuff")
     check("model keeps calling tools: capped at 5 rounds", r["ok"] and r.get("cappedRounds") and len(G.calls) == 6, f"calls={len(G.calls)}")
     G.reset("hang")

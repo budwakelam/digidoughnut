@@ -131,7 +131,7 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
 <div id="dd-layer"></div>     <!-- sheets and toasts render here -->
 
 <script>
-window.DD_BUILD = {"built":"2026-10-07","commit":"bab1f01","platform":"0.1.0"};
+window.DD_BUILD = {"built":"2026-10-07","commit":"eca6cd0","platform":"0.1.0"};
 /* ---- dd.core.js ---- */
 /* ===== DigiDoughnut Platform · dd.core =====
    The `dd` namespace, a tiny event bus, device/page detection, and dd.start(), which boots
@@ -996,7 +996,7 @@ window.DD_BUILD = {"built":"2026-10-07","commit":"bab1f01","platform":"0.1.0"};
     var p = ai.providers[conn.provider], ad = adapters[p.adapter];
     var all = models(), m = all[conn.provider];
     var stale = !m || !m.checkedAt || Date.now() - m.checkedAt > RECHECK_MS;
-    if (m && m.model && !force && !stale) return Promise.resolve(m.model);
+    if (m && m.model && !force && !stale) return Promise.resolve(firstNotBusy(m));
     return ad.listModels(p, conn.code).then(function (ids) {
       var ranked = ai.rankModels(conn.provider, ids);
       if (!ranked.length) throw { type: "unexpected", raw: "no usable models in list of " + ids.length };
@@ -1012,6 +1012,24 @@ window.DD_BUILD = {"built":"2026-10-07","commit":"bab1f01","platform":"0.1.0"};
       throw e;
     });
   }
+  /* Busy models: Google sometimes refuses a model for a while ("high demand", 503) while its
+     sister models work fine. We remember a busy model for 10 minutes and use the next one. */
+  var BUSY_MS = 10 * 60 * 1000;
+  function firstNotBusy(m) {
+    var busy = m.busy || {}, now = Date.now();
+    var list = [m.model].concat((m.candidates || []).filter(function (id) { return id !== m.model; }));
+    for (var i = 0; i < list.length; i++) if (!(busy[list[i]] > now)) return list[i];
+    return m.model;   // everything busy: try the main one anyway
+  }
+  function markBusy(provider, id) {
+    var all = models(), m = all[provider]; if (!m) return null;
+    m.busy = m.busy || {}; m.busy[id] = Date.now() + BUSY_MS;
+    saveModels(all);
+    var next = firstNotBusy(m);
+    return next !== id ? next : null;
+  }
+  ai._markBusy = markBusy;
+
   function nextCandidate(provider, failed) {
     var all = models(), m = all[provider]; if (!m) return null;
     m.candidates = (m.candidates || []).filter(function (id) { return id !== failed; });
@@ -1085,7 +1103,7 @@ window.DD_BUILD = {"built":"2026-10-07","commit":"bab1f01","platform":"0.1.0"};
     if (!conns.main) return Promise.resolve(fail({ type: "bad_code" }, null, "The helper needs your free access code first."));
     var conn = conns.main, p = ai.providers[conn.provider], ad = adapters[p.adapter];
     var history = (req.history || []).slice();
-    var started = Date.now(), rounds = 0, retried = 0, rediscovered = false, ran = [];
+    var started = Date.now(), rounds = 0, retried = 0, switched = 0, rediscovered = false, ran = [];
     var status = req.onStatus || function () {};
     stopped = false;
 
@@ -1093,7 +1111,8 @@ window.DD_BUILD = {"built":"2026-10-07","commit":"bab1f01","platform":"0.1.0"};
 
     function step(model) {
       if (stopped) return Promise.reject({ type: "stopped" });
-      var ms = Math.min(ai.limits.request, left());
+      // While other models are still available, don't let one silent model eat the whole turn.
+      var ms = Math.min(switched < 3 ? ai.limits.request * 2 / 3 : ai.limits.request, left());
       if (ms <= 500) return Promise.reject({ type: "timeout", raw: "turn budget used up" });
       status(rounds ? "working" : "thinking");
       return ad.send(p, conn.code, model, { system: req.system, history: history, tools: req.tools, ms: ms }).then(function (res) {
@@ -1122,6 +1141,14 @@ window.DD_BUILD = {"built":"2026-10-07","commit":"bab1f01","platform":"0.1.0"};
           var next = nextCandidate(conn.provider, model);
           return (next ? Promise.resolve(next) : pickModel(conn, true)).then(step);
         }
+        if ((e.type === "busy" || e.type === "timeout") && switched < 3 && left() > 4000) {
+          var other = markBusy(conn.provider, model);
+          if (other) {
+            switched++; status("retrying");
+            dd.errors.record("ai.switch", model + " " + (e.type === "busy" ? "busy" : "no answer") + ", trying " + other);
+            return step(other);
+          }
+        }
         if (e.retry && retried < 2 && left() > (e.wait || 0) + 3000) {
           retried++; status("retrying"); dd.errors.record("ai.retry", e.raw);
           return wait(e.wait || 2500).then(function () { return step(model); });
@@ -1148,13 +1175,18 @@ window.DD_BUILD = {"built":"2026-10-07","commit":"bab1f01","platform":"0.1.0"};
       return fn().then(function (r) { out.push({ step: step, secs: ((Date.now() - t) / 1000).toFixed(1), outcome: r }); },
                        function (e) { out.push({ step: step, secs: ((Date.now() - t) / 1000).toFixed(1), outcome: "failed: " + (e.type || "?") + (e.status ? " (" + e.status + ")" : "") }); });
     }
-    var model;
+    var model, working = null;
     return pickModel(conn).then(function (m) { model = m; })
       .then(function () { return timed("model list", function () { return ad.listModels(p, conn.code).then(function (ids) { return ids.length + " models"; }); }); })
-      .then(function () { return timed("plain answer (" + model + ")", function () {
-        return ad.send(p, conn.code, model, { ms: ai.limits.request, history: [{ role: "user", text: "Say hi in three words." }] }).then(function (r) { return "ok"; }); }); })
-      .then(function () { return timed("tool answer (" + model + ")", function () {
-        return ad.send(p, conn.code, model, { ms: ai.limits.request, history: [{ role: "user", text: "Add apples to my list." }],
+      .then(function () {
+        var all = models()[conn.provider] || {}, list = [model].concat((all.candidates || []).filter(function (id) { return id !== model; })).slice(0, 3);
+        return list.reduce(function (chain, id) {
+          return chain.then(function () { return timed("plain answer (" + id + ")", function () {
+            return ad.send(p, conn.code, id, { ms: ai.limits.request, history: [{ role: "user", text: "Say hi in three words." }] }).then(function () { if (!working) working = id; return "ok"; }); }); });
+        }, Promise.resolve());
+      })
+      .then(function () { var use = working || model; return timed("tool answer (" + use + ")", function () {
+        return ad.send(p, conn.code, use, { ms: ai.limits.request, history: [{ role: "user", text: "Add apples to my list." }],
           tools: [{ name: "add_item", description: "Add one item to the list.", params: { text: { type: "string" } } }] })
           .then(function (r) { return r.calls.length ? "ok, used the tool" : "ok, but answered without the tool"; }); }); })
       .then(function () { ai.limits.request = keep; return out; }, function (e) { ai.limits.request = keep; out.push({ step: "picking a model", secs: "-", outcome: "failed: " + (e.type || "?") }); return out; });
@@ -1181,7 +1213,8 @@ window.DD_BUILD = {"built":"2026-10-07","commit":"bab1f01","platform":"0.1.0"};
     return [
       (ai.providers[c.provider] ? ai.providers[c.provider].label : c.provider) + " code " + mask(c.code) + (c.migrated ? " (moved from older version)" : ""),
       "Model: " + (pm.model || "not picked yet") + (pm.checkedAt ? " · list checked " + new Date(pm.checkedAt).toLocaleDateString() : ""),
-      "Candidates: " + ((pm.candidates || []).slice(0, 5).join(", ") || "-")
+      "Candidates: " + ((pm.candidates || []).slice(0, 5).join(", ") || "-"),
+      "Busy right now: " + (Object.keys(pm.busy || {}).filter(function (id) { return pm.busy[id] > Date.now(); }).join(", ") || "none")
     ].concat(reqLog.length ? ["Recent requests (newest first):"].concat(reqLog.map(function (q) {
       return "  " + q.at + " · " + q.what + (q.model ? " " + q.model : "") + " · " + q.secs + " s · " + q.outcome;
     })) : ["No AI requests yet this visit."]);
