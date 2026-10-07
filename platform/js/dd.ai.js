@@ -35,7 +35,7 @@
       base: "https://generativelanguage.googleapis.com/v1beta",
       free: true,
       // Model picking hints: never shown to the buyer.
-      exclude: /(tts|live|audio|transcri|image|banana|embed|robotics|veo|lyria|imagen|research|aqa|gemma|computer|learnlm|thinking-exp)/i,
+      exclude: /(tts|live|audio|transcri|image|banana|embed|robotics|veo|lyria|imagen|research|aqa|gemma|computer|learnlm|thinking-exp|antigravity|customtools)/i,
       privacyNote: "Google may use what you send through its free plan to improve its products, and people at Google may read it. Don't put anything private in your messages to the helper."
     }
   };
@@ -323,6 +323,7 @@
     return m.model;   // everything busy: try the main one anyway
   }
   function markBusy(provider, id) {
+    if (ai.drill) return null;   // pretend failures from the test page leave no trace
     var all = models(), m = all[provider]; if (!m) return null;
     m.busy = m.busy || {}; m.busy[id] = Date.now() + BUSY_MS;
     saveModels(all);

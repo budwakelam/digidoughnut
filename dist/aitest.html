@@ -170,7 +170,7 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
 <div id="dd-layer"></div>     <!-- sheets and toasts render here -->
 
 <script>
-window.DD_BUILD = {"built":"2026-10-07","commit":"211f0a8","platform":"0.1.0"};
+window.DD_BUILD = {"built":"2026-10-07","commit":"e707542","platform":"0.1.0"};
 /* ---- dd.core.js ---- */
 /* ===== DigiDoughnut Platform · dd.core =====
    The `dd` namespace, a tiny event bus, device/page detection, and dd.start(), which boots
@@ -794,7 +794,7 @@ window.DD_BUILD = {"built":"2026-10-07","commit":"211f0a8","platform":"0.1.0"};
       base: "https://generativelanguage.googleapis.com/v1beta",
       free: true,
       // Model picking hints: never shown to the buyer.
-      exclude: /(tts|live|audio|transcri|image|banana|embed|robotics|veo|lyria|imagen|research|aqa|gemma|computer|learnlm|thinking-exp)/i,
+      exclude: /(tts|live|audio|transcri|image|banana|embed|robotics|veo|lyria|imagen|research|aqa|gemma|computer|learnlm|thinking-exp|antigravity|customtools)/i,
       privacyNote: "Google may use what you send through its free plan to improve its products, and people at Google may read it. Don't put anything private in your messages to the helper."
     }
   };
@@ -1082,6 +1082,7 @@ window.DD_BUILD = {"built":"2026-10-07","commit":"211f0a8","platform":"0.1.0"};
     return m.model;   // everything busy: try the main one anyway
   }
   function markBusy(provider, id) {
+    if (ai.drill) return null;   // pretend failures from the test page leave no trace
     var all = models(), m = all[provider]; if (!m) return null;
     m.busy = m.busy || {}; m.busy[id] = Date.now() + BUSY_MS;
     saveModels(all);

@@ -216,6 +216,7 @@ with sync_playwright() as p:
     page.wait_for_function("() => window.__r !== null", timeout=3000)
     check("Stop ends a stuck request at once", page.evaluate("() => window.__r.stopped === true"))
     page.evaluate("() => { dd.ai.limits.request = 2500; dd.ai.limits.perModel = 1200; dd.ai.limits.turn = 8000; }")
+    page.evaluate("() => { const k='dd_ai_models_v1', m=JSON.parse(localStorage.getItem(k)); m.google.busy={}; localStorage.setItem(k, JSON.stringify(m)); }")
     for drill, words in [("out_of_share", "free share"), ("offline", "internet"), ("timeout", "too long")]:
         G.reset()
         page.evaluate("() => { const s = document.getElementById('tDrillStatus'); s.className = 'dd-status'; s.textContent = ''; }")
@@ -223,6 +224,9 @@ with sync_playwright() as p:
         page.wait_for_function("() => document.getElementById('tDrillStatus').className.includes('err') || document.getElementById('tDrillStatus').className.includes('ok')", timeout=12000)
         t = page.inner_text("#tDrillStatus")
         check(f"drill '{drill}': friendly message only", words in t.lower() and friendly_only(t), t)
+    busy_after = page.evaluate("() => Object.keys((JSON.parse(localStorage.getItem('dd_ai_models_v1')).google.busy)||{}).filter(k => JSON.parse(localStorage.getItem('dd_ai_models_v1')).google.busy[k] > Date.now())")
+    check("drills leave no trace (no model marked busy)", busy_after == [], str(busy_after))
+    check("non-chat models (antigravity, customtools) excluded", page.evaluate("() => dd.ai.rankModels('google', ['antigravity-preview-latest','gemini-3.1-pro-preview-customtools','gemini-3.8-flash'])").__eq__(["gemini-3.8-flash"]))
     check("no page errors", not errs, "; ".join(errs[:3]))
     ctx.close()
 
