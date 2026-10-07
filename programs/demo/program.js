@@ -76,9 +76,63 @@ const DD_PROGRAM = {
     });
   },
 
-  // Phase 4 (Penny): what the AI sees each turn, and the tools she can use. Not used yet.
-  summarizeForAI(ctx) { return ctx.data.items.map((i) => `${i.id}: ${i.text}${i.done ? " (done)" : ""}`).join("\n"); },
-  tools: [],
-  knowledge: "",
-  suggestions: []
+  // Phase 4: the helper. Where she sits, her name, and what she can do in THIS program.
+  helper: {
+    name: "Penny", face: "🪙", role: "your list helper",
+    greeting: "Hi, I'm Penny! Tell me what to add, tick off or remove, and I'll do it for you. You can undo anything I change.",
+    place: { computer: "side", phone: "inline" },   // "side" | "inline" | "bubble" | "none"
+    slot: "demoHelper"                               // where the on-page card goes
+  },
+  knowledge: "A simple to-do list. Each item has some text and can be ticked off when it's done. 'Clear the list' removes everything. 'Send to my phone' moves the list to a phone by scanning a code.",
+  summarizeForAI(ctx) {
+    const items = ctx.data.items;
+    if (!items.length) return "The list is empty.";
+    return items.length + " items:\n" + items.map((i) => "- " + i.text + (i.done ? " (done)" : "")).join("\n");
+  },
+  suggestions: ["Add milk and eggs", "Tick off the first thing", "What's left to do?"],
+  tools: [
+    { name: "add_item", description: "Add one item to the list. Call once per item.",
+      params: { text: { type: "string", description: "The item, a few words" } },
+      run(args, ctx) {
+        const text = String(args.text || "").trim().slice(0, 120);
+        if (!text) return { ok: false, message: "No item text was given." };
+        ctx.update((d) => { d.items.push({ id: ctx.ui.uid("i"), text, done: false }); });
+        return { ok: true, message: "Added '" + text + "'. The list has " + ctx.data.items.length + " items now." };
+      } },
+    { name: "set_done", description: "Tick an item off as done, or un-tick it. Finds the item whose text contains the words given.",
+      params: { text: { type: "string", description: "Words from the item's text" },
+                done: { type: "boolean", description: "true = done, false = not done yet", optional: true } },
+      run(args, ctx) {
+        const item = find(ctx.data.items, args.text);
+        if (!item) return { ok: false, message: "No item matches '" + args.text + "'. Items: " + ctx.data.items.map((i) => i.text).join(", ") };
+        const done = args.done !== false;
+        ctx.update((d) => { d.items.find((i) => i.id === item.id).done = done; });
+        return { ok: true, message: (done ? "Ticked off '" : "Un-ticked '") + item.text + "'." };
+      } },
+    { name: "remove_item", description: "Remove one item from the list. Finds the item whose text contains the words given.",
+      params: { text: { type: "string", description: "Words from the item's text" } },
+      run(args, ctx) {
+        const item = find(ctx.data.items, args.text);
+        if (!item) return { ok: false, message: "No item matches '" + args.text + "'. Items: " + ctx.data.items.map((i) => i.text).join(", ") };
+        ctx.update((d) => { d.items = d.items.filter((i) => i.id !== item.id); });
+        return { ok: true, message: "Removed '" + item.text + "'." };
+      } },
+    { name: "clear_list", description: "Remove every item from the list. The person is asked to confirm first.",
+      params: {},
+      confirm: (args, ctx) => ctx.data.items.length ? "Clear all " + ctx.data.items.length + " items from your list?" : null,
+      yesLabel: "Yes, clear it",
+      run(args, ctx) {
+        const n = ctx.data.items.length;
+        dd.replaceData(DD_PROGRAM.emptyData(), { example: false, source: "helper" });
+        return { ok: true, message: "Cleared the list (" + n + " items)." };
+      } }
+  ]
 };
+
+/* The item whose text best matches what the helper said: exact first, then "contains". */
+function find(items, words) {
+  const w = String(words || "").trim().toLowerCase();
+  if (!w) return null;
+  return items.find((i) => i.text.toLowerCase() === w) || items.find((i) => i.text.toLowerCase().includes(w)) ||
+         items.find((i) => w.includes(i.text.toLowerCase()));
+}

@@ -36,6 +36,7 @@
       '<p><b>Your numbers</b> are stored in this browser, on this device. DigiDoughnut never sees them.</p>' +
       '<p><b>The helper.</b> When you use an AI feature, your question and the numbers it needs go to Google, using your own free access code. ' +
         (ai ? ui.esc(ai.privacyNote) : "") + '</p>' +
+      (dd.helper && dd.helper.enabled() ? '<p><b>Your chats with ' + ui.esc(dd.helper.name()) + '</b> are kept in this browser, on this device, so you can pick up where you left off. "New chat" clears them. They are never sent to your phone or synced.</p>' : "") +
       '<p><b>Live sync</b> (only if you turn it on) keeps a copy in your own private Firebase database that only you can open.</p>' +
       '<p><b>The DigiDoughnut noticeboard.</b> Once a week, ' + ui.esc(name) + ' checks the DigiDoughnut noticeboard for updated help links and notices. ' +
         'It only downloads a small file. Your numbers, your code and anything you type are never sent.</p>' +

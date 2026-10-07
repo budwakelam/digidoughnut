@@ -100,3 +100,29 @@ Collected as decisions come up; folded into handoff.md later.
 - Wizards are sticky (a click beside them doesn't close; ✕/Finish later/Esc do), show Continue
   once opened, have a moving picture + "Your turn" line per screen, and an always-open helper
   chat stuck to the bottom of the window.
+
+## Phase 4: the helper with hands (2026-10-07, evening)
+
+- Oran: the corner bubble isn't handy; WHERE the helper sits is a per-program choice and should
+  be prominent. Name defaults to "Penny", changeable per program. Undo and saved chat: yes.
+- New module `platform/js/dd.helper.js` (loads after dd.setup). Program contract:
+  `helper: false | {name, face, role, greeting, place, slot}`, `tools[]` (now may carry
+  `confirm` + `yesLabel`), `summarizeForAI(ctx)`, `knowledge`, `suggestions`.
+  `place` = "side" | "inline" | "bubble" | "none", or `{computer, phone}` (default
+  `{computer:"side", phone:"inline"}`; breakpoint 960 px; "side" on a narrow screen becomes
+  "inline"; the chat moves live when the window crosses the line, keeping the conversation).
+- Undo: every reply that changed data gets "↩ Undo" (snapshot before/after; last 5 kept in
+  `dd_<id>_undo_v1`). If the buyer changed things since, a friendly confirm first.
+- Big changes: a tool with `confirm` is NOT run by the AI; a Yes/No shows under the reply and only
+  the buyer's tap runs it (no waiting inside the AI's 90 s budget). Questions expire on reload.
+- Saved chat: `dd_<id>_chat_v1`, last 40 messages, "New chat" clears. Never in the QR, never
+  synced; Privacy sheet says so. The AI gets the last 16 messages as plain text only (no old
+  tool parts, so no thought-signature trouble), plus Undo/No notes.
+- No code: the window shows "Penny needs a free access code" + "Turn on Penny"; asking opens
+  the wizard (`setup.needAI`) and the typed question stays in the box.
+- Try again (busy/timeout/etc.), "Fix my access code" (bad/blocked code), Stop while working.
+- `dd.ctx()` exposed by core; `dd.helper.ask(text)` lets program buttons use the helper.
+- aitest sets `helper: false` (it has its own test chat). Demo has 4 tools: add_item,
+  set_done, remove_item, clear_list (confirm).
+- Tests: `python3 tests/helper_test.py` → 64 checks (fake Google that calls the tools).
+- Noticeboard: `master`'s notes.json replaced with the platform format, so Pages serves it.

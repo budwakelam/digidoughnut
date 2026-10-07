@@ -73,6 +73,7 @@
   /* ---------- the wizard ---------- */
   var cur = null;   // {id, wiz, at, context}
   setup.open = function (id, opts) {
+    if (!program && dd.getProgram) program = dd.getProgram();   // programs with no setup card can still open a wizard
     // "Put it on your phone" picks up inside whichever service the buyer already chose.
     if (id === "host") {
       var hs = state(), only = hostChoice();
@@ -190,7 +191,7 @@
   function mountChat(sh) {
     var box = sh.querySelector("#dd-wiz-ask"), live = dd.ai && dd.ai.hasCode();
     box.innerHTML = '<button class="dd-chat-hide" data-chathide aria-label="Hide the chat">Hide</button>' +
-      '<div class="dd-chat-head"><span aria-hidden="true">💬</span> <b>' + (live ? "Ask the helper" : "Questions? Ask the setup guide") + '</b>' +
+      '<div class="dd-chat-head"><span aria-hidden="true">💬</span> <b>' + (live ? "Ask " + (dd.helper && dd.helper.enabled() ? dd.helper.name() : "the helper") : "Questions? Ask the setup guide") + '</b>' +
         '<span class="dd-note">' + (live ? " The AI helper answers." : " Ready-made answers; the AI helper takes over once your code is connected.") + '</span></div>' +
       '<div class="dd-ask-msgs" id="dd-ask-msgs"></div>' +
       '<div class="dd-ask-row"><input class="dd-input" id="dd-ask-in" placeholder="' + (live ? "Ask anything about this step…" : "e.g. Is it really free?") + '" autocomplete="off"><button class="dd-btn small" id="dd-ask-go">Ask</button></div>' +

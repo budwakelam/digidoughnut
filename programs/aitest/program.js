@@ -124,5 +124,6 @@ const DD_PROGRAM = {
   },
 
   summarizeForAI() { return ""; },
+  helper: false,   // this page has its own test chat
   tools: [], knowledge: "", suggestions: []
 };

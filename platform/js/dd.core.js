@@ -83,6 +83,7 @@
   };
 
   dd.getData = function () { return data; };
+  dd.ctx = function () { return ctx(); };
   dd.getProgram = function () { return program; };
   dd.isExample = function () { return meta.example; };
 
@@ -127,6 +128,7 @@
       }
       paintExampleNotice();
       if (dd.setup && program.setup !== false) dd.setup.start(program);
+      if (dd.helper) dd.helper.start(program);
       dd.diag.attach();
       if (dd.notes) dd.notes.start();
       dd.emit("ready", { source: loaded.source });
