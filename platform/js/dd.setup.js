@@ -103,7 +103,9 @@
     var html =
       '<div class="dd-wiz-main">' +
       '<button class="dd-wiz-x" data-later aria-label="Close. Your place is saved.">✕</button>' +
-      '<div class="dd-wiz-top"><span class="dd-wiz-name">' + esc(wiz.title) + '</span><span class="dd-wiz-progress">' + (shownTotal > 1 ? 'Step ' + (shownAt + 1) + ' of ' + shownTotal : '') + '</span></div>' +
+      '<div class="dd-wiz-top"><span class="dd-wiz-name"><span class="dd-wiz-icon" aria-hidden="true">' + wizIcon(cur.id) + '</span>' + esc(wiz.title.split(" · ")[0]) +
+        (wiz.title.indexOf(" · ") > 0 ? ' <span class="dd-wiz-tag">' + esc(wiz.title.split(" · ")[1]) + '</span>' : "") + '</span>' +
+        '<span class="dd-wiz-progress">' + (shownTotal > 1 ? 'Step ' + (shownAt + 1) + ' of ' + shownTotal : '') + '</span></div>' +
       '<div class="dd-wiz-dots">' + dots + '</div>' +
       (cur.context && cur.at === 0 ? '<p class="dd-status show info">' + esc(cur.context) + '</p>' : "") +
       '<h2>' + esc(sc.title) + '</h2>' +
@@ -152,6 +154,9 @@
     var s = state(), parent = cur.wiz.parent; delete s.wizards[cur.id]; s.hostWith = null; saveState(s);
     setup.open(parent);
   }
+
+  /* The same icon as the setup card's row, so it's always clear which step you're in. */
+  function wizIcon(id) { var st = setup.steps.filter(function (x) { return x.wizard === id || (x.wizard === "host" && /^host/.test(id)); })[0]; return st ? st.icon : "✨"; }
 
   function ctxFor(sh) {
     return {

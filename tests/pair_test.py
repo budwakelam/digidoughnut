@@ -111,7 +111,7 @@ with sync_playwright() as p:
     big = pc.evaluate("() => dd.pair.makeLink({includeCode:true})")
     check("too many numbers: left out, code still sent, QR stays simple", "d" not in payload_of(big["link"]) and "k" in payload_of(big["link"]) and big["left"] == ["numbers"])
     pc.click("#demoPhone")
-    check("...and the sheet says so in plain words", "too much for one square" in pc.inner_text(".dd-sheet"))
+    check("...and the sheet says so in plain words", "can't fit in one square" in pc.inner_text(".dd-sheet"))
     pc.keyboard.press("Escape")
 
     print("\n== from a file on the computer ==")

@@ -9,6 +9,7 @@ const DD_PROGRAM = {
   version: "0.1.0",
   schemaVersion: 2,
   accent: "#2563eb",
+  dataLabel: "list",                // how the QR screen names this program's data ("your list")
   exampleNotice: "You're looking at an example list so you can try things out.",
 
   emptyData() { return { items: [] }; },

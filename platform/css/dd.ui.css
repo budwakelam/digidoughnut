@@ -12,7 +12,7 @@
 }
 *{box-sizing:border-box}
 body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-ink);line-height:1.55;
-     padding:0 0 calc(120px + env(safe-area-inset-bottom));-webkit-text-size-adjust:100%}
+     padding:0 0 calc(120px + var(--dd-host-bottom,0px) + env(safe-area-inset-bottom));-webkit-text-size-adjust:100%}
 
 /* header */
 .dd-top{position:sticky;top:0;z-index:20;background:var(--dd-card);border-bottom:1px solid var(--dd-line);
@@ -73,7 +73,7 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
 .dd-check input{width:20px;height:20px;margin-top:2px;accent-color:var(--dd-brand)}
 
 /* toast */
-.dd-toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--dd-ink);color:#fff;
+.dd-toast{pointer-events:none;position:fixed;left:50%;bottom:calc(24px + var(--dd-host-bottom,0px) + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--dd-ink);color:#fff;
           padding:10px 16px;border-radius:12px;font-size:.92rem;z-index:60;box-shadow:0 8px 24px rgba(0,0,0,.2);max-width:calc(100vw - 32px)}
 
 /* footer: brand line + version; triple-click opens the support diagnostic */
@@ -248,6 +248,20 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
   .dd-wiz .dd-chip{white-space:nowrap;flex:0 0 auto}
 }
 
+/* wizard header: which step you're in, at a glance */
+.dd-wiz .dd-wiz-top{align-items:flex-start;gap:10px;margin-bottom:10px}
+.dd-wiz-name{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;font-size:1.2rem;font-weight:800;color:var(--dd-ink);line-height:1.25}
+.dd-wiz-icon{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:var(--dd-brand-soft);font-size:1.5rem;flex:0 0 auto}
+.dd-wiz-tag{font-size:.8rem;font-weight:700;color:var(--dd-brand);background:var(--dd-brand-soft);border:1px solid var(--dd-brand-soft-d);border-radius:99px;padding:2px 10px}
+.dd-wiz-progress{white-space:nowrap;padding-top:10px}
+.dd-wiz h2{font-size:1.15rem;color:#374151}
+/* the written instructions live in one light-grey box, so they're easy to find */
+.dd-wiz .dd-wiz-body{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:14px;padding:14px 16px;margin:0 0 4px}
+.dd-wiz .dd-wiz-body::before{content:"📝 Step by step";display:block;font-size:.78rem;font-weight:800;letter-spacing:.02em;color:#6b7280;margin:0 0 8px;text-transform:uppercase}
+.dd-wiz .dd-wiz-body > :last-child{margin-bottom:0}
+.dd-wiz .dd-wiz-body .dd-filename{background:#fff}
+@media (max-width:520px){ .dd-wiz-name{font-size:1.05rem} .dd-wiz-icon{width:34px;height:34px;font-size:1.25rem} .dd-wiz .dd-wiz-body{padding:12px} }
+
 /* ===== the helper ("Penny", dd.helper): side column, on-page card, or corner bubble ===== */
 .dd-helper-home{display:flex;flex-direction:column;gap:8px;background:linear-gradient(170deg,#ffffff,var(--dd-brand-soft));font-size:.95rem}
 .dd-helper-head{display:flex;align-items:center;gap:10px}
@@ -274,7 +288,7 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
 .dd-helper-row .dd-input{flex:1;min-width:0}
 
 /* side: a column on the right of the page, always open */
-.dd-helper-side{position:fixed;top:0;right:0;bottom:0;width:360px;z-index:30;border-left:1px solid var(--dd-line);padding:16px;
+.dd-helper-side{position:fixed;top:var(--dd-host-top,0px);right:0;bottom:var(--dd-host-bottom,0px);width:360px;z-index:30;border-left:1px solid var(--dd-line);padding:16px;
                 padding-top:calc(16px + env(safe-area-inset-top));box-shadow:-4px 0 16px rgba(16,24,40,.06)}
 .dd-helper-side .dd-helper-msgs{flex:1;min-height:0}
 body.dd-has-side{padding-right:360px}
@@ -282,11 +296,11 @@ body.dd-has-side{padding-right:360px}
 .dd-helper-inline{border-radius:var(--dd-radius);padding:16px;margin:0 0 14px;box-shadow:var(--dd-shadow);border:2px solid var(--dd-brand-soft-d)}
 .dd-helper-inline .dd-helper-msgs{max-height:340px}
 /* bubble: a labelled corner button that opens a panel */
-.dd-helper-bubble{display:none;position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));width:min(380px,calc(100vw - 32px));height:min(560px,75vh);
+.dd-helper-bubble{display:none;position:fixed;right:16px;bottom:calc(16px + var(--dd-host-bottom,0px) + env(safe-area-inset-bottom));width:min(380px,calc(100vw - 32px));height:min(560px,75vh);
                   z-index:30;border-radius:18px;padding:14px;box-shadow:0 12px 36px rgba(0,0,0,.25);border:1px solid var(--dd-line)}
 .dd-helper-bubble.open{display:flex}
 .dd-helper-bubble .dd-helper-msgs{flex:1;min-height:0}
-.dd-helper-fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:30;display:inline-flex;align-items:center;gap:8px;
+.dd-helper-fab{position:fixed;right:16px;bottom:calc(16px + var(--dd-host-bottom,0px) + env(safe-area-inset-bottom));z-index:30;display:inline-flex;align-items:center;gap:8px;
                background:var(--dd-brand);color:#fff;border:none;border-radius:99px;padding:12px 18px;font:inherit;font-weight:700;cursor:pointer;
                min-height:48px;box-shadow:0 6px 18px rgba(0,0,0,.25)}
 .dd-helper-fab[hidden]{display:none}

@@ -126,3 +126,15 @@ Collected as decisions come up; folded into handoff.md later.
   set_done, remove_item, clear_list (confirm).
 - Tests: `python3 tests/helper_test.py` → 64 checks (fake Google that calls the tools).
 - Noticeboard: `master`'s notes.json replaced with the platform format, so Pages serves it.
+- Restored three Phase 3 finishing touches that were in Oran's demo8 but never pushed: the
+  wizard header icon + service tag, the grey "Step by step" box, and `pointer-events:none` on
+  toasts. (Lesson: before a handoff, diff the last file sent to Oran against the repo build.)
+- Host banners: tiiny.host lays a ~42 px "Shared with tiiny.host" bar across the bottom (Oran's
+  screenshot), which covered Penny's message box. `dd.ui.measureHostBars` finds any full-width
+  fixed bar at the top/bottom edge that isn't ours and sets `--dd-host-top/--dd-host-bottom`;
+  the side column, bubble, corner button, toasts and page padding use them. Re-measured at
+  load, 0.5-10 s, on resize, and when the host adds elements. Logged in the support report.
+- QR: Oran expected his list to come across. It didn't because it was EXAMPLE data (never sent).
+  The QR sheet now always says what it carries and why anything stays behind (example data,
+  or too big for one square -> step 4 will move it). Programs name their data with
+  `dataLabel` (demo: "list").

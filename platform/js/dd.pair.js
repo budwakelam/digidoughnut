@@ -130,8 +130,7 @@
       var q = pair.qrSvg(made.link, Math.min(300, window.innerWidth - 80));
       sh.querySelector("#dd-qr").innerHTML = q.svg;
       var warn = sh.querySelector("#dd-qr-warn"); if (warn) warn.style.display = include ? "" : "none";
-      sh.querySelector("#dd-qr-left").textContent = made.left.length
-        ? "Your " + made.left.join(" and ") + " are too much for one square, so they stay here. Turn on Live sync or use Backup to move them." : "";
+      sh.querySelector("#dd-qr-left").textContent = pair.whatTravels(made);
       clearInterval(timer);
       var tick = function () {
         var s = Math.round((made.expiresAt - Date.now()) / 1000), el = sh.querySelector("#dd-qr-timer");
@@ -146,6 +145,20 @@
       };
       tick(); timer = setInterval(tick, 1000);
     }
+  };
+
+  /* One plain sentence: what this square carries, and what stays behind and why.
+     Oran (2026-10-07): buyers expect their numbers to come along, so always say. */
+  pair.whatTravels = function (made) {
+    var p = dd.getProgram && dd.getProgram(), thing = (p && p.dataLabel) || "numbers";
+    var parts = [], code = made.included.indexOf("k") >= 0, data = made.included.indexOf("d") >= 0;
+    if (code) parts.push("your access code");
+    if (data) parts.push("your " + thing);
+    var says = parts.length ? "This brings " + parts.join(" and ") + " to your phone. " : "";
+    if (!data && dd.isExample && dd.isExample()) says += "Example data doesn't travel: once you start your own " + thing + ", it will come along too.";
+    else if (made.left.length) says += "Your " + thing + " can't fit in one square, so it will stay on this computer for now. Keeping devices in step (setup step 4) will move it.";
+    else if (!data) says += "Your " + thing + " will stay on this computer.";
+    return says.trim();
   };
 
   /* ---------- the phone side: unpack once, then forget the link ---------- */

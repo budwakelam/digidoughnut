@@ -164,4 +164,47 @@
     if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(b); else for (var i = 0; i < 6; i++) b[i] = Math.random() * 256;
     return (prefix || "i") + Date.now().toString(36) + Array.prototype.map.call(b, function (x) { return (x < 16 ? "0" : "") + x.toString(16); }).join("");
   };
+
+  /* ---------- the hosting website's own bars ----------
+     Some free hosts lay a bar over the page (tiiny.host: "Shared with tiiny.host" across the
+     bottom, about 42 px, seen 2026-10-07 covering Penny's message box). We look for anything
+     fixed to the top or bottom edge that isn't ours, measure it, and set --dd-host-top and
+     --dd-host-bottom so the helper, the corner button, toasts and the page's end move clear. */
+  var OURS = "#dd-layer,#dd-helper-home,#dd-helper-fab,.dd-top,.dd-overlay,.dd-toast";
+  function hostBar(y, atTop) {
+    var w = window.innerWidth, h = window.innerHeight, best = 0;
+    [12, Math.round(w * 0.3), Math.round(w * 0.5)].forEach(function (x) {
+      var el = document.elementFromPoint(x, y);
+      while (el && el !== document.body && el !== document.documentElement) {
+        if (el.closest && el.closest(OURS)) return;
+        var pos = getComputedStyle(el).position;
+        if (pos === "fixed" || pos === "sticky") {
+          var r = el.getBoundingClientRect();
+          if (r.width >= w * 0.5 && r.height > 0 && r.height < h * 0.3)
+            best = Math.max(best, Math.round(atTop ? r.bottom : h - r.top));
+          return;
+        }
+        el = el.parentElement;
+      }
+    });
+    return best;
+  }
+  ui.hostBars = { top: 0, bottom: 0 };
+  ui.measureHostBars = function () {
+    if (!document.body || !document.elementFromPoint) return;
+    var top = hostBar(2, true), bottom = hostBar(window.innerHeight - 3, false);
+    if (top === ui.hostBars.top && bottom === ui.hostBars.bottom) return;
+    ui.hostBars = { top: top, bottom: bottom };
+    var r = document.documentElement.style;
+    r.setProperty("--dd-host-top", top + "px");
+    r.setProperty("--dd-host-bottom", bottom + "px");
+    if ((top || bottom) && dd.errors) dd.errors.record("page", "this website lays its own bar over the page: top " + top + " px, bottom " + bottom + " px");
+  };
+  function watchHostBars() {
+    ui.measureHostBars();
+    [500, 1500, 3000, 6000, 10000].forEach(function (ms) { setTimeout(ui.measureHostBars, ms); });
+    window.addEventListener("resize", function () { setTimeout(ui.measureHostBars, 150); });
+    try { new MutationObserver(function () { setTimeout(ui.measureHostBars, 50); }).observe(document.body, { childList: true }); } catch (e) {}
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", watchHostBars); else watchHostBars();
 })();
