@@ -59,7 +59,7 @@
       '<p class="dd-note" style="margin:0 0 8px">Each step is optional. Do them in any order, any time.</p><ol class="dd-steps">' + rows + '</ol>' +
       '<div class="dd-btnrow"><button class="dd-linkbtn" id="dd-setup-fold">Hide this for now</button></div></div>';
     var ph = host.querySelector("[data-phone]"); if (ph) ph.addEventListener("click", function () { dd.pair.open(); });
-    var hs = host.querySelector("[data-home]"); if (hs) hs.addEventListener("click", setup.showHomeScreen);
+    var hs = host.querySelector("[data-home]"); if (hs) hs.addEventListener("click", function () { setup.showHomeScreen(); });
     host.querySelectorAll("[data-start]").forEach(function (b) { b.addEventListener("click", function () { setup.open(b.dataset.start); }); });
     document.getElementById("dd-setup-fold").addEventListener("click", function () { var s = state(); s.folded = true; saveState(s); setup.paint(); });
   };
@@ -410,8 +410,11 @@
             "Tap <b>" + esc(L("home_android_add", "Add to Home screen")) + "</b> (some phones say <b>Install app</b>).",
             "Keep the name <b>" + esc(program ? program.name : "") + "</b>, then tap <b>" + esc(L("home_android_confirm", "Add")) + "</b>."];
   };
-  setup.showHomeScreen = function () {
-    var sh = dd.ui.sheet('<h2>Add it to your Home Screen</h2>' +
+  setup.showHomeScreen = function (arrived) {
+    // Shown right after a QR scan: say what arrived here, instead of a toast on top of the sheet.
+    var old = document.querySelector(".dd-toast"); if (old) old.remove();
+    var got = arrived && arrived.got && arrived.got.length ? '<p class="dd-status show ok">✓ Your ' + esc(arrived.got.join(" and ")) + ' came across from your computer.</p>' : "";
+    var sh = dd.ui.sheet(got + '<h2>Add it to your Home Screen</h2>' +
       '<p>Then it opens like an app, and your phone keeps your numbers safe.</p>' +
       '<ol class="dd-home-steps">' + setup.homeScreenSteps().map(function (t) { return "<li>" + t + "</li>"; }).join("") + '</ol>' +
       (dd.env.isIOS ? '<p class="dd-note">Why it matters: an iPhone can clear a website\'s saved data if you don\'t open it for about a week. Programs on the Home Screen are kept.</p>' : "") +
@@ -427,10 +430,10 @@
     program = p;
     setup.paint();
     dd.on("ai:changed", setup.paint);
-    dd.on("pair:received", function () {
+    dd.on("pair:received", function (ev) {
       setup.paint();
       // Just arrived on the phone by QR: the best moment to add it to the Home Screen.
-      if (needsHomeScreen()) setTimeout(setup.showHomeScreen, 1200);
+      if (needsHomeScreen()) setTimeout(function () { setup.showHomeScreen(ev); }, 600);
     });
   };
 

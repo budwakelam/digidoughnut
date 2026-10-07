@@ -271,6 +271,7 @@ with sync_playwright() as p:
     check("iPhone, hosted: phone row offers Add to Home Screen", page.locator("[data-home]").is_visible())
     page.goto(link); page.wait_for_timeout(1800)
     check("iPhone: after the QR scan, the Home Screen steps open by themselves", page.locator(".dd-home-steps").is_visible())
+    check("the sheet says the code arrived (no toast on top of it)", "came across" in page.inner_text(".dd-sheet") and page.locator(".dd-toast").count() == 0)
     check("iPhone steps say Share, then Add to Home Screen", "Share" in page.inner_text(".dd-home-steps") and "Add to Home Screen" in page.inner_text(".dd-home-steps"))
     page.screenshot(path=os.path.join(SHOTS, "setup-iphone-homescreen.png"))
     page.click("text=Got it")
