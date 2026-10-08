@@ -43,7 +43,7 @@ function build(name) {
     "{{DD_ACCENT}}": meta.accent,
     // The page title is what browsers suggest as the bookmark name: "Profit Coach · DigiDoughnut".
     "{{DD_TITLE}}": `${meta.name} · DigiDoughnut`,
-    "{{DD_BUILD_JSON}}": JSON.stringify({ built, commit, platform: read("platform/VERSION").trim(), home: homeFor(name) }),
+    "{{DD_BUILD_JSON}}": JSON.stringify({ built, commit, platform: read("platform/VERSION").trim(), home: homeFor(name), file: `${name}.html` }),
     "/*{{DD_PLATFORM_CSS}}*/": PLATFORM_CSS.map((f) => read(`platform/css/${f}`)).join("\n"),
     "/*{{DD_PROGRAM_CSS}}*/": readIf(`${dir}/program.css`),
     "<!--{{DD_PROGRAM_BODY}}-->": readIf(`${dir}/program.html`),

@@ -225,7 +225,7 @@
   function run(id, t, args) {
     var note = "";
     if (dd.isExample()) {   // example data never travels: take the examples out first, keep anything the buyer added
-      dd.replaceData(withoutExamples(dd.getData()), { example: false, source: "agent" });
+      dd.replaceData(dd.withoutExamples(dd.getData()), { example: false, source: "agent" });
       note = " (The program was showing example items, so those were removed first.)";
     }
     var before = JSON.stringify(dd.getData());
@@ -238,22 +238,6 @@
       dd.errors.record("agent tool:" + t.name, e);
       return finish(id, { ok: false, tool: t.name, message: "That didn't work." });
     });
-  }
-
-  /* The data minus the program's example items. Lists: items whose id is one of exampleData()'s
-     are dropped (so example ids must stay fixed). Other values still equal to the example go back to
-     emptyData()'s. Anything the buyer added stays. If the result doesn't check out: empty data. */
-  function withoutExamples(data) {
-    try {
-      var ex = program.exampleData(), empty = program.emptyData(), out = JSON.parse(JSON.stringify(data));
-      Object.keys(out).forEach(function (k) {
-        if (Array.isArray(out[k]) && Array.isArray(ex[k])) {
-          var ids = ex[k].map(function (i) { return i && i.id; }).filter(Boolean);
-          out[k] = out[k].filter(function (i) { return !(i && i.id && ids.indexOf(i.id) >= 0); });
-        } else if (k in ex && JSON.stringify(out[k]) === JSON.stringify(ex[k])) out[k] = empty[k];
-      });
-      return program.validateData(out) ? out : empty;
-    } catch (e) { dd.errors.record("agent.examples", e); return program.emptyData(); }
   }
 
   function finish(id, res) {

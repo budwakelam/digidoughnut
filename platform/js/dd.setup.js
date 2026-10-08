@@ -45,7 +45,7 @@
       shown: function () { return !!(dd.agent && dd.agent.available()); } }
   ];
 
-  function inProgress(st, id) { return !!(st.wizards[id] || (id === "host" && (st.wizards.host_neocities || st.wizards.host_tiiny))); }
+  function inProgress(st, id) { return !!(st.wizards[id] || (id === "host" && (st.wizards.host_github || st.wizards.host_tiiny || st.wizards.host_other))); }
   function visibleSteps() { return setup.steps.filter(function (s) { return !s.shown || s.shown(); }); }
   setup.visibleSteps = visibleSteps;
   setup.doneCount = function () { return visibleSteps().filter(function (s) { return s.done(); }).length; };
@@ -92,11 +92,8 @@
   // Buttons inside the steps list work the same on the page card and in the menu's sheet.
   function wireSteps(box) {
     var on = function (sel, fn) { var b = box.querySelector(sel); if (b) b.addEventListener("click", fn); };
-    on("[data-phone]", function () { dd.pair.open(); });
     on("[data-agent]", function () { dd.agent.openSheet(); });
     on("[data-syncsheet]", function () { dd.sync.openSheet(); });
-    on("[data-home]", function () { setup.showHomeScreen(); });
-    on("[data-where]", function () { dd.move.where(); });
     box.querySelectorAll("[data-start]").forEach(function (b) { b.addEventListener("click", function () { setup.open(b.dataset.start); }); });
   }
 
@@ -117,7 +114,7 @@
   setup.openSheet = function () {
     if (!program && dd.getProgram) program = dd.getProgram();
     var st = state(), n = setup.doneCount(), total = visibleSteps().length;
-    var sh = dd.ui.sheet('<h2>⚙️ Setup &amp; connections <span class="dd-setup-count">' + n + ' of ' + total + ' done</span></h2>' +
+    var sh = dd.ui.sheet('<h2>🧰 Setup &amp; connections <span class="dd-setup-count">' + n + ' of ' + total + ' done</span></h2>' +
       '<p class="dd-note" style="margin:0 0 8px">Each step is optional. Do them in any order, any time.</p>' +
       '<ol class="dd-steps">' + stepRows() + '</ol>' +
       '<div class="dd-btnrow">' + (st.hidden || (st.folded && n < total) ? '<button class="dd-linkbtn" data-unfold>Show the setup reminder on the page again</button>' : "") +
@@ -194,7 +191,13 @@
       // The helper chat: a column beside the steps on computers; on phones a 💬 Ask button opens it.
       '<aside class="dd-wiz-ask' + (chatOpen ? " open" : "") + '" id="dd-wiz-ask" aria-label="Helper chat"></aside>' +
       '<button class="dd-ask-fab" data-askfab aria-label="Ask the helper a question"><span aria-hidden="true">💬</span> Ask</button>';
-    var later = function () { dd.ui.closeSheet(); dd.ui.toast("Saved. Tap Continue in the setup card to pick up here."); };
+    // Where to pick up again: the setup card if it's on the page, otherwise the menu (audit 2026-10-08).
+    var later = function () {
+      dd.ui.closeSheet();
+      var st = state(), onPage = !st.hidden && !st.folded;
+      dd.ui.toast(onPage ? "Saved. Tap Continue in the setup card to pick up here."
+                         : "Saved. To pick up here: menu (" + program.name + ", top left) → ⚙️ Settings → Setup & connections.", 4500);
+    };
     var sh = dd.ui.sheet(html, { sticky: true, onClose: function () { setup.paint(); }, onEscape: later,
       onOutside: function () { dd.ui.toast("To close this, tap Finish later or ✕. Your place is saved."); } });
     sh.classList.add("dd-wiz");
@@ -323,7 +326,7 @@
         "Left menu, Settings > General > Your apps > the </> web button > App nickname anything, Firebase Hosting unticked > Register app > under Add Firebase SDK, the copy icon at the bottom right of the big box with firebaseConfig > Continue to console. " +
         "Safe to ignore: Gemini cards and Ask Gemini, the Dynamic Links box, the yellow Sign in with Google bar, SMS Multi-factor, Rules playground, npm install, Use a script tag, the AI coding agent box. Never turn on App Check: it blocks the program. " +
         "The setup code is not a password: it only says where the database is. Google may change button names; if what they see differs, believe their screen. Never ask for passwords." : "") +
-      (cur && /^host/.test(cur.id) ? " Hosting facts: the program is ONE self-contained HTML file. It must be uploaded unchanged, keeping its file name, to an https address, " +
+      (cur && /^host/.test(cur.id) ? " Hosting facts: the program is ONE self-contained HTML file. It must be uploaded unchanged, named exactly " + fileName() + " (rename it first if the browser added something like (1)), to an https address, " +
         "not behind a password. The host must not block outside connections (a Content-Security-Policy with connect-src 'self' breaks the helper; Neocities' free plan does this). " +
         "Updates: upload the new file with the same name to the same place, because each web address keeps its own saved numbers. If the buyer names a host " +
         "(Netlify, Cloudflare Pages, Vercel, cPanel, Hostinger, GoDaddy, Bluehost, WordPress, Wix, Squarespace, Google Sites, etc.), give short, numbered steps for that host and say plainly " +
@@ -348,30 +351,30 @@
     { keys: ["ignore", "skip", "terms", "email", "updates", "checkbox", "tick"], a: "Tick the box agreeing to Google's terms (you have to). Any box about emails or news is up to you: you can leave it empty." },
     { keys: ["long", "time", "how many", "minutes"], a: "About 2 minutes for the helper, 5 to 10 for the phone, 10 for sync. You can stop any time and pick up where you left off." },
     { keys: ["api", "key", "what is", "access code"], a: "Google calls it an API key. We call it your free access code: it's how the helper gets to use Google's AI for free." },
-    { keys: ["tiiny", "tiny host", "neocities", "hosting", "online", "upload", "address", "link", "website"], a: "Neocities or tiiny.host puts your program online for free, so your phone can open it. Your numbers and your code are never uploaded: they stay on your own devices." },
-    { keys: ["which one", "neocities or", "difference", "better", "choose", "pick"], a: "Pick Neocities if you're not sure. One free Neocities account holds all your DigiDoughnut programs and shows no ads. tiiny.host holds one program per free account." },
+    { keys: ["tiiny", "tiny host", "hosting", "online", "upload", "address", "link", "website"], a: "Putting the program online (on GitHub, tiiny.host or your own website) lets your phone open it. Your numbers and your code are never uploaded: they stay on your own devices." },
+    { keys: ["which one", "difference", "better", "choose", "pick", "neocities"], for: /^host/, a: "Pick GitHub if you're not sure: it's free, shows no ads, never expires, and one account holds all your DigiDoughnut programs. tiiny.host is quicker to set up, but holds one program per free account and needs a log-in every 3 months." },
     { keys: ["github", "repository", "repo"], a: "GitHub is a free place to keep files online, and it can show a file as a web page. Your program file goes there; your numbers and your code never do." },
-    { keys: ["public", "who can see"], a: "Public means anyone could look at the program file itself, like any web page. Your numbers and your code are never in the file: they stay on your own devices." },
-    { keys: ["not online", "not live", "404", "not found", "isn t there", "still waiting"], a: "GitHub can take up to 10 minutes to put a new site online. Check Settings, Pages: Branch should say main, and Save should have been tapped." },
-    { keys: ["private", "upgrade", "make this repository public", "enable pages"], a: "GitHub only makes free web pages from Public repositories. In your repository: Settings, General, scroll to Danger Zone, Change visibility, Change to public, then confirm." },
-    { keys: ["etsy", "folder", "different address", "wrong address", "github io"], a: "Your address is username.github.io, then the repository's name, then the file. On the waiting step, open \"GitHub shows a different address?\" and paste what GitHub shows." },
-    { keys: ["netlify", "cloudflare", "vercel", "cpanel", "hostinger", "godaddy", "bluehost", "file manager"], a: "Most hosts let you upload a file through a file manager or an upload page: upload this file unchanged and keep its name. For step-by-step help for your exact host, turn on the AI helper (setup step 2), then ask here." },
+    { keys: ["public", "who can see"], for: /^host_github/, a: "Public means anyone could look at the program file itself, like any web page. Your numbers and your code are never in the file: they stay on your own devices." },
+    { keys: ["not online", "not live", "404", "not found", "isn t there", "still waiting"], for: /^host_github/, a: "GitHub can take up to 10 minutes to put a new site online. Check Settings, Pages: Branch should say main, and Save should have been tapped." },
+    { keys: ["private", "upgrade", "make this repository public", "enable pages"], for: /^host_github/, a: "GitHub only makes free web pages from Public repositories. In your repository: Settings, General, scroll to Danger Zone, Change visibility, Change to public, then confirm." },
+    { keys: ["etsy", "folder", "different address", "wrong address", "github io"], for: /^host_github/, a: "Your address is username.github.io, then the repository's name, then the file. On the waiting step, open \"GitHub shows a different address?\" and paste what GitHub shows." },
+    { keys: ["netlify", "cloudflare", "vercel", "cpanel", "hostinger", "godaddy", "bluehost", "file manager"], a: "Most hosts let you upload a file through a file manager or an upload page: upload this file unchanged, named exactly as the setup screen shows. For step-by-step help for your exact host, turn on the AI helper (setup step 2), then ask here." },
     { keys: ["wordpress", "wix", "squarespace", "google sites", "website builder"], a: "Most website builders can't host a whole web page file like this one. If yours won't take it, tap Start over and pick GitHub: it's free and made for this." },
     { keys: ["https", "http", "secure", "padlock"], a: "https:// means the page is sent securely (the padlock in the address bar). Phones and the helper need it. Most hosts switch it on for free, often called SSL." },
-    { keys: ["readme"], a: "Turn on Add README when you create the repository. It's a small text file GitHub needs to start the repository; you can ignore it after that." },
-    { keys: ["username", "user name"], a: "On Neocities, your username becomes your web address: username.neocities.org. Letters, numbers and hyphens only. Anything you like, for example yourname-tools." },
-    { keys: ["supporter", "5 a month", "card number", "plan"], a: "Pick Free and tap Continue. You don't need the Supporter plan, and you never need to enter a card." },
-    { keys: ["confirmation", "token", "email code", "didn t get", "no email"], a: "Neocities emails you a code: paste it into Email Confirmation Token and tap Confirm Email. No email? Check spam, or tap Resend Confirmation Email." },
-    { keys: ["3 months", "expire", "taken down", "stay online", "disappear", "how long does it stay", "how long will it stay"], a: "On tiiny.host's free plan the page stays online as long as you log in to tiiny.host at least once every 3 months." },
-    { keys: ["update", "new version", "upgrade"], a: "To put a new version online, log in to tiiny.host and use Update on the same project. That keeps the same address, so your numbers stay." },
-    { keys: ["trial", "free trial", "solo"], a: "You don't need tiiny.host's free trial: tap Skip. The trial turns into a paid plan, and the free plan is all this program needs." },
+    { keys: ["readme"], for: /^host_github/, a: "Turn on Add README when you create the repository. It's a small text file GitHub needs to start the repository; you can ignore it after that." },
+    { keys: ["username", "user name"], for: /^host_github/, a: "Your GitHub username becomes part of your web address: username.github.io. Letters, numbers and single hyphens, for example smith-tools." },
+    { keys: ["confirmation", "token", "email code", "code", "didn t get", "no email"], for: /^host_github/, a: "GitHub emails you an 8-digit code: type it under Enter code and tap Continue. No email after a few minutes? Check your spam folder, or tap Resend the code." },
+    { keys: ["expire", "taken down", "stay online", "disappear", "how long does it stay", "how long will it stay"], for: /^host_github/, a: "On GitHub it stays online for good. Free GitHub pages don't expire and need no looking after." },
+    { keys: ["3 months", "expire", "taken down", "stay online", "disappear", "how long does it stay", "how long will it stay"], for: /^host_tiiny/, a: "On tiiny.host's free plan the page stays online as long as you log in to tiiny.host at least once every 3 months." },
+    { keys: ["update", "new version", "upgrade"], a: "To put a new version online, upload the new file to the same place with exactly the same file name, replacing the old one. The address stays the same, so your numbers stay." },
+    { keys: ["update", "new version", "upgrade"], for: /^host_tiiny/, a: "To put a new version online, log in to tiiny.host and use Update on the same project. That keeps the same address, so your numbers stay." },
+    { keys: ["trial", "free trial", "solo"], for: /^host_tiiny/, a: "You don't need tiiny.host's free trial: tap Skip. The trial turns into a paid plan, and the free plan is all this program needs." },
     { keys: ["home screen", "icon", "app", "bookmark", "shortcut"], a: "Bookmark it on your computer and add it to your Home Screen on your phone. Then it opens like an app, always from the same address, so your numbers are always there." },
     { keys: ["phone", "iphone", "android", "mobile"], a: "Setting up the helper is easiest on a computer. Once it works, Send to my phone moves it over by scanning a code." }
   ];
   setup.suggestQuestions = function (wizardId) {
     if (wizardId === "host_other") return ["How do I upload it to Netlify?", "Can I use WordPress?", "What does https mean?"];
     if (wizardId === "host_github") return ["Is GitHub really free?", "What does Public mean?", "It's not online yet"];
-    if (/^host_neo/.test(wizardId || "")) return ["Which username?", "Do I need Supporter?", "No email came"];
     if (/^host/.test(wizardId || "")) return ["Is it really free?", "Do I need the free trial?", "How long does it stay online?"];
     return wizardId === "sync" ? ["Which region?", "Locked or test mode?", "Where's the setup code?"]
                                : ["Is it really free?", "Do I need a credit card?", "What if I make a mistake?"];
@@ -510,21 +513,34 @@
     });
   }
 
-  /* ---------- "Put it on your phone" ----------
-     The program file has to be online before a phone can open it. Two free services, checked
-     with Oran 2026-10-07:
-     - Neocities (first choice): one free account holds every DigiDoughnut program, no banner,
-       no ads. Sign up = Username (becomes <name>.neocities.org) + Password + Email + "I am
-       human" + "Create My Site"; then a plan page (Free -> "Continue"; Supporter has card boxes);
-       then "Check your Email" (Email Confirmation Token -> "Confirm Email"); dashboard has
-       "Upload". A file keeps its address: <name>.neocities.org/<file name>.
-     - tiiny.host: 1 project per free account, small banner, log in every 3 months, a
-       "Start your free trial" popup whose way out is "Skip"; "Upload file", "Update".
-     Either way, the last steps carry the code + numbers from the file to the new address in one
-     link (dd.pair), then bookmark it (the page title is the bookmark name). */
-  function fileName() {
-    try { return decodeURIComponent(location.pathname.split("/").pop()) || "the program file"; } catch (e) { return "the program file"; }
+  /* ---------- "Put it on your phone": the buyer's own copy ----------
+     The program file has to be online before a phone can open it. Offered (checked with Oran
+     2026-10-07): GitHub Pages (recommended), tiiny.host (1 project per free account, small banner,
+     log in every 3 months, a "Start your free trial" popup whose way out is "Skip"; "Upload file",
+     "Update"), or the buyer's own host. Each wizard's last steps carry the code + numbers from the
+     file to the new address in one link (dd.pair), then bookmark it (the page title is the
+     bookmark name). */
+  /* The file's PROPER name (audit 2026-10-08). Browsers name repeat downloads "demo (1).html",
+     "demo (10).html"…; uploaded as-is, that ends up in the web address, and the next download gets a
+     different name, so "same place, same name" stops working. The build stamps the real name
+     (DD_BUILD.file) and the wizards ask buyers to rename the file to it before uploading. */
+  function currentFileName() {
+    try { return decodeURIComponent(location.pathname.split("/").pop()) || ""; } catch (e) { return ""; }
   }
+  function fileName() {
+    var b = window.DD_BUILD && window.DD_BUILD.file;
+    if (b && /^[a-z0-9-]+\.html$/.test(b)) return b;
+    return currentFileName() || "the program file";
+  }
+  /* Shown on the upload screens when the file on this computer has a different name. */
+  function renameNote() {
+    var now = currentFileName();
+    if (!dd.env.isFile || !now || now === fileName()) return "";
+    return '<p class="dd-todo"><span aria-hidden="true">✏️</span> <b>Rename it first.</b> Your file is called <b>' + esc(now) + '</b>. ' +
+      'Rename it to <b>' + esc(fileName()) + '</b> before you upload it, so the address stays the same when you get a new version.</p>';
+  }
+  setup.renameNote = renameNote;
+  setup.currentFileName = currentFileName;
   function hostState(v) { var s = state(); if (v !== undefined) { s.hostUrl = v; saveState(s); } return s.hostUrl || ""; }
   setup.ownAddress = hostState;
   setup.hostInProgress = function (svc) { return !!state().wizards["host_" + svc]; };
@@ -543,76 +559,19 @@
       return u.href;
     } catch (e) { return null; }
   };
-  /* Neocities: a username (or a pasted address) -> https://<name>.neocities.org/<this file's name> */
-  setup.neocitiesAddress = function (raw) {
-    var t = String(raw || "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/\.neocities\.org$/, "");
-    if (!/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(t)) return null;
-    return "https://" + t + ".neocities.org/" + encodeURIComponent(fileName());
-  };
-
   var facts = '<ul class="dd-facts"><li>✓ Free. No credit card.</li><li>✓ About 5 to 10 minutes.</li><li>✓ Your numbers and your code are never uploaded.</li></ul>';
   var publicNote = '<p class="dd-note">The page itself can be opened by anyone who has its address, like a shared link. What you type into it stays on each of your own devices.</p>';
   function phoneWarn() { return dd.env.isPhone ? '<p class="dd-status show warn">Do this step on the computer where you saved the program file. Then come back to your phone at the end.</p>' : ""; }
 
-  /* Which services the wizard offers. Neocities is PARKED (2026-10-07): its free plan sends
+  /* Which services are offered. Neocities was dropped (2026-10-07): its free plan sends
      "connect-src 'self'", so a page there can't reach Google, Firebase or the noticeboard.
-     Seen on Oran's site; the helper said "no internet". Its wizard stays below for a paid plan
-     or a policy change, but isn't offered. When only one service is offered, the choice screen
-     is skipped. */
+     When only one service is offered, the choice screen is skipped. */
   setup.hostChoices = ["github", "tiiny", "other"];
   function hostChoice() { return setup.hostChoices.length === 1 ? setup.hostChoices[0] : null; }
 
-  /* ease = how easy the setup is, lasting = how little looking-after it needs later (out of 5). */
-  var HOSTS = {
-    github: { name: "GitHub", blurb: "Recommended. Free, no ads, never expires, and one account holds all your DigiDoughnut programs. About 10 minutes.", ease: 3, lasting: 5 },
-    tiiny: { name: "tiiny.host", blurb: "Quicker to set up, but one program per free account, and you log in every 3 months to keep it online. About 5 minutes.", ease: 4, lasting: 2 },
-    other: { name: "My own website or another host", blurb: "Already have web hosting? Put the file there. The helper can give you steps for your host.", ease: 0, lasting: 0 },
-    neocities: { name: "Neocities", blurb: "Free, but its free plan blocks the helper.", ease: 4, lasting: 4 }
-  };
-  function bars(label, n) {
-    if (!n) return "";
-    var cells = ""; for (var i = 1; i <= 5; i++) cells += '<i class="' + (i <= n ? "on" : "") + '"></i>';
-    return '<span class="dd-bars"><span class="dd-bars-label">' + esc(label) + '</span><span class="dd-bars-cells" aria-label="' + n + ' out of 5">' + cells + '</span></span>';
-  }
-
-  /* Screen 1, shared. Phase 7.2: when there is a DigiDoughnut version (DD_BUILD.home), the first
-     choice is "Ready to go (recommended)", which opens the Move sheet aimed at it; "My own copy
-     (advanced)" shows today's chooser, unchanged. Without a home address, only the chooser. */
-  function hostChooser() {
-    return facts + phoneWarn() +
-      '<div class="dd-choice">' + setup.hostChoices.map(function (id) { var o = HOSTS[id];
-        return '<button class="dd-choice-btn" data-host="' + id + '"><b>' + esc(o.name) + '</b><span>' + esc(o.blurb) + '</span>' +
-          (o.ease ? '<span class="dd-bars-wrap">' + bars("Easy to set up", o.ease) + bars("Looks after itself", o.lasting) + '</span>' : "") + '</button>'; }).join("") +
-      '</div>' + publicNote;
-  }
-  function offerHome() { return !dd.env.isHome && !!dd.move; }   // always offered, address or not
-  setup.wizards.host = {
-    title: "Where it lives",
-    screens: [
-      { title: function () { return offerHome() ? "Where should it live?" : "Put it online, for free"; },
-        pic: function () { return { kind: "hero", icons: ["💻", "🌐", "📱"], caption: "Computer → online → phone" }; },
-        todo: function () { return offerHome() ? "Pick one. You can switch later and take your " + esc(program.dataLabel || "numbers") + " with you." : "Pick one of the choices below."; },
-        body: function () {
-          if (!offerHome()) return '<p>Your phone can\'t open a file that lives on this computer. So first we put the program online, at its own web address, using a free service.</p>' + hostChooser();
-          return '<p>Right now ' + esc(program.name) + ' is a file on this computer. To use it on your phone too, it needs a web address.</p>' +
-            '<div class="dd-choice">' +
-              '<button class="dd-choice-btn dd-choice-rec" data-ready><b>Ready to go (recommended)</b><span>Use the DigiDoughnut version. Works on your phone straight away, nothing to upload.</span></button>' +
-              '<button class="dd-choice-btn" data-own><b>My own copy (advanced)</b><span>Put the file on your own free web space: GitHub, tiiny.host or your own website. About 10 minutes.</span></button>' +
-            '</div><div data-ownlist hidden>' + hostChooser() + '</div>';
-        },
-        mount: function (c) {
-          var r = c.el.querySelector("[data-ready]"), o = c.el.querySelector("[data-own]");
-          if (r) r.addEventListener("click", function () { dd.move.open({ to: "home" }); });
-          if (o && cur && cur.own) { o.classList.add("picked"); c.el.querySelector("[data-ownlist]").hidden = false; }
-          if (o) o.addEventListener("click", function () { o.classList.add("picked"); var l = c.el.querySelector("[data-ownlist]"); l.hidden = false; try { l.scrollIntoView({ block: "nearest" }); } catch (e) {} });
-          c.el.querySelectorAll("[data-host]").forEach(function (b) { b.addEventListener("click", function () {
-            var s = state(); s.hostWith = b.dataset.host; saveState(s);
-            setup.open("host_" + b.dataset.host);
-          }); });
-        },
-        next: false }
-    ]
-  };
+  /* The choice of where it lives is ONE screen, dd.move.where() (Phase 7.2). The old chooser screen
+     and the Neocities wizard were removed in the 2026-10-08 audit; "host" is still the parent name the
+     host wizards return to (Back / Start over open dd.move.where()). */
 
   /* The last three screens, shared by both services. */
   function finishScreens(svc) {
@@ -631,7 +590,7 @@
           c.status(made.left.length ? "warn" : "ok", made.left.length ? "Opened. Your " + made.left.join(" and ") + " were too big to carry, so they stay here for now." : "Opened in a new tab. Check it, then come back here and tap Next.");
         } },
         stuck: ["Nothing opened? Your browser may have blocked the new tab. Allow pop-ups for this page, or tap the button again.",
-                svc !== "tiiny" ? "Page not found? Check the upload finished, and that your username is right: tap Back to fix it."
+                svc !== "tiiny" ? "Page not found? Check the upload finished, and that the address is right: tap Back to fix it."
                                     : "If the new page looks empty, check the address you pasted: tap Back and fix it."], guide: "host_move" },
       { title: "Bookmark it and keep it",
         pic: function () { return { kind: "bookmark", site: "Bookmark", name: setup.bookmarkName() }; },
@@ -645,60 +604,13 @@
             : svc === "tiiny"
             ? '<li><b>Log in to tiiny.host at least once every 3 months.</b> That keeps your free page online.</li>' +
               '<li><b>Getting an update?</b> On tiiny.host, use <b>' + esc(L("host_update", "Update")) + '</b> on this same project. Don\'t upload it as a new one.</li>'
-            : svc === "other"
-            ? '<li><b>Getting an update?</b> Upload the new file to the same place with the <b>same file name</b>, replacing the old one, so the address stays the same.</li>'
-            : '<li><b>Getting an update?</b> Upload the new file to Neocities with the <b>same file name</b>. It replaces the old one and keeps the same address.</li>') +
+            : '<li><b>Getting an update?</b> Upload the new file to the same place with the <b>same file name</b>, replacing the old one, so the address stays the same.</li>') +
           '</ul>' +
           '<p>Last step: in the new tab, tap the program\'s name at the top left (the menu), then <b>⚙️ Settings</b> → <b>📲 Send to my phone</b>. On your phone, add it to your Home Screen when it asks.</p>' +
           (svc === "tiiny" ? '<p class="dd-note">You can ignore the small tiiny.host banner on your page.</p>' : ""); },
         nextLabel: "Done" }
     ];
   }
-
-  setup.wizards.host_neocities = {
-    title: "Put it on your phone · Neocities", parent: "host",
-    onDone: function () { dd.ui.toast("Use your new address from now on. Bookmark it!", 4500); },
-    screens: [
-      { title: "Make a free Neocities account",
-        body: function () { return '<p>Tap the button. Neocities opens in a new tab. Under <b>' + esc(L("neo_signup", "Sign up for free")) + '</b>:</p>' +
-          '<ul><li><b>Username</b>: this becomes your web address, like <i>yourname</i>.neocities.org. Letters, numbers and hyphens only. Write it down.</li>' +
-          '<li><b>Password</b> and <b>Email</b>.</li>' +
-          '<li>Tick <b>' + esc(L("neo_human", "I am human")) + '</b>. It may ask you to tap a picture: that\'s normal.</li>' +
-          '<li>Tap <b>' + esc(L("neo_create", "Create My Site")) + '</b>.</li></ul>' +
-          '<p><b>You can ignore</b> Tags. Leave it empty.</p>' + phoneWarn(); },
-        action: { label: "Open Neocities", run: function (c) { c.open(link("host_neocities", "https://neocities.org/")); } },
-        stuck: ["Already have a Neocities account? Tap Sign In at the top right, then skip ahead with Next.",
-                "Username taken? Try adding a word or a number, like yourname-tools."], guide: "neo_signup" },
-      { title: "Pick the free plan",
-        body: function () { return '<p>Neocities shows two plans. Under <b>Free</b>, tap <b>' + esc(L("neo_free_continue", "Continue")) + '</b>.</p>' +
-          '<p><b>You can ignore</b> the Supporter plan and its card boxes. You don\'t need them.</p>'; },
-        stuck: ["Didn't see the plans? That's fine. Tap Next."], guide: "neo_plan" },
-      { title: "Confirm your email",
-        body: function () { return '<p>Neocities emails you a code. Open that email, copy the code, paste it into <b>' + esc(L("neo_token", "Email Confirmation Token")) + '</b>, and tap <b>' + esc(L("neo_confirm", "Confirm Email")) + '</b>.</p>' +
-          '<p><b>You can ignore</b> the rules box above it. This program is your own private tool, which is fine there.</p>'; },
-        stuck: ["No email after a few minutes? Check your spam folder, or tap Resend Confirmation Email."], guide: "neo_email" },
-      { title: "Upload this program",
-        body: function () { return '<p>Go to your Neocities <b>dashboard</b>. (If you see a page about learning to make websites, tap <b>' + esc(L("neo_dashboard", "Head to your dashboard")) + '</b>.)</p>' +
-          '<p>Tap <b>' + esc(L("neo_upload", "Upload")) + '</b> and choose this file:</p>' +
-          '<p class="dd-filename">' + esc(fileName()) + '</p>' +
-          '<p class="dd-note">It\'s wherever you saved it from Etsy, often the Downloads folder.</p>' +
-          '<p><b>You can ignore</b> index.html and the other files Neocities made for you. Leave them alone.</p>'; },
-        stuck: ["Can't find the file? On Windows, open File Explorer and look in Downloads. On a Mac, open Finder and look in Downloads.",
-                "Don't rename the file. Its name becomes part of its address."], guide: "neo_upload" },
-      { title: "Your Neocities username",
-        body: function () { var s = state(); return '<p>Type the username you picked when you signed up.</p>' +
-          '<input class="dd-input" id="dd-wiz-addr" placeholder="e.g. smith-tools" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + esc(s.neoUser || "") + '">' +
-          '<p class="dd-note">It\'s at the top right of Neocities, and in your site\'s address: <i>username</i>.neocities.org.</p>'; },
-        mount: function (c) { var i = c.el.querySelector("#dd-wiz-addr"); if (!dd.env.isPhone && !i.value) i.focus(); },
-        check: function (c) {
-          var raw = c.el.querySelector("#dd-wiz-addr").value, url = setup.neocitiesAddress(raw);
-          if (!url) { c.status("warn", "Type your Neocities username first.", "Letters, numbers and hyphens only, like smith-tools."); return false; }
-          var s = state(); s.neoUser = raw.trim(); saveState(s);
-          hostState(url); return true;
-        },
-        guide: "neo_address" }
-    ].concat(finishScreens("neocities"))
-  };
 
   /* GitHub Pages (Oran's number one, 2026-10-07): the buyer's own free GitHub account, one
      repository named <username>.github.io that holds every DigiDoughnut program they buy, at
@@ -804,9 +716,9 @@
         pic: function () { return { kind: "page", site: "github.com · your repository", items: [{ type: "menu", label: L("gh_add_file", "Add file"), value: L("gh_upload", "Upload files") }, { type: "file", value: fileName() }], btn: L("gh_commit", "Commit changes") }; },
         todo: function () { return "<b>" + esc(L("gh_add_file", "Add file")) + "</b> → <b>" + esc(L("gh_upload", "Upload files")) + "</b>, pick the file, then tap <b>" + esc(L("gh_commit", "Commit changes")) + "</b>."; },
         body: function () { return '<p>On your new repository\'s page, tap <b>' + esc(L("gh_add_file", "Add file")) + '</b>, then <b>' + esc(L("gh_upload", "Upload files")) + '</b>, and choose this file:</p>' +
-          '<p class="dd-filename">' + esc(fileName()) + '</p>' +
+          renameNote() + '<p class="dd-filename">' + esc(fileName()) + '</p>' +
           '<p>Then tap the green <b>' + esc(L("gh_commit", "Commit changes")) + '</b> button at the bottom.</p>' +
-          '<p><b>You can ignore</b> the boxes for a message or description. Don\'t rename the file: its name becomes part of its address.</p>'; },
+          '<p><b>You can ignore</b> the boxes for a message or description. Its name becomes part of its address, so it must be exactly <b>' + esc(fileName()) + '</b>.</p>'; },
         action: { label: "Open my repository", run: function (c) { var a = setup.githubAddress(ghUser()); c.open(a ? "https://github.com/" + a.user + "/" + a.repo : "https://github.com/"); } },
         stuck: ["Can't find the file? On Windows, open File Explorer and look in Downloads. On a Mac, open Finder and look in Downloads.",
                 "You can also drag the file from your folder onto the GitHub page, onto Drag files here to add them to your repository.",
@@ -874,8 +786,8 @@
         pic: function () { return { kind: "page", site: "your host's file manager", items: [{ type: "file", value: fileName() }], btn: "Upload" }; },
         todo: "Upload this program's file to your host, the same way you'd upload any web page.",
         body: function () { return '<p>Use your host\'s usual way to put a web page online (a file manager, an upload button, or a drag-and-drop page). Upload this file:</p>' +
-          '<p class="dd-filename">' + esc(fileName()) + '</p>' +
-          '<ul><li><b>Don\'t change the file.</b> Upload it exactly as it is, and keep its name.</li>' +
+          renameNote() + '<p class="dd-filename">' + esc(fileName()) + '</p>' +
+          '<ul><li><b>Don\'t change what\'s inside the file.</b> Upload it as it is, named <b>' + esc(fileName()) + '</b>.</li>' +
           '<li>The address must start with <b>https://</b>.</li>' +
           '<li>Don\'t put it in a password-protected or members-only area.</li></ul>' +
           '<p class="dd-note">Not sure how on your host? Ask the helper in the box below and say which host you use, for example "How do I upload it to Netlify?". ' +
@@ -916,7 +828,7 @@
         pic: function () { return { kind: "page", site: "tiiny.host", items: [{ type: "file", value: fileName() }], btn: L("host_upload", "Upload file") }; },
         todo: function () { return "Tap <b>" + esc(L("host_upload", "Upload file")) + "</b> and pick this program's file."; },
         body: function () { return '<p>On tiiny.host, tap <b>' + esc(L("host_upload", "Upload file")) + '</b> and choose this file:</p>' +
-          '<p class="dd-filename">' + esc(fileName()) + '</p>' +
+          renameNote() + '<p class="dd-filename">' + esc(fileName()) + '</p>' +
           '<p class="dd-note">It\'s wherever you saved it from Etsy, often the Downloads folder.</p>' +
           '<p><b>You can ignore</b> options for passwords, domains or names. The address tiiny.host picks is fine.</p>'; },
         stuck: ["Can't find the file? On Windows, open File Explorer and look in Downloads. On a Mac, open Finder and look in Downloads.",
@@ -1086,7 +998,7 @@
     });
   };
 
-  if (dd.menu) dd.menu.add({ id: "setup", icon: "⚙️", label: "Setup & connections", order: 10,
+  if (dd.menu) dd.menu.add({ id: "setup", icon: "🧰", label: "Setup & connections", order: 10,
     show: function () { var p = dd.getProgram && dd.getProgram(); return !!(p && p.setup !== false); },
     note: function () { var n = setup.doneCount(), t = visibleSteps().length; return n === t ? "All set up" : n + " of " + t + " steps done"; },
     run: function () { setup.openSheet(); } });

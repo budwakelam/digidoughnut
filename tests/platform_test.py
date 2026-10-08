@@ -6,10 +6,12 @@ Every check runs twice per device: opened as a file (file://) and from a web add
 Devices: desktop and an emulated iPhone 13. Emulation is not a real iPhone; the Phase 1
 gate still needs the demo opened from tiiny.host on Oran's iPhone.
 """
-import json, os, sys, threading, http.server, functools
+import re, json, os, sys, threading, http.server, functools
 from playwright.sync_api import sync_playwright
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+# The version comes from the program itself, so a version bump is one edit (audit 2026-10-08).
+VERSION = re.search(r'version:\s*"([^"]+)"', open(os.path.join(ROOT, "programs", "demo", "program.js")).read()).group(1)
 DIST = os.path.join(ROOT, "dist")
 SHOTS = os.path.join(ROOT, "tests", "screenshots")
 os.makedirs(SHOTS, exist_ok=True)
@@ -47,7 +49,7 @@ def suite(browser, device_name, device, mode):
     check("first run shows example data", items(page) == ["Buy flour", "Book the market table", "Print price tags"], str(items(page)))
     check("example notice is shown", page.locator("#dd-notice-example").is_visible())
     check("nothing saved until the buyer acts", page.evaluate(f"() => localStorage.getItem('{KEY}')") is None)
-    check("footer has brand line + version", "Made with care by DigiDoughnut · Demo List 0.1.6" in page.inner_text("#dd-footer"))
+    check("footer has brand line + version", "Made with care by DigiDoughnut · Demo List " + VERSION in page.inner_text("#dd-footer"))
     check("page title is the bookmark name", page.title() == "Demo List · DigiDoughnut", page.title())
     page.screenshot(path=os.path.join(SHOTS, f"{device_name}-{mode}-first-run.png"), full_page=True)
 
@@ -57,9 +59,19 @@ def suite(browser, device_name, device, mode):
     check("added item survives a reload", "Call the bakery" in items(page))
     env = stored(page)
     check("saved inside the envelope", env.get("dd") == 1 and env.get("program") == "demo" and env.get("schemaVersion") == 2, json.dumps(env)[:120])
-    check("example flag still on after an edit", env.get("example") is True)
+    # Audit 2026-10-08: the first real change ends example mode. Untouched examples go, the buyer's
+    # item stays and is theirs (so it syncs, travels and backs up).
+    check("first edit ends example mode", env.get("example") is False, json.dumps(env)[:160])
+    check("untouched example items are taken out, the buyer's item stays", items(page) == ["Call the bakery"], str(items(page)))
+    check("example notice is gone after the first edit", page.locator("#dd-notice-example").count() == 0)
+    # A changed example item is the buyer's: it stays.
+    page.evaluate("() => localStorage.clear()"); page.reload()
+    page.locator(".demo-row input").first.check()
+    check("ticking an example item keeps that item, drops the rest", items(page) == ["Buy flour"], str(items(page)))
+    check("...and it is no longer example data", stored(page).get("example") is False)
 
     # 3. Clear example and start fresh
+    page.evaluate("() => localStorage.clear()"); page.reload()
     page.click("#dd-notice-example >> text=Clear them and start mine")
     check("start-mine empties the list", items(page) == [])
     check("example notice goes away", page.locator("#dd-notice-example").count() == 0)
@@ -98,7 +110,12 @@ def suite(browser, device_name, device, mode):
     page.evaluate("() => dd.errors.record('test', 'GET https://x/v1?key=AIzaSyA1234567890abcdefghijklmnopqrstu failed sk-or-v1-abcdefghijklmnop123456')")
     page.click("#dd-footer p", click_count=3)
     txt = page.inner_text("#dd-diag-text") if page.locator("#dd-diag-text").count() else ""
-    check("triple-click opens support details", "--- Program ---" in txt and "Demo List 0.1.6" in txt)
+    check("triple-click opens support details", "--- Program ---" in txt and ("Demo List " + VERSION) in txt)
+    check("support details show how much browser storage is used", "browser storage used" in txt)
+    page.keyboard.press("Escape")
+    page.evaluate("() => { dd.store.LIMIT = 100; dd.store.checkRoom(); }")
+    check("nearly-full storage warns before a save fails", page.locator("#dd-notice-storage").count() == 1 and "backup" in page.inner_text("#dd-notice-storage"))
+    page.evaluate("() => { dd.store.LIMIT = 5000000; dd.ui.clearNotice('storage'); }")
     check("codes are masked in the diagnostic", "AIzaSyA1234567890abc" not in txt and "abcdefghijklmnop123456" not in txt and "[hidden]" in txt)
     check("diagnostic knows file vs hosted", ("Opened from a file" in txt) == (mode == "file"))
     page.keyboard.press("Escape")

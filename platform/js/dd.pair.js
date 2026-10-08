@@ -142,7 +142,7 @@
           el.textContent = "";
           return;
         }
-        el.textContent = "Works for " + Math.floor(s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60) + " more, one phone only.";
+        el.textContent = "Works for " + Math.floor(s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60) + " more. Scan it with your own phone.";
       };
       tick(); timer = setInterval(tick, 1000);
     }

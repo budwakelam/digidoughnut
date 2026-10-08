@@ -8,7 +8,7 @@
    - Neutral tools: programs declare tools once ({name, description, params}); the adapter
      writes the company's schema. Nobody hand-writes Gemini schemas, so the old
      "required goes inside parameters" bug can't come back.
-   - Hard limits: 30 s per request, 60 s and 5 tool rounds per turn, Stop at any time.
+   - Hard limits: 30 s per request, 90 s and 5 tool rounds per turn, Stop at any time.
      The endless "thinking…" can't happen.
    - Every failure maps to one of dd.errors' seven friendly types.
 
@@ -598,13 +598,6 @@
     return ai.chat({ system: system, history: [{ role: "user", text: prompt }] });
   };
 
-  function wait(ms) {
-    return new Promise(function (resolve, reject) {
-      var t = setTimeout(resolve, ms);
-      var poll = setInterval(function () { if (stopped) { clearTimeout(t); clearInterval(poll); reject({ type: "stopped" }); } }, 200);
-      setTimeout(function () { clearInterval(poll); }, ms + 50);
-    });
-  }
 
   /* ---------- phone pairing: the AI code travels in the QR (on by default) ----------
      Google codes travel as-is (the company is the default); others as "company:code". */

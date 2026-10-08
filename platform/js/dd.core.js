@@ -72,11 +72,41 @@
      so the box doesn't lose focus. */
   dd.update = function (fn, opts) {
     opts = opts || {};
+    var wasExample = meta.example;
     var out = fn(data);
     if (out !== undefined) data = out;
+    // The buyer's first real change ends "example mode" (audit 2026-10-08): untouched example items
+    // go, anything the buyer added or changed stays and is theirs from now on, so it syncs, travels
+    // and can be backed up. Before this, an edit kept the whole list marked "example" forever.
+    var cleared = false;
+    if (wasExample) {
+      var mine = dd.withoutExamples(data);
+      cleared = JSON.stringify(mine) !== JSON.stringify(data);
+      data = mine; meta.example = false;
+      paintExampleNotice();
+    }
     persist(opts.source);
-    if (opts.render !== false) render();
+    if (opts.render !== false || cleared) render();
+    if (cleared) dd.ui.toast("Took out the example items. The rest is yours now.", 3500);
     return data;
+  };
+
+  /* The data minus the program's untouched example items. Lists: an item is dropped when its id is
+     one of exampleData()'s AND it is unchanged (so example ids must stay fixed). Other values still
+     equal to the example go back to emptyData()'s. Anything the buyer added or changed stays.
+     If the result doesn't check out: empty data. Used by dd.update and dd.agent. */
+  dd.withoutExamples = function (d) {
+    try {
+      var ex = program.exampleData(), empty = program.emptyData(), out = JSON.parse(JSON.stringify(d));
+      Object.keys(out).forEach(function (k) {
+        if (Array.isArray(out[k]) && Array.isArray(ex[k])) {
+          var orig = {};
+          ex[k].forEach(function (i) { if (i && i.id) orig[i.id] = JSON.stringify(i); });
+          out[k] = out[k].filter(function (i) { return !(i && i.id && orig[i.id] === JSON.stringify(i)); });
+        } else if (k in ex && JSON.stringify(out[k]) === JSON.stringify(ex[k])) out[k] = empty[k];
+      });
+      return program.validateData(out) ? out : empty;
+    } catch (e) { dd.errors.record("examples", e); return program.emptyData(); }
   };
 
   /* Swap in a whole new data set (restore, sync, "start fresh"). Checked before it's used. */

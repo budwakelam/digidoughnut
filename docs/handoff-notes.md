@@ -386,3 +386,29 @@ yes. 4 AI companies at launch: Google, Groq, OpenRouter, OpenAI, Anthropic. (5 a
   (Setup, Where it lives, Send to my phone, Backup, Privacy), then Help, About. "Hide setup" asks
   first, then hides everything; Menu → Settings → Setup brings it back. Print hides the frame.
   Suites: 110·61·202·79·101·22·91·108.
+- Oran (00:45–02:00, 10-08): **AI companies: Google only for launch** (Oran: "easier to stay with
+  Google; if there's a big request, add it later"). 7.5 is off the build list; calls 5 and 6 are moot.
+  Then an audit of 0.1.6; Oran approved fixes 2–10 and is testing #1 himself:
+  1. (Oran testing) iPhone: does the Home Screen app start empty? iOS has kept Home Screen apps'
+     storage separate from Safari's (WebKit bug 181849). Scan → Add to Home Screen → open the icon.
+  2. **The first real change ends example mode** (`dd.update`): untouched example items go (by id +
+     unchanged), anything added or changed stays and is the buyer's (syncs, travels, backs up).
+     `dd.withoutExamples` moved to dd.core (dd.agent uses it). Penny's Undo of that first change puts
+     the examples back as examples (`undos[id].example`).
+  3. **Proper file name**: build stamps `DD_BUILD.file` (`<program>.html`). `setup.fileName()` returns
+     it; GitHub / tiiny / own-host upload screens show "✏️ Rename it first" when the file on this
+     computer is called something else (e.g. "demo (10).html"). Addresses use the proper name.
+  4. Setup guide answers rewritten: GitHub-first, tiiny-only answers tagged `for: /^host_tiiny/`,
+     no Neocities answers.
+  5. Backup carries `sync: {ledger, config}` when live sync is on; restoring it on a device with
+     sync off joins that ledger (merge, newest edits come back). Backup sheet: "Keep it private" and
+     "Careful when clearing your browser"; Where it lives: one line on clearing site data.
+  6. "Finish later" points to Menu → Settings → Setup & connections when the card is hidden/folded.
+  7. Removed: Neocities wizard + `neocitiesAddress`, the old host chooser screen (`setup.wizards.host`),
+     dead step-row handlers, `wait()` in dd.ai, `find()` in the demo.
+  8. Tests read the version from `programs/demo/program.js`: a version bump is now ONE edit.
+  9. `dd.store.usedChars()` in the support report; a warning notice at 80% of ~5M characters
+     (`store.checkRoom`, after each save). Penny's summary is capped at `dd.helper.SUMMARY_MAX` (12,000).
+  10. QR: "Scan it with your own phone" (one-use is only checked per phone). Setup & connections
+      icon 🧰 (Settings keeps ⚙️). Demo: "Clear the 1 item" wording.
+  Demo 0.1.7. Suites: 134·61·191·81·108·91·108·22.

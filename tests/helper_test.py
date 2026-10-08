@@ -118,7 +118,7 @@ with sync_playwright() as p:
     page.click(".dd-helper-chip >> nth=0")   # "Add milk and eggs"
     wait_reply(page, 0)
     after = items(page)
-    check("one message, two tool calls: both items added", after == before + ["milk", "eggs"], after)
+    check("one message, two tool calls: both items added (the untouched examples go: her change is the first real one)", after == ["milk", "eggs"], after)
     check("the list on screen shows them", "milk" in page.inner_text("#demoList") and "eggs" in page.inner_text("#demoList"))
     check("she confirms in her reply", "Added 'milk'" in page.locator(".dd-helper-msg.bot").last.inner_text())
     check("an Undo button sits under that reply", page.locator(".dd-helper-msg.bot").last.locator(".dd-helper-undo").count() == 1)
@@ -126,12 +126,15 @@ with sync_playwright() as p:
     check("she was told the current list", "Buy flour" in sys1 and "Book the market table (done)" in sys1)
     check("she was told it's example data", "EXAMPLE" in sys1)
     check("she was told her name and the program", "You are Penny" in sys1 and "Demo List" in sys1)
+    cut = page.evaluate("() => { const k = dd.helper.SUMMARY_MAX; dd.helper.SUMMARY_MAX = 5; const t = dd.helper.systemPrompt(); dd.helper.SUMMARY_MAX = k; return t; }")
+    check("a big program's summary is cut short before it's sent", "cut short" in cut and len(cut.split("Current data in the program:")[1]) < 300, cut[-300:])
     tools = [f["name"] for f in G.sent[0]["tools"][0]["functionDeclarations"]]
     check("she was given the program's four tools", tools == ["add_item", "set_done", "remove_item", "clear_list"], tools)
 
     print("\n== Undo ==")
     page.click(".dd-helper-undo")
     check("one tap puts back everything that reply did", items(page) == before, items(page))
+    check("...including the examples being examples again", page.evaluate("() => dd.isExample()") and page.locator("#dd-notice-example").count() == 1)
     check("the reply now says Undone, and the button is gone", "Undone." in page.inner_text(".dd-helper-msgs") and page.locator(".dd-helper-undo").count() == 0)
     send(page, "tick off flour")
     check("tick off: done", "Buy flour*" in items(page), items(page))
@@ -146,7 +149,8 @@ with sync_playwright() as p:
     before = items(page)
     send(page, "clear the list")
     check("nothing cleared yet", items(page) == before)
-    check("a Yes / No question shows under her reply", "Clear all 3 items" in page.inner_text(".dd-helper-msgs") and page.locator("text=Yes, clear it").count() == 1)
+    want_q = "Clear the 1 item" if len(before) == 1 else f"Clear all {len(before)} items"
+    check("a Yes / No question shows under her reply", want_q in page.inner_text(".dd-helper-msgs") and page.locator("text=Yes, clear it").count() == 1)
     page.click("text=No, leave it")
     check("No leaves it alone", items(page) == before)
     send(page, "clear the list please")

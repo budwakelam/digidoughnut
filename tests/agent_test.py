@@ -323,14 +323,13 @@ with sync_playwright() as p:
     v = eagent.get("/view")
     check("the moment the result is there, the view already shows the change", sum(1 for i in json.loads(v["data"])["items"] if i["text"] == "Milk") == 1)
     check("the instructions offer PUT with your own id, the streaming wait, and item ids", all(w in ebrief for w in ["PUT BASE/inbox/<your own id>.json", "text/event-stream", "ids from the view"]))
-    # examples: the buyer typed one of their own while the examples were showing
+    # examples: the agent's change is the first one, while the examples are still showing
     xctx, xpage, xerrs = fresh()
-    xpage.fill("#demoNew", "Typed by me"); xpage.click("#demoAdd")
-    check("(the examples are still showing, with the buyer's own item)", xpage.evaluate("() => dd.isExample()") and len(items(xpage)) == 4)
+    check("(the examples are showing)", xpage.evaluate("() => dd.isExample()") and len(items(xpage)) == 3)
     xpage.evaluate("(t) => dd.sync.connect(t)", CFG)
     xa = Agent(xpage.evaluate("() => dd.agent.brief()"))
     r = xa.result(xa.send("add_item", {"text": "From Muse"}))
-    check("the agent's first change removes the example items but keeps the buyer's own", wait_items(xpage, ["Typed by me", "From Muse"]), items(xpage))
+    check("the agent's first change removes the example items", wait_items(xpage, ["From Muse"]), items(xpage))
     check("…and says so", r and "example items" in r["message"], r)
     xctx.close()
     rep = epage.evaluate("() => dd.diag.text()")

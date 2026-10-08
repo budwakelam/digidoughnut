@@ -12,6 +12,8 @@ import json, os, re, sys, tempfile, threading, http.server, functools, shutil
 from playwright.sync_api import sync_playwright
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+# The version comes from the program itself, so a version bump is one edit (audit 2026-10-08).
+VERSION = re.search(r'version:\s*"([^"]+)"', open(os.path.join(ROOT, "programs", "demo", "program.js")).read()).group(1)
 SRC = os.path.join(ROOT, "dist", "demo.html")
 SHOTS = os.path.join(ROOT, "tests", "screenshots")
 os.makedirs(SHOTS, exist_ok=True)
@@ -115,7 +117,7 @@ def main():
                     open_item(page, "backup"); check("Backup & new versions opens", "Backup & new versions" in page.inner_text(".dd-sheet h2")); page.keyboard.press("Escape")
                     open_item(page, "privacy"); check("Privacy opens", "connects to" in page.inner_text(".dd-sheet h2")); page.keyboard.press("Escape")
                     open_item(page, "help"); check("Help opens the support details", "--- Program ---" in page.inner_text("#dd-diag-text")); page.keyboard.press("Escape")
-                    open_item(page, "about"); check("About shows name and version", "Version 0.1.6" in page.inner_text(".dd-sheet")); page.keyboard.press("Escape")
+                    open_item(page, "about"); check("About shows name and version", ("Version " + VERSION) in page.inner_text(".dd-sheet")); page.keyboard.press("Escape")
                     page.click("#dd-footer p", click_count=3); page.wait_for_timeout(100)
                     check("footer triple-click still opens support details", page.locator("#dd-diag-text").is_visible()); page.keyboard.press("Escape")
                     if dev_name == "desktop":

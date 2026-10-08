@@ -34,6 +34,7 @@
   var msgs = [], undos = {}, busy = false, lastTurn = null, root = null, mode = null, mq = null;
   var esc = function (s) { return dd.ui.esc(s); };
 
+  helper.SUMMARY_MAX = 12000;   // characters of summarizeForAI sent per message
   helper.name = function () { return (cfg && cfg.name) || "Penny"; };
   helper.enabled = function () { return !!cfg; };
 
@@ -227,6 +228,8 @@
   helper.systemPrompt = function () {
     var name = helper.name(), c = dd.ctx();
     var data = ""; try { data = program.summarizeForAI ? String(program.summarizeForAI(c) || "") : ""; } catch (e) { dd.errors.record("summarizeForAI", e); }
+    // A big program's summary goes with every message and eats the free daily share: cap it.
+    if (data.length > helper.SUMMARY_MAX) { dd.errors.record("helper", "summary cut from " + data.length + " characters"); data = data.slice(0, helper.SUMMARY_MAX) + "\n(The rest was cut short to keep messages small. Say so if the person asks about something not shown.)"; }
     return "You are " + name + ", the friendly helper inside " + program.name + ", a one-page program made by DigiDoughnut. " +
       "The person using it is not technical. " + (program.knowledge ? "About the program: " + program.knowledge + " " : "") +
       ((program.tools || []).length ? "You have tools that change the program directly. When the person asks you to add, change, tick, remove or clear something, " +
@@ -261,7 +264,7 @@
 
   var STATUS = { thinking: " is thinking…", working: " is working on it…", retrying: " is still working: trying again…" };
   function turn(text) {
-    var name = helper.name(), before = snapshot(), pendings = [], started = Date.now();
+    var name = helper.name(), before = snapshot(), wasExample = dd.isExample(), pendings = [], started = Date.now();
     setBusy(true, name + STATUS.thinking);
     var hist = history();
     var tools = (program.tools || []).map(function (t) {
@@ -290,7 +293,7 @@
         if (r.type !== "bad_code" && r.type !== "not_allowed" && r.type !== "host_blocked") m.retry = text;
         if (r.type === "bad_code" || r.type === "not_allowed") m.fix = true;
       }
-      if (changed) { m.undo = true; m.id = dd.ui.uid("m"); undos[m.id] = { before: before, after: after }; }
+      if (changed) { m.undo = true; m.id = dd.ui.uid("m"); undos[m.id] = { before: before, after: after, example: wasExample }; }
       if (pendings.length) m.pending = pendings[0];   // one question at a time
       add(m);
       setBusy(false);
@@ -311,12 +314,12 @@
     p.state = yes ? "yes" : "no";
     if (!yes) { add({ who: "note", text: "The person tapped No, so nothing was changed." }); paint(); return; }
     var tool = (program.tools || []).filter(function (t) { return t.name === p.tool; })[0];
-    var before = snapshot(), res;
+    var before = snapshot(), wasExample = dd.isExample(), res;
     try { res = tool ? tool.run(p.args || {}, dd.ctx()) : { ok: false, message: "That can't be done any more." }; }
     catch (e) { dd.errors.record("tool:" + p.tool, e); res = { ok: false, message: "That didn't work." }; }
     var done = function (out) {
       var after = snapshot(), r = { who: "bot", text: (out && out.message) || (out && out.ok ? "Done." : "That didn't work.") };
-      if (after !== before) { r.id = dd.ui.uid("m"); r.undo = true; undos[r.id] = { before: before, after: after }; }
+      if (after !== before) { r.id = dd.ui.uid("m"); r.undo = true; undos[r.id] = { before: before, after: after, example: wasExample }; }
       add(r); paint();
     };
     if (res && typeof res.then === "function") res.then(done, function () { done({ ok: false }); }); else done(res);
@@ -327,7 +330,7 @@
     var u = undos[m.id]; if (!u || busy) return;
     var go = function () {
       var before; try { before = JSON.parse(u.before); } catch (e) { before = null; }
-      if (!before || !dd.replaceData(before, { source: "helper-undo" })) { dd.ui.toast("Sorry, that can't be undone any more."); return; }
+      if (!before || !dd.replaceData(before, { source: "helper-undo", example: !!u.example })) { dd.ui.toast("Sorry, that can't be undone any more."); return; }
       delete undos[m.id]; m.undo = false; m.undone = true;
       add({ who: "note", text: "The person tapped Undo, so that change was reversed." });
       paint();

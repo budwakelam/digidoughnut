@@ -6,7 +6,7 @@ const DD_PROGRAM = {
   id: "demo",                       // lowercase letters/digits; becomes dd_demo_data_v1
   name: "Demo List",
   tagline: "A platform test program",
-  version: "0.1.6",
+  version: "0.1.7",
   schemaVersion: 2,
   accent: "#2563eb",
   dataLabel: "list",                // how the QR screen names this program's data ("your list")
@@ -128,7 +128,7 @@ const DD_PROGRAM = {
       } },
     { name: "clear_list", description: "Remove every item from the list. The person is asked to confirm first.",
       params: {},
-      confirm: (args, ctx) => ctx.data.items.length ? "Clear all " + ctx.data.items.length + " items from your list?" : null,
+      confirm: (args, ctx) => { const n = ctx.data.items.length; return n ? (n === 1 ? "Clear the 1 item from your list?" : "Clear all " + n + " items from your list?") : null; },
       yesLabel: "Yes, clear it",
       run(args, ctx) {
         const n = ctx.data.items.length;
@@ -154,12 +154,4 @@ function pick(items, args) {
   if (near.length === 1) return { item: near[0] };
   if (!near.length) return { problem: "No item matches '" + args.text + "'. Items: " + list() };
   return { problem: "More than one item matches '" + args.text + "': " + near.map((i) => "'" + i.text + "' (id " + i.id + ")").join(", ") + ". Use the id, or ask the person which one." };
-}
-
-/* The item whose text best matches what the helper said: exact first, then "contains". */
-function find(items, words) {
-  const w = String(words || "").trim().toLowerCase();
-  if (!w) return null;
-  return items.find((i) => i.text.toLowerCase() === w) || items.find((i) => i.text.toLowerCase().includes(w)) ||
-         items.find((i) => w.includes(i.text.toLowerCase()));
 }

@@ -282,6 +282,24 @@ with sync_playwright() as p:
     r = pc.evaluate("(t) => { const x = dd.backup.read(t); return x.ok && x.data.items.map(i => i.text); }", open(old).read())
     check("a backup from an older version is upgraded", r == ["Old one", "Old two"], r)
 
+    print("Backup reconnects live sync on a cleared device (audit 2026-10-08)")
+    check("with live sync on, the backup carries the sync address and setup code", bk.get("sync", {}).get("ledger") == ledger(pc) and bk["sync"].get("config", {}).get("projectId") == "my-dd", bk.get("sync"))
+    pc.click("#dd-data-link"); sh = pc.inner_text(".dd-sheet")
+    check("the sheet says the backup is a key: keep it private", "Keep it private" in sh, sh[-500:])
+    check("the sheet warns that clearing the browser removes the list", "Careful when clearing" in sh and "cookies and site data" in sh)
+    pc.click("[data-close]")
+    add(pc, "After the backup"); settle(pc)
+    rctx, rp, rerrs = fresh()   # a new or cleared device: nothing but the backup file
+    check("(the cleared device has no live sync)", ledger(rp) is None)
+    rp.evaluate("(t) => { dd.backup.restoreText(t); }", json.dumps(bk)); rp.click("[data-yes]")
+    try: rp.wait_for_function("(l) => localStorage.getItem('dd_demo_sync_id_v1') === l", arg=ledger(pc), timeout=8000); joined = True
+    except Exception: joined = False
+    check("restoring it reconnects to the same live sync", joined and rp.evaluate("() => dd.sync.isOn()"))
+    check("...and what's newer in the database comes back too", wait_items(rp, items(pc)), (items(rp), items(pc)))
+    check("(no page errors on the restored device)", not rerrs, rerrs)
+    rctx.close()
+    pc.evaluate("(s) => dd.replaceData(JSON.parse(s), { source: 'test' })", snap); settle(pc)
+
     print("Support report")
     d = pc.evaluate("() => dd.diag.text()")
     check("Sync section: state, database, pushes, remote updates", all(w in d for w in ["--- Sync ---", "State: on", "my-dd", "Pushes sent / confirmed", "Remote updates", "connected: yes"]), d[-900:])

@@ -19,10 +19,19 @@
     var p = dd.getProgram();
     return p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + "-backup-" + dd.ui.isoDate() + ".json";
   };
+  /* With live sync on, the backup also carries this program's sync address and the setup code
+     (audit 2026-10-08), so restoring it on a cleared or new device reconnects to the buyer's own
+     database. That makes the file a key to the data: the Backup sheet says to keep it private. */
+  function syncPart() {
+    if (!(dd.sync && dd.sync.isOn && dd.sync.isOn())) return null;
+    var led = dd.sync.ledger && dd.sync.ledger(), cfg = dd.sync.config && dd.sync.config();
+    return led && cfg ? { ledger: led, config: dd.sync.strip(cfg) } : null;
+  }
   backup.make = function () {
-    var p = dd.getProgram();
-    return JSON.stringify({ dd: 1, kind: "backup", program: p.id, name: p.name, schemaVersion: p.schemaVersion,
-                            savedAt: new Date().toISOString(), data: dd.getData() }, null, 1);
+    var p = dd.getProgram(), out = { dd: 1, kind: "backup", program: p.id, name: p.name, schemaVersion: p.schemaVersion,
+                                     savedAt: new Date().toISOString(), data: dd.getData() };
+    var sp = syncPart(); if (sp) out.sync = sp;
+    return JSON.stringify(out, null, 1);
   };
 
   /* Download the file. Returns false (and says why) when there's nothing of the buyer's to keep. */
@@ -53,7 +62,12 @@
     if (v > p.schemaVersion) return { ok: false, type: "backup_newer", title: "That backup was made by a newer version of " + p.name + ".", help: "Open it in the newer version instead, or contact DigiDoughnut and we'll help." };
     try { if (v < p.schemaVersion) body = p.migrate(body, v); } catch (e) { dd.errors.record("backup.migrate", e); return bad(); }
     if (!p.validateData(body)) return bad();
-    return { ok: true, data: body, savedAt: raw.savedAt };
+    var sync = null;
+    if (raw.sync && typeof raw.sync === "object" && /^[0-9a-f]{32}$/.test(String(raw.sync.ledger)) && dd.sync) {
+      var cfg = raw.sync.config && typeof raw.sync.config === "object" ? dd.sync.parseConfig(JSON.stringify(raw.sync.config)) : null;
+      if (cfg) sync = { ledger: raw.sync.ledger, config: cfg };
+    }
+    return { ok: true, data: body, savedAt: raw.savedAt, sync: sync };
   };
 
   /* Ask, then swap in the backup. Keeps what was there so it can be undone. */
@@ -69,6 +83,16 @@
       var before = JSON.stringify(dd.getData()), wasExample = dd.isExample();
       if (!dd.replaceData(r.data, { example: false, source: "restore" })) { var f = dd.errors.friendly("backup_bad"); dd.ui.toast(f.title, 5000); return { ok: false, type: "backup_bad" }; }
       last.restored = new Date().toLocaleTimeString();
+      // Live sync isn't on here but the backup knows the buyer's database: reconnect (this device was
+      // probably cleared). Anything newer in the database comes back too. On a device that already
+      // syncs somewhere, nothing changes: the restored data goes to that database as usual.
+      if (r.sync && !dd.sync.isOn()) {
+        dd.sync.join(r.sync.ledger, r.sync.config).then(function (j) {
+          last.restored += j.ok ? " · live sync reconnected" : " · live sync not reconnected (" + j.type + ")";
+          if (j.ok) dd.ui.toast("Live sync is back on. Anything newer from your other devices comes in too.", 4500);
+          else dd.ui.notice("sync", "Your backup was restored, but live sync couldn't reconnect. " + j.title + " " + j.help, "warn");
+        });
+      }
       dd.ui.notice("restore", "Restored the backup from " + when + ".", "info", [
         { label: "Undo", onClick: function () { dd.replaceData(JSON.parse(before), { example: wasExample, source: "restore-undo" }); dd.ui.clearNotice("restore"); dd.ui.toast("Put back the way it was."); } },
         { label: "OK", primary: true, onClick: function () { dd.ui.clearNotice("restore"); } }
@@ -106,10 +130,13 @@
       '<h3 class="dd-sub">Keep a copy</h3>' +
       '<p class="dd-note">A backup is a small file you keep (your Documents folder, a USB stick or your email). Last backup on this device: <b>' +
         (last ? esc(last.toLocaleDateString()) : "never") + '</b>.</p>' +
+      (on ? '<p class="dd-note">With live sync on, the backup also holds your live sync address, so restoring it on a new or cleared device reconnects everything. <b>Keep it private</b>: anyone with the file could open your ' + esc(thing) + '.</p>' : "") +
+      '<p class="dd-note"><b>Careful when clearing your browser:</b> clearing "cookies and site data" (or "history and website data") removes your ' + esc(thing) + ', your access code and your live sync address from this device. ' +
+        (on ? 'Your live copy stays safe in your own Firebase; restore a recent backup to reconnect.' : 'Download a backup first.') + '</p>' +
       '<div class="dd-btnrow"><button class="dd-btn" data-down>⬇ Download a backup</button><button class="dd-btn ghost" data-up>Restore from a backup</button></div>' +
       '<h3 class="dd-sub">Moving to a new version?</h3>' +
       '<ol class="dd-home-steps">' +
-        '<li><b>Same place, same name:</b> upload the new file over the old one, keeping its file name. Your ' + esc(thing) + ' just stays. This is the easiest way.</li>' +
+        '<li><b>Same place, same name:</b> upload the new file over the old one, with exactly the same file name (if your browser called the download something like "(1)", rename it first). Your ' + esc(thing) + ' just stays. This is the easiest way.</li>' +
         '<li><b>Live sync on:</b> ' + (on ? "you're all set. Open the new version, turn on live sync there, and everything comes across."
             : 'turn it on first (setup step 4), and the new version gets everything from your own database.') + '</li>' +
         '<li><b>Neither:</b> tap <b>Download a backup</b> here. Then, in the new version, tap <b>💾 Backup &amp; new versions</b> at the bottom and <b>Restore from a backup</b>.</li>' +

@@ -94,11 +94,28 @@
       dd: 1, program: program.id, schemaVersion: program.schemaVersion,
       savedAt: new Date().toISOString(), example: !!(meta && meta.example), data: data
     });
-    if (res.ok) askToKeepStorage(program);
+    if (res.ok) { askToKeepStorage(program); store.checkRoom(); }
     return res;
   };
 
   store.dataBytes = function (programId) { var t = store.get(store.programKey(programId, "data")); return t ? t.length : 0; };
+
+  /* Everything this web address keeps in the browser, in characters (browsers allow about 5 million
+     per address). Live sync keeps a second copy of the data, so a program uses about 3x its data. */
+  store.LIMIT = 5000000;
+  store.usedChars = function () {
+    var s = ls(), n = 0; if (!s) return 0;
+    try { for (var i = 0; i < s.length; i++) { var k = s.key(i), v = s.getItem(k); n += k.length + (v ? v.length : 0); } } catch (e) {}
+    return n;
+  };
+  /* Nearly full (over 80%): warn once per visit, before a save actually fails. */
+  var warnedFull = false;
+  store.checkRoom = function () {
+    if (warnedFull || store.usedChars() < store.LIMIT * 0.8) return;
+    warnedFull = true;
+    dd.errors.record("store", "browser storage over 80% full: " + store.usedChars() + " characters");
+    if (dd.ui) dd.ui.notice("storage", "This browser's storage for this web address is nearly full. Download a backup now (menu → ⚙️ Settings → 💾 Backup & new versions), and contact DigiDoughnut if this keeps showing.", "warn");
+  };
 
   /* ---------- ask the browser to keep our storage ----------
      Asked once, after the buyer's first real save, so browsers that show a prompt

@@ -28,7 +28,8 @@
     out.push("--- Storage ---");
     out.push("Saving works: " + (dd.store.available() ? "yes" : "NO") +
              " · keep-storage request: " + dd.store.persisted +
-             (p ? " · data " + dd.store.dataBytes(p.id) + " bytes" + (dd.isExample() ? " (example)" : "") : ""));
+             (p ? " · data " + dd.store.dataBytes(p.id) + " bytes" + (dd.isExample() ? " (example)" : "") : "") +
+             " · browser storage used " + Math.round(dd.store.usedChars() / 1000) + " of about " + Math.round(dd.store.LIMIT / 1000) + " thousand characters");
     if (p && dd.store.get(dd.store.programKey(p.id, "data_recovery")) != null) out.push("A recovery copy of older data is saved on this device.");
     var blocked = dd.errors.blockedList ? dd.errors.blockedList() : [];
     if (blocked.length) out.push("This website BLOCKS outside connections: " + blocked.map(function (v) { return v.origin; }).filter(function (o, i, a) { return a.indexOf(o) === i; }).join(", "));

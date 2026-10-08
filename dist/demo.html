@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  Demo List 0.1.6 · a DigiDoughnut program
+  Demo List 0.1.7 · a DigiDoughnut program
   Built 2026-10-08 from the DigiDoughnut Platform. This file is assembled by build.mjs:
   edit platform/ and programs/<name>/, never this output.
 -->
@@ -444,7 +444,7 @@ body.dd-has-side{padding-right:360px}
 <div id="dd-layer"></div>     <!-- sheets and toasts render here -->
 
 <script>
-window.DD_BUILD = {"built":"2026-10-08","commit":"9262347","platform":"0.1.0","home":""};
+window.DD_BUILD = {"built":"2026-10-08","commit":"f201c7f","platform":"0.1.0","home":"","file":"demo.html"};
 /* qrcode-generator 1.4.4 by Kazuhiko Arase, MIT License — vendored so the page stays
    fully self-contained. QR codes are generated on-device; your access code never leaves the browser for this. */
 var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=new Array(t),e=0;e<t;e+=1){r[e]=new Array(t);for(var n=0;n<t;n+=1)r[e][n]=null}return r}(l=4*u+17),e(0,0),e(l-7,0),e(0,l-7),i(),o(),v(t,r),7<=u&&h(t),null==n&&(n=w(u,f,c)),d(n,r)}var u=t,f=y[r],g=null,l=0,n=null,c=[],s={},e=function(t,r){for(var e=-1;e<=7;e+=1)if(!(t+e<=-1||l<=t+e))for(var n=-1;n<=7;n+=1)r+n<=-1||l<=r+n||(g[t+e][r+n]=0<=e&&e<=6&&(0==n||6==n)||0<=n&&n<=6&&(0==e||6==e)||2<=e&&e<=4&&2<=n&&n<=4)},o=function(){for(var t=8;t<l-8;t+=1)null==g[t][6]&&(g[t][6]=t%2==0);for(var r=8;r<l-8;r+=1)null==g[6][r]&&(g[6][r]=r%2==0)},i=function(){for(var t=B.getPatternPosition(u),r=0;r<t.length;r+=1)for(var e=0;e<t.length;e+=1){var n=t[r],o=t[e];if(null==g[n][o])for(var i=-2;i<=2;i+=1)for(var a=-2;a<=2;a+=1)g[n+i][o+a]=-2==i||2==i||-2==a||2==a||0==i&&0==a}},h=function(t){for(var r=B.getBCHTypeNumber(u),e=0;e<18;e+=1){var n=!t&&1==(r>>e&1);g[Math.floor(e/3)][e%3+l-8-3]=n}for(e=0;e<18;e+=1){n=!t&&1==(r>>e&1);g[e%3+l-8-3][Math.floor(e/3)]=n}},v=function(t,r){for(var e=f<<3|r,n=B.getBCHTypeInfo(e),o=0;o<15;o+=1){var i=!t&&1==(n>>o&1);o<6?g[o][8]=i:o<8?g[o+1][8]=i:g[l-15+o][8]=i}for(o=0;o<15;o+=1){i=!t&&1==(n>>o&1);o<8?g[8][l-o-1]=i:o<9?g[8][15-o-1+1]=i:g[8][15-o-1]=i}g[l-8][8]=!t},d=function(t,r){for(var e=-1,n=l-1,o=7,i=0,a=B.getMaskFunction(r),u=l-1;0<u;u-=2)for(6==u&&(u-=1);;){for(var f=0;f<2;f+=1)if(null==g[n][u-f]){var c=!1;i<t.length&&(c=1==(t[i]>>>o&1)),a(n,u-f)&&(c=!c),g[n][u-f]=c,-1==(o-=1)&&(i+=1,o=7)}if((n+=e)<0||l<=n){n-=e,e=-e;break}}},w=function(t,r,e){for(var n=b.getRSBlocks(t,r),o=M(),i=0;i<e.length;i+=1){var a=e[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var u=0;for(i=0;i<n.length;i+=1)u+=n[i].dataCount;if(o.getLengthInBits()>8*u)throw"code length overflow. ("+o.getLengthInBits()+">"+8*u+")";for(o.getLengthInBits()+4<=8*u&&o.put(0,4);o.getLengthInBits()%8!=0;)o.putBit(!1);for(;!(o.getLengthInBits()>=8*u||(o.put(236,8),o.getLengthInBits()>=8*u));)o.put(17,8);return function(t,r){for(var e=0,n=0,o=0,i=new Array(r.length),a=new Array(r.length),u=0;u<r.length;u+=1){var f=r[u].dataCount,c=r[u].totalCount-f;n=Math.max(n,f),o=Math.max(o,c),i[u]=new Array(f);for(var g=0;g<i[u].length;g+=1)i[u][g]=255&t.getBuffer()[g+e];e+=f;var l=B.getErrorCorrectPolynomial(c),h=C(i[u],l.getLength()-1).mod(l);a[u]=new Array(l.getLength()-1);for(g=0;g<a[u].length;g+=1){var s=g+h.getLength()-a[u].length;a[u][g]=0<=s?h.getAt(s):0}}var v=0;for(g=0;g<r.length;g+=1)v+=r[g].totalCount;var d=new Array(v),w=0;for(g=0;g<n;g+=1)for(u=0;u<r.length;u+=1)g<i[u].length&&(d[w]=i[u][g],w+=1);for(g=0;g<o;g+=1)for(u=0;u<r.length;u+=1)g<a[u].length&&(d[w]=a[u][g],w+=1);return d}(o,n)};s.addData=function(t,r){var e=null;switch(r=r||"Byte"){case"Numeric":e=x(t);break;case"Alphanumeric":e=m(t);break;case"Byte":e=L(t);break;case"Kanji":e=D(t);break;default:throw"mode:"+r}c.push(e),n=null},s.isDark=function(t,r){if(t<0||l<=t||r<0||l<=r)throw t+","+r;return g[t][r]},s.getModuleCount=function(){return l},s.make=function(){if(u<1){for(var t=1;t<40;t++){for(var r=b.getRSBlocks(t,f),e=M(),n=0;n<c.length;n++){var o=c[n];e.put(o.getMode(),4),e.put(o.getLength(),B.getLengthInBits(o.getMode(),t)),o.write(e)}var i=0;for(n=0;n<r.length;n++)i+=r[n].dataCount;if(e.getLengthInBits()<=8*i)break}u=t}a(!1,function(){for(var t=0,r=0,e=0;e<8;e+=1){a(!0,e);var n=B.getLostPoint(s);(0==e||n<t)&&(t=n,r=e)}return r}())},s.createTableTag=function(t,r){t=t||2;var e="";e+='<table style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: "+(r=void 0===r?4*t:r)+"px;",e+='">',e+="<tbody>";for(var n=0;n<s.getModuleCount();n+=1){e+="<tr>";for(var o=0;o<s.getModuleCount();o+=1)e+='<td style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: 0px;",e+=" width: "+t+"px;",e+=" height: "+t+"px;",e+=" background-color: ",e+=s.isDark(n,o)?"#000000":"#ffffff",e+=";",e+='"/>';e+="</tr>"}return e+="</tbody>",e+="</table>"},s.createSvgTag=function(t,r,e,n){var o={};"object"==typeof t&&(t=(o=t).cellSize,r=o.margin,e=o.alt,n=o.title),t=t||2,r=void 0===r?4*t:r,(e="string"==typeof e?{text:e}:e||{}).text=e.text||null,e.id=e.text?e.id||"qrcode-description":null,(n="string"==typeof n?{text:n}:n||{}).text=n.text||null,n.id=n.text?n.id||"qrcode-title":null;var i,a,u,f,c=s.getModuleCount()*t+2*r,g="";for(f="l"+t+",0 0,"+t+" -"+t+",0 0,-"+t+"z ",g+='<svg version="1.1" xmlns="http://www.w3.org/2000/svg"',g+=o.scalable?"":' width="'+c+'px" height="'+c+'px"',g+=' viewBox="0 0 '+c+" "+c+'" ',g+=' preserveAspectRatio="xMinYMin meet"',g+=n.text||e.text?' role="img" aria-labelledby="'+p([n.id,e.id].join(" ").trim())+'"':"",g+=">",g+=n.text?'<title id="'+p(n.id)+'">'+p(n.text)+"</title>":"",g+=e.text?'<description id="'+p(e.id)+'">'+p(e.text)+"</description>":"",g+='<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>',g+='<path d="',a=0;a<s.getModuleCount();a+=1)for(u=a*t+r,i=0;i<s.getModuleCount();i+=1)s.isDark(a,i)&&(g+="M"+(i*t+r)+","+u+f);return g+='" stroke="transparent" fill="black"/>',g+="</svg>"},s.createDataURL=function(o,t){o=o||2,t=void 0===t?4*o:t;var r=s.getModuleCount()*o+2*t,i=t,a=r-t;return I(r,r,function(t,r){if(i<=t&&t<a&&i<=r&&r<a){var e=Math.floor((t-i)/o),n=Math.floor((r-i)/o);return s.isDark(n,e)?0:1}return 1})},s.createImgTag=function(t,r,e){t=t||2,r=void 0===r?4*t:r;var n=s.getModuleCount()*t+2*r,o="";return o+="<img",o+=' src="',o+=s.createDataURL(t,r),o+='"',o+=' width="',o+=n,o+='"',o+=' height="',o+=n,o+='"',e&&(o+=' alt="',o+=p(e),o+='"'),o+="/>"};var p=function(t){for(var r="",e=0;e<t.length;e+=1){var n=t.charAt(e);switch(n){case"<":r+="&lt;";break;case">":r+="&gt;";break;case"&":r+="&amp;";break;case'"':r+="&quot;";break;default:r+=n}}return r};return s.createASCII=function(t,r){if((t=t||1)<2)return function(t){t=void 0===t?2:t;var r,e,n,o,i,a=1*s.getModuleCount()+2*t,u=t,f=a-t,c={"██":"█","█ ":"▀"," █":"▄","  ":" "},g={"██":"▀","█ ":"▀"," █":" ","  ":" "},l="";for(r=0;r<a;r+=2){for(n=Math.floor((r-u)/1),o=Math.floor((r+1-u)/1),e=0;e<a;e+=1)i="█",u<=e&&e<f&&u<=r&&r<f&&s.isDark(n,Math.floor((e-u)/1))&&(i=" "),u<=e&&e<f&&u<=r+1&&r+1<f&&s.isDark(o,Math.floor((e-u)/1))?i+=" ":i+="█",l+=t<1&&f<=r+1?g[i]:c[i];l+="\n"}return a%2&&0<t?l.substring(0,l.length-a-1)+Array(1+a).join("▀"):l.substring(0,l.length-1)}(r);t-=1,r=void 0===r?2*t:r;var e,n,o,i,a=s.getModuleCount()*t+2*r,u=r,f=a-r,c=Array(t+1).join("██"),g=Array(t+1).join("  "),l="",h="";for(e=0;e<a;e+=1){for(o=Math.floor((e-u)/t),h="",n=0;n<a;n+=1)i=1,u<=n&&n<f&&u<=e&&e<f&&s.isDark(o,Math.floor((n-u)/t))&&(i=0),h+=i?c:g;for(o=0;o<t;o+=1)l+=h+"\n"}return l.substring(0,l.length-1)},s.renderTo2dContext=function(t,r){r=r||2;for(var e=s.getModuleCount(),n=0;n<e;n++)for(var o=0;o<e;o++)t.fillStyle=s.isDark(n,o)?"black":"white",t.fillRect(n*r,o*r,r,r)},s}i.stringToBytes=(i.stringToBytesFuncs={default:function(t){for(var r=[],e=0;e<t.length;e+=1){var n=t.charCodeAt(e);r.push(255&n)}return r}}).default,i.createStringToBytes=function(u,f){var i=function(){function t(){var t=r.read();if(-1==t)throw"eof";return t}for(var r=S(u),e=0,n={};;){var o=r.read();if(-1==o)break;var i=t(),a=t()<<8|t();n[String.fromCharCode(o<<8|i)]=a,e+=1}if(e!=f)throw e+" != "+f;return n}(),a="?".charCodeAt(0);return function(t){for(var r=[],e=0;e<t.length;e+=1){var n=t.charCodeAt(e);if(n<128)r.push(n);else{var o=i[t.charAt(e)];"number"==typeof o?(255&o)==o?r.push(o):(r.push(o>>>8),r.push(255&o)):r.push(a)}}return r}};var r,t,a=1,u=2,o=4,f=8,y={L:1,M:0,Q:3,H:2},e=0,n=1,c=2,g=3,l=4,h=5,s=6,v=7,B=(r=[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],(t={}).getBCHTypeInfo=function(t){for(var r=t<<10;0<=d(r)-d(1335);)r^=1335<<d(r)-d(1335);return 21522^(t<<10|r)},t.getBCHTypeNumber=function(t){for(var r=t<<12;0<=d(r)-d(7973);)r^=7973<<d(r)-d(7973);return t<<12|r},t.getPatternPosition=function(t){return r[t-1]},t.getMaskFunction=function(t){switch(t){case e:return function(t,r){return(t+r)%2==0};case n:return function(t,r){return t%2==0};case c:return function(t,r){return r%3==0};case g:return function(t,r){return(t+r)%3==0};case l:return function(t,r){return(Math.floor(t/2)+Math.floor(r/3))%2==0};case h:return function(t,r){return t*r%2+t*r%3==0};case s:return function(t,r){return(t*r%2+t*r%3)%2==0};case v:return function(t,r){return(t*r%3+(t+r)%2)%2==0};default:throw"bad maskPattern:"+t}},t.getErrorCorrectPolynomial=function(t){for(var r=C([1],0),e=0;e<t;e+=1)r=r.multiply(C([1,w.gexp(e)],0));return r},t.getLengthInBits=function(t,r){if(1<=r&&r<10)switch(t){case a:return 10;case u:return 9;case o:case f:return 8;default:throw"mode:"+t}else if(r<27)switch(t){case a:return 12;case u:return 11;case o:return 16;case f:return 10;default:throw"mode:"+t}else{if(!(r<41))throw"type:"+r;switch(t){case a:return 14;case u:return 13;case o:return 16;case f:return 12;default:throw"mode:"+t}}},t.getLostPoint=function(t){for(var r=t.getModuleCount(),e=0,n=0;n<r;n+=1)for(var o=0;o<r;o+=1){for(var i=0,a=t.isDark(n,o),u=-1;u<=1;u+=1)if(!(n+u<0||r<=n+u))for(var f=-1;f<=1;f+=1)o+f<0||r<=o+f||0==u&&0==f||a==t.isDark(n+u,o+f)&&(i+=1);5<i&&(e+=3+i-5)}for(n=0;n<r-1;n+=1)for(o=0;o<r-1;o+=1){var c=0;t.isDark(n,o)&&(c+=1),t.isDark(n+1,o)&&(c+=1),t.isDark(n,o+1)&&(c+=1),t.isDark(n+1,o+1)&&(c+=1),0!=c&&4!=c||(e+=3)}for(n=0;n<r;n+=1)for(o=0;o<r-6;o+=1)t.isDark(n,o)&&!t.isDark(n,o+1)&&t.isDark(n,o+2)&&t.isDark(n,o+3)&&t.isDark(n,o+4)&&!t.isDark(n,o+5)&&t.isDark(n,o+6)&&(e+=40);for(o=0;o<r;o+=1)for(n=0;n<r-6;n+=1)t.isDark(n,o)&&!t.isDark(n+1,o)&&t.isDark(n+2,o)&&t.isDark(n+3,o)&&t.isDark(n+4,o)&&!t.isDark(n+5,o)&&t.isDark(n+6,o)&&(e+=40);var g=0;for(o=0;o<r;o+=1)for(n=0;n<r;n+=1)t.isDark(n,o)&&(g+=1);return e+=Math.abs(100*g/r/r-50)/5*10},t);function d(t){for(var r=0;0!=t;)r+=1,t>>>=1;return r}var w=function(){for(var r=new Array(256),e=new Array(256),t=0;t<8;t+=1)r[t]=1<<t;for(t=8;t<256;t+=1)r[t]=r[t-4]^r[t-5]^r[t-6]^r[t-8];for(t=0;t<255;t+=1)e[r[t]]=t;var n={glog:function(t){if(t<1)throw"glog("+t+")";return e[t]},gexp:function(t){for(;t<0;)t+=255;for(;256<=t;)t-=255;return r[t]}};return n}();function C(n,o){if(void 0===n.length)throw n.length+"/"+o;var r=function(){for(var t=0;t<n.length&&0==n[t];)t+=1;for(var r=new Array(n.length-t+o),e=0;e<n.length-t;e+=1)r[e]=n[e+t];return r}(),i={getAt:function(t){return r[t]},getLength:function(){return r.length},multiply:function(t){for(var r=new Array(i.getLength()+t.getLength()-1),e=0;e<i.getLength();e+=1)for(var n=0;n<t.getLength();n+=1)r[e+n]^=w.gexp(w.glog(i.getAt(e))+w.glog(t.getAt(n)));return C(r,0)},mod:function(t){if(i.getLength()-t.getLength()<0)return i;for(var r=w.glog(i.getAt(0))-w.glog(t.getAt(0)),e=new Array(i.getLength()),n=0;n<i.getLength();n+=1)e[n]=i.getAt(n);for(n=0;n<t.getLength();n+=1)e[n]^=w.gexp(w.glog(t.getAt(n))+r);return C(e,0).mod(t)}};return i}function p(){var e=[],o={writeByte:function(t){e.push(255&t)},writeShort:function(t){o.writeByte(t),o.writeByte(t>>>8)},writeBytes:function(t,r,e){r=r||0,e=e||t.length;for(var n=0;n<e;n+=1)o.writeByte(t[n+r])},writeString:function(t){for(var r=0;r<t.length;r+=1)o.writeByte(t.charCodeAt(r))},toByteArray:function(){return e},toString:function(){var t="";t+="[";for(var r=0;r<e.length;r+=1)0<r&&(t+=","),t+=e[r];return t+="]"}};return o}var k,A,b=(k=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],(A={}).getRSBlocks=function(t,r){var e=function(t,r){switch(r){case y.L:return k[4*(t-1)+0];case y.M:return k[4*(t-1)+1];case y.Q:return k[4*(t-1)+2];case y.H:return k[4*(t-1)+3];default:return}}(t,r);if(void 0===e)throw"bad rs block @ typeNumber:"+t+"/errorCorrectionLevel:"+r;for(var n,o,i=e.length/3,a=[],u=0;u<i;u+=1)for(var f=e[3*u+0],c=e[3*u+1],g=e[3*u+2],l=0;l<f;l+=1)a.push((n=g,o=void 0,(o={}).totalCount=c,o.dataCount=n,o));return a},A),M=function(){var e=[],n=0,o={getBuffer:function(){return e},getAt:function(t){var r=Math.floor(t/8);return 1==(e[r]>>>7-t%8&1)},put:function(t,r){for(var e=0;e<r;e+=1)o.putBit(1==(t>>>r-e-1&1))},getLengthInBits:function(){return n},putBit:function(t){var r=Math.floor(n/8);e.length<=r&&e.push(0),t&&(e[r]|=128>>>n%8),n+=1}};return o},x=function(t){var r=a,n=t,e={getMode:function(){return r},getLength:function(t){return n.length},write:function(t){for(var r=n,e=0;e+2<r.length;)t.put(o(r.substring(e,e+3)),10),e+=3;e<r.length&&(r.length-e==1?t.put(o(r.substring(e,e+1)),4):r.length-e==2&&t.put(o(r.substring(e,e+2)),7))}},o=function(t){for(var r=0,e=0;e<t.length;e+=1)r=10*r+i(t.charAt(e));return r},i=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);throw"illegal char :"+t};return e},m=function(t){var r=u,n=t,e={getMode:function(){return r},getLength:function(t){return n.length},write:function(t){for(var r=n,e=0;e+1<r.length;)t.put(45*o(r.charAt(e))+o(r.charAt(e+1)),11),e+=2;e<r.length&&t.put(o(r.charAt(e)),6)}},o=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);if("A"<=t&&t<="Z")return t.charCodeAt(0)-"A".charCodeAt(0)+10;switch(t){case" ":return 36;case"$":return 37;case"%":return 38;case"*":return 39;case"+":return 40;case"-":return 41;case".":return 42;case"/":return 43;case":":return 44;default:throw"illegal char :"+t}};return e},L=function(t){var r=o,e=i.stringToBytes(t),n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=0;r<e.length;r+=1)t.put(e[r],8)}};return n},D=function(t){var r=f,e=i.stringToBytesFuncs.SJIS;if(!e)throw"sjis not supported.";!function(){var t=e("友");if(2!=t.length||38726!=(t[0]<<8|t[1]))throw"sjis not supported."}();var o=e(t),n={getMode:function(){return r},getLength:function(t){return~~(o.length/2)},write:function(t){for(var r=o,e=0;e+1<r.length;){var n=(255&r[e])<<8|255&r[e+1];if(33088<=n&&n<=40956)n-=33088;else{if(!(57408<=n&&n<=60351))throw"illegal char at "+(e+1)+"/"+n;n-=49472}n=192*(n>>>8&255)+(255&n),t.put(n,13),e+=2}if(e<r.length)throw"illegal char at "+(e+1)}};return n},S=function(t){var e=t,n=0,o=0,i=0,r={read:function(){for(;i<8;){if(n>=e.length){if(0==i)return-1;throw"unexpected end of file./"+i}var t=e.charAt(n);if(n+=1,"="==t)return i=0,-1;t.match(/^\s$/)||(o=o<<6|a(t.charCodeAt(0)),i+=6)}var r=o>>>i-8&255;return i-=8,r}},a=function(t){if(65<=t&&t<=90)return t-65;if(97<=t&&t<=122)return t-97+26;if(48<=t&&t<=57)return t-48+52;if(43==t)return 62;if(47==t)return 63;throw"c:"+t};return r},I=function(t,r,e){for(var n=function(t,r){var n=t,o=r,l=new Array(t*r),e={setPixel:function(t,r,e){l[r*n+t]=e},write:function(t){t.writeString("GIF87a"),t.writeShort(n),t.writeShort(o),t.writeByte(128),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(255),t.writeByte(255),t.writeByte(255),t.writeString(","),t.writeShort(0),t.writeShort(0),t.writeShort(n),t.writeShort(o),t.writeByte(0);var r=i(2);t.writeByte(2);for(var e=0;255<r.length-e;)t.writeByte(255),t.writeBytes(r,e,255),e+=255;t.writeByte(r.length-e),t.writeBytes(r,e,r.length-e),t.writeByte(0),t.writeString(";")}},i=function(t){for(var r=1<<t,e=1+(1<<t),n=t+1,o=h(),i=0;i<r;i+=1)o.add(String.fromCharCode(i));o.add(String.fromCharCode(r)),o.add(String.fromCharCode(e));var a=p(),u=function(t){var e=t,n=0,o=0,r={write:function(t,r){if(t>>>r!=0)throw"length over";for(;8<=n+r;)e.writeByte(255&(t<<n|o)),r-=8-n,t>>>=8-n,n=o=0;o|=t<<n,n+=r},flush:function(){0<n&&e.writeByte(o)}};return r}(a);u.write(r,n);var f=0,c=String.fromCharCode(l[f]);for(f+=1;f<l.length;){var g=String.fromCharCode(l[f]);f+=1,o.contains(c+g)?c+=g:(u.write(o.indexOf(c),n),o.size()<4095&&(o.size()==1<<n&&(n+=1),o.add(c+g)),c=g)}return u.write(o.indexOf(c),n),u.write(e,n),u.flush(),a.toByteArray()},h=function(){var r={},e=0,n={add:function(t){if(n.contains(t))throw"dup key:"+t;r[t]=e,e+=1},size:function(){return e},indexOf:function(t){return r[t]},contains:function(t){return void 0!==r[t]}};return n};return e}(t,r),o=0;o<r;o+=1)for(var i=0;i<t;i+=1)n.setPixel(i,o,e(i,o));var a=p();n.write(a);for(var u=function(){function e(t){a+=String.fromCharCode(r(63&t))}var n=0,o=0,i=0,a="",t={},r=function(t){if(t<0);else{if(t<26)return 65+t;if(t<52)return t-26+97;if(t<62)return t-52+48;if(62==t)return 43;if(63==t)return 47}throw"n:"+t};return t.writeByte=function(t){for(n=n<<8|255&t,o+=8,i+=1;6<=o;)e(n>>>o-6),o-=6},t.flush=function(){if(0<o&&(e(n<<6-o),o=n=0),i%3!=0)for(var t=3-i%3,r=0;r<t;r+=1)a+="="},t.toString=function(){return a},t}(),f=a.toByteArray(),c=0;c<f.length;c+=1)u.writeByte(f[c]);return u.flush(),"data:image/gif;base64,"+u};return i}();qrcode.stringToBytesFuncs["UTF-8"]=function(t){return function(t){for(var r=[],e=0;e<t.length;e++){var n=t.charCodeAt(e);n<128?r.push(n):n<2048?r.push(192|n>>6,128|63&n):n<55296||57344<=n?r.push(224|n>>12,128|n>>6&63,128|63&n):(e++,n=65536+((1023&n)<<10|1023&t.charCodeAt(e)),r.push(240|n>>18,128|n>>12&63,128|n>>6&63,128|63&n))}return r}(t)},function(t){"function"==typeof define&&define.amd?define([],t):"object"==typeof exports&&(module.exports=t())}(function(){return qrcode});
@@ -524,11 +524,41 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
      so the box doesn't lose focus. */
   dd.update = function (fn, opts) {
     opts = opts || {};
+    var wasExample = meta.example;
     var out = fn(data);
     if (out !== undefined) data = out;
+    // The buyer's first real change ends "example mode" (audit 2026-10-08): untouched example items
+    // go, anything the buyer added or changed stays and is theirs from now on, so it syncs, travels
+    // and can be backed up. Before this, an edit kept the whole list marked "example" forever.
+    var cleared = false;
+    if (wasExample) {
+      var mine = dd.withoutExamples(data);
+      cleared = JSON.stringify(mine) !== JSON.stringify(data);
+      data = mine; meta.example = false;
+      paintExampleNotice();
+    }
     persist(opts.source);
-    if (opts.render !== false) render();
+    if (opts.render !== false || cleared) render();
+    if (cleared) dd.ui.toast("Took out the example items. The rest is yours now.", 3500);
     return data;
+  };
+
+  /* The data minus the program's untouched example items. Lists: an item is dropped when its id is
+     one of exampleData()'s AND it is unchanged (so example ids must stay fixed). Other values still
+     equal to the example go back to emptyData()'s. Anything the buyer added or changed stays.
+     If the result doesn't check out: empty data. Used by dd.update and dd.agent. */
+  dd.withoutExamples = function (d) {
+    try {
+      var ex = program.exampleData(), empty = program.emptyData(), out = JSON.parse(JSON.stringify(d));
+      Object.keys(out).forEach(function (k) {
+        if (Array.isArray(out[k]) && Array.isArray(ex[k])) {
+          var orig = {};
+          ex[k].forEach(function (i) { if (i && i.id) orig[i.id] = JSON.stringify(i); });
+          out[k] = out[k].filter(function (i) { return !(i && i.id && orig[i.id] === JSON.stringify(i)); });
+        } else if (k in ex && JSON.stringify(out[k]) === JSON.stringify(ex[k])) out[k] = empty[k];
+      });
+      return program.validateData(out) ? out : empty;
+    } catch (e) { dd.errors.record("examples", e); return program.emptyData(); }
   };
 
   /* Swap in a whole new data set (restore, sync, "start fresh"). Checked before it's used. */
@@ -709,11 +739,28 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
       dd: 1, program: program.id, schemaVersion: program.schemaVersion,
       savedAt: new Date().toISOString(), example: !!(meta && meta.example), data: data
     });
-    if (res.ok) askToKeepStorage(program);
+    if (res.ok) { askToKeepStorage(program); store.checkRoom(); }
     return res;
   };
 
   store.dataBytes = function (programId) { var t = store.get(store.programKey(programId, "data")); return t ? t.length : 0; };
+
+  /* Everything this web address keeps in the browser, in characters (browsers allow about 5 million
+     per address). Live sync keeps a second copy of the data, so a program uses about 3x its data. */
+  store.LIMIT = 5000000;
+  store.usedChars = function () {
+    var s = ls(), n = 0; if (!s) return 0;
+    try { for (var i = 0; i < s.length; i++) { var k = s.key(i), v = s.getItem(k); n += k.length + (v ? v.length : 0); } } catch (e) {}
+    return n;
+  };
+  /* Nearly full (over 80%): warn once per visit, before a save actually fails. */
+  var warnedFull = false;
+  store.checkRoom = function () {
+    if (warnedFull || store.usedChars() < store.LIMIT * 0.8) return;
+    warnedFull = true;
+    dd.errors.record("store", "browser storage over 80% full: " + store.usedChars() + " characters");
+    if (dd.ui) dd.ui.notice("storage", "This browser's storage for this web address is nearly full. Download a backup now (menu → ⚙️ Settings → 💾 Backup & new versions), and contact DigiDoughnut if this keeps showing.", "warn");
+  };
 
   /* ---------- ask the browser to keep our storage ----------
      Asked once, after the buyer's first real save, so browsers that show a prompt
@@ -1260,7 +1307,8 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     out.push("--- Storage ---");
     out.push("Saving works: " + (dd.store.available() ? "yes" : "NO") +
              " · keep-storage request: " + dd.store.persisted +
-             (p ? " · data " + dd.store.dataBytes(p.id) + " bytes" + (dd.isExample() ? " (example)" : "") : ""));
+             (p ? " · data " + dd.store.dataBytes(p.id) + " bytes" + (dd.isExample() ? " (example)" : "") : "") +
+             " · browser storage used " + Math.round(dd.store.usedChars() / 1000) + " of about " + Math.round(dd.store.LIMIT / 1000) + " thousand characters");
     if (p && dd.store.get(dd.store.programKey(p.id, "data_recovery")) != null) out.push("A recovery copy of older data is saved on this device.");
     var blocked = dd.errors.blockedList ? dd.errors.blockedList() : [];
     if (blocked.length) out.push("This website BLOCKS outside connections: " + blocked.map(function (v) { return v.origin; }).filter(function (o, i, a) { return a.indexOf(o) === i; }).join(", "));
@@ -1467,7 +1515,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
           el.textContent = "";
           return;
         }
-        el.textContent = "Works for " + Math.floor(s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60) + " more, one phone only.";
+        el.textContent = "Works for " + Math.floor(s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60) + " more. Scan it with your own phone.";
       };
       tick(); timer = setInterval(tick, 1000);
     }
@@ -1553,7 +1601,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
    - Neutral tools: programs declare tools once ({name, description, params}); the adapter
      writes the company's schema. Nobody hand-writes Gemini schemas, so the old
      "required goes inside parameters" bug can't come back.
-   - Hard limits: 30 s per request, 60 s and 5 tool rounds per turn, Stop at any time.
+   - Hard limits: 30 s per request, 90 s and 5 tool rounds per turn, Stop at any time.
      The endless "thinking…" can't happen.
    - Every failure maps to one of dd.errors' seven friendly types.
 
@@ -2143,13 +2191,6 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     return ai.chat({ system: system, history: [{ role: "user", text: prompt }] });
   };
 
-  function wait(ms) {
-    return new Promise(function (resolve, reject) {
-      var t = setTimeout(resolve, ms);
-      var poll = setInterval(function () { if (stopped) { clearTimeout(t); clearInterval(poll); reject({ type: "stopped" }); } }, 200);
-      setTimeout(function () { clearInterval(poll); }, ms + 50);
-    });
-  }
 
   /* ---------- phone pairing: the AI code travels in the QR (on by default) ----------
      Google codes travel as-is (the company is the default); others as "company:code". */
@@ -2365,7 +2406,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
       shown: function () { return !!(dd.agent && dd.agent.available()); } }
   ];
 
-  function inProgress(st, id) { return !!(st.wizards[id] || (id === "host" && (st.wizards.host_neocities || st.wizards.host_tiiny))); }
+  function inProgress(st, id) { return !!(st.wizards[id] || (id === "host" && (st.wizards.host_github || st.wizards.host_tiiny || st.wizards.host_other))); }
   function visibleSteps() { return setup.steps.filter(function (s) { return !s.shown || s.shown(); }); }
   setup.visibleSteps = visibleSteps;
   setup.doneCount = function () { return visibleSteps().filter(function (s) { return s.done(); }).length; };
@@ -2412,11 +2453,8 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
   // Buttons inside the steps list work the same on the page card and in the menu's sheet.
   function wireSteps(box) {
     var on = function (sel, fn) { var b = box.querySelector(sel); if (b) b.addEventListener("click", fn); };
-    on("[data-phone]", function () { dd.pair.open(); });
     on("[data-agent]", function () { dd.agent.openSheet(); });
     on("[data-syncsheet]", function () { dd.sync.openSheet(); });
-    on("[data-home]", function () { setup.showHomeScreen(); });
-    on("[data-where]", function () { dd.move.where(); });
     box.querySelectorAll("[data-start]").forEach(function (b) { b.addEventListener("click", function () { setup.open(b.dataset.start); }); });
   }
 
@@ -2437,7 +2475,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
   setup.openSheet = function () {
     if (!program && dd.getProgram) program = dd.getProgram();
     var st = state(), n = setup.doneCount(), total = visibleSteps().length;
-    var sh = dd.ui.sheet('<h2>⚙️ Setup &amp; connections <span class="dd-setup-count">' + n + ' of ' + total + ' done</span></h2>' +
+    var sh = dd.ui.sheet('<h2>🧰 Setup &amp; connections <span class="dd-setup-count">' + n + ' of ' + total + ' done</span></h2>' +
       '<p class="dd-note" style="margin:0 0 8px">Each step is optional. Do them in any order, any time.</p>' +
       '<ol class="dd-steps">' + stepRows() + '</ol>' +
       '<div class="dd-btnrow">' + (st.hidden || (st.folded && n < total) ? '<button class="dd-linkbtn" data-unfold>Show the setup reminder on the page again</button>' : "") +
@@ -2514,7 +2552,13 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
       // The helper chat: a column beside the steps on computers; on phones a 💬 Ask button opens it.
       '<aside class="dd-wiz-ask' + (chatOpen ? " open" : "") + '" id="dd-wiz-ask" aria-label="Helper chat"></aside>' +
       '<button class="dd-ask-fab" data-askfab aria-label="Ask the helper a question"><span aria-hidden="true">💬</span> Ask</button>';
-    var later = function () { dd.ui.closeSheet(); dd.ui.toast("Saved. Tap Continue in the setup card to pick up here."); };
+    // Where to pick up again: the setup card if it's on the page, otherwise the menu (audit 2026-10-08).
+    var later = function () {
+      dd.ui.closeSheet();
+      var st = state(), onPage = !st.hidden && !st.folded;
+      dd.ui.toast(onPage ? "Saved. Tap Continue in the setup card to pick up here."
+                         : "Saved. To pick up here: menu (" + program.name + ", top left) → ⚙️ Settings → Setup & connections.", 4500);
+    };
     var sh = dd.ui.sheet(html, { sticky: true, onClose: function () { setup.paint(); }, onEscape: later,
       onOutside: function () { dd.ui.toast("To close this, tap Finish later or ✕. Your place is saved."); } });
     sh.classList.add("dd-wiz");
@@ -2643,7 +2687,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
         "Left menu, Settings > General > Your apps > the </> web button > App nickname anything, Firebase Hosting unticked > Register app > under Add Firebase SDK, the copy icon at the bottom right of the big box with firebaseConfig > Continue to console. " +
         "Safe to ignore: Gemini cards and Ask Gemini, the Dynamic Links box, the yellow Sign in with Google bar, SMS Multi-factor, Rules playground, npm install, Use a script tag, the AI coding agent box. Never turn on App Check: it blocks the program. " +
         "The setup code is not a password: it only says where the database is. Google may change button names; if what they see differs, believe their screen. Never ask for passwords." : "") +
-      (cur && /^host/.test(cur.id) ? " Hosting facts: the program is ONE self-contained HTML file. It must be uploaded unchanged, keeping its file name, to an https address, " +
+      (cur && /^host/.test(cur.id) ? " Hosting facts: the program is ONE self-contained HTML file. It must be uploaded unchanged, named exactly " + fileName() + " (rename it first if the browser added something like (1)), to an https address, " +
         "not behind a password. The host must not block outside connections (a Content-Security-Policy with connect-src 'self' breaks the helper; Neocities' free plan does this). " +
         "Updates: upload the new file with the same name to the same place, because each web address keeps its own saved numbers. If the buyer names a host " +
         "(Netlify, Cloudflare Pages, Vercel, cPanel, Hostinger, GoDaddy, Bluehost, WordPress, Wix, Squarespace, Google Sites, etc.), give short, numbered steps for that host and say plainly " +
@@ -2668,30 +2712,30 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     { keys: ["ignore", "skip", "terms", "email", "updates", "checkbox", "tick"], a: "Tick the box agreeing to Google's terms (you have to). Any box about emails or news is up to you: you can leave it empty." },
     { keys: ["long", "time", "how many", "minutes"], a: "About 2 minutes for the helper, 5 to 10 for the phone, 10 for sync. You can stop any time and pick up where you left off." },
     { keys: ["api", "key", "what is", "access code"], a: "Google calls it an API key. We call it your free access code: it's how the helper gets to use Google's AI for free." },
-    { keys: ["tiiny", "tiny host", "neocities", "hosting", "online", "upload", "address", "link", "website"], a: "Neocities or tiiny.host puts your program online for free, so your phone can open it. Your numbers and your code are never uploaded: they stay on your own devices." },
-    { keys: ["which one", "neocities or", "difference", "better", "choose", "pick"], a: "Pick Neocities if you're not sure. One free Neocities account holds all your DigiDoughnut programs and shows no ads. tiiny.host holds one program per free account." },
+    { keys: ["tiiny", "tiny host", "hosting", "online", "upload", "address", "link", "website"], a: "Putting the program online (on GitHub, tiiny.host or your own website) lets your phone open it. Your numbers and your code are never uploaded: they stay on your own devices." },
+    { keys: ["which one", "difference", "better", "choose", "pick", "neocities"], for: /^host/, a: "Pick GitHub if you're not sure: it's free, shows no ads, never expires, and one account holds all your DigiDoughnut programs. tiiny.host is quicker to set up, but holds one program per free account and needs a log-in every 3 months." },
     { keys: ["github", "repository", "repo"], a: "GitHub is a free place to keep files online, and it can show a file as a web page. Your program file goes there; your numbers and your code never do." },
-    { keys: ["public", "who can see"], a: "Public means anyone could look at the program file itself, like any web page. Your numbers and your code are never in the file: they stay on your own devices." },
-    { keys: ["not online", "not live", "404", "not found", "isn t there", "still waiting"], a: "GitHub can take up to 10 minutes to put a new site online. Check Settings, Pages: Branch should say main, and Save should have been tapped." },
-    { keys: ["private", "upgrade", "make this repository public", "enable pages"], a: "GitHub only makes free web pages from Public repositories. In your repository: Settings, General, scroll to Danger Zone, Change visibility, Change to public, then confirm." },
-    { keys: ["etsy", "folder", "different address", "wrong address", "github io"], a: "Your address is username.github.io, then the repository's name, then the file. On the waiting step, open \"GitHub shows a different address?\" and paste what GitHub shows." },
-    { keys: ["netlify", "cloudflare", "vercel", "cpanel", "hostinger", "godaddy", "bluehost", "file manager"], a: "Most hosts let you upload a file through a file manager or an upload page: upload this file unchanged and keep its name. For step-by-step help for your exact host, turn on the AI helper (setup step 2), then ask here." },
+    { keys: ["public", "who can see"], for: /^host_github/, a: "Public means anyone could look at the program file itself, like any web page. Your numbers and your code are never in the file: they stay on your own devices." },
+    { keys: ["not online", "not live", "404", "not found", "isn t there", "still waiting"], for: /^host_github/, a: "GitHub can take up to 10 minutes to put a new site online. Check Settings, Pages: Branch should say main, and Save should have been tapped." },
+    { keys: ["private", "upgrade", "make this repository public", "enable pages"], for: /^host_github/, a: "GitHub only makes free web pages from Public repositories. In your repository: Settings, General, scroll to Danger Zone, Change visibility, Change to public, then confirm." },
+    { keys: ["etsy", "folder", "different address", "wrong address", "github io"], for: /^host_github/, a: "Your address is username.github.io, then the repository's name, then the file. On the waiting step, open \"GitHub shows a different address?\" and paste what GitHub shows." },
+    { keys: ["netlify", "cloudflare", "vercel", "cpanel", "hostinger", "godaddy", "bluehost", "file manager"], a: "Most hosts let you upload a file through a file manager or an upload page: upload this file unchanged, named exactly as the setup screen shows. For step-by-step help for your exact host, turn on the AI helper (setup step 2), then ask here." },
     { keys: ["wordpress", "wix", "squarespace", "google sites", "website builder"], a: "Most website builders can't host a whole web page file like this one. If yours won't take it, tap Start over and pick GitHub: it's free and made for this." },
     { keys: ["https", "http", "secure", "padlock"], a: "https:// means the page is sent securely (the padlock in the address bar). Phones and the helper need it. Most hosts switch it on for free, often called SSL." },
-    { keys: ["readme"], a: "Turn on Add README when you create the repository. It's a small text file GitHub needs to start the repository; you can ignore it after that." },
-    { keys: ["username", "user name"], a: "On Neocities, your username becomes your web address: username.neocities.org. Letters, numbers and hyphens only. Anything you like, for example yourname-tools." },
-    { keys: ["supporter", "5 a month", "card number", "plan"], a: "Pick Free and tap Continue. You don't need the Supporter plan, and you never need to enter a card." },
-    { keys: ["confirmation", "token", "email code", "didn t get", "no email"], a: "Neocities emails you a code: paste it into Email Confirmation Token and tap Confirm Email. No email? Check spam, or tap Resend Confirmation Email." },
-    { keys: ["3 months", "expire", "taken down", "stay online", "disappear", "how long does it stay", "how long will it stay"], a: "On tiiny.host's free plan the page stays online as long as you log in to tiiny.host at least once every 3 months." },
-    { keys: ["update", "new version", "upgrade"], a: "To put a new version online, log in to tiiny.host and use Update on the same project. That keeps the same address, so your numbers stay." },
-    { keys: ["trial", "free trial", "solo"], a: "You don't need tiiny.host's free trial: tap Skip. The trial turns into a paid plan, and the free plan is all this program needs." },
+    { keys: ["readme"], for: /^host_github/, a: "Turn on Add README when you create the repository. It's a small text file GitHub needs to start the repository; you can ignore it after that." },
+    { keys: ["username", "user name"], for: /^host_github/, a: "Your GitHub username becomes part of your web address: username.github.io. Letters, numbers and single hyphens, for example smith-tools." },
+    { keys: ["confirmation", "token", "email code", "code", "didn t get", "no email"], for: /^host_github/, a: "GitHub emails you an 8-digit code: type it under Enter code and tap Continue. No email after a few minutes? Check your spam folder, or tap Resend the code." },
+    { keys: ["expire", "taken down", "stay online", "disappear", "how long does it stay", "how long will it stay"], for: /^host_github/, a: "On GitHub it stays online for good. Free GitHub pages don't expire and need no looking after." },
+    { keys: ["3 months", "expire", "taken down", "stay online", "disappear", "how long does it stay", "how long will it stay"], for: /^host_tiiny/, a: "On tiiny.host's free plan the page stays online as long as you log in to tiiny.host at least once every 3 months." },
+    { keys: ["update", "new version", "upgrade"], a: "To put a new version online, upload the new file to the same place with exactly the same file name, replacing the old one. The address stays the same, so your numbers stay." },
+    { keys: ["update", "new version", "upgrade"], for: /^host_tiiny/, a: "To put a new version online, log in to tiiny.host and use Update on the same project. That keeps the same address, so your numbers stay." },
+    { keys: ["trial", "free trial", "solo"], for: /^host_tiiny/, a: "You don't need tiiny.host's free trial: tap Skip. The trial turns into a paid plan, and the free plan is all this program needs." },
     { keys: ["home screen", "icon", "app", "bookmark", "shortcut"], a: "Bookmark it on your computer and add it to your Home Screen on your phone. Then it opens like an app, always from the same address, so your numbers are always there." },
     { keys: ["phone", "iphone", "android", "mobile"], a: "Setting up the helper is easiest on a computer. Once it works, Send to my phone moves it over by scanning a code." }
   ];
   setup.suggestQuestions = function (wizardId) {
     if (wizardId === "host_other") return ["How do I upload it to Netlify?", "Can I use WordPress?", "What does https mean?"];
     if (wizardId === "host_github") return ["Is GitHub really free?", "What does Public mean?", "It's not online yet"];
-    if (/^host_neo/.test(wizardId || "")) return ["Which username?", "Do I need Supporter?", "No email came"];
     if (/^host/.test(wizardId || "")) return ["Is it really free?", "Do I need the free trial?", "How long does it stay online?"];
     return wizardId === "sync" ? ["Which region?", "Locked or test mode?", "Where's the setup code?"]
                                : ["Is it really free?", "Do I need a credit card?", "What if I make a mistake?"];
@@ -2830,21 +2874,34 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     });
   }
 
-  /* ---------- "Put it on your phone" ----------
-     The program file has to be online before a phone can open it. Two free services, checked
-     with Oran 2026-10-07:
-     - Neocities (first choice): one free account holds every DigiDoughnut program, no banner,
-       no ads. Sign up = Username (becomes <name>.neocities.org) + Password + Email + "I am
-       human" + "Create My Site"; then a plan page (Free -> "Continue"; Supporter has card boxes);
-       then "Check your Email" (Email Confirmation Token -> "Confirm Email"); dashboard has
-       "Upload". A file keeps its address: <name>.neocities.org/<file name>.
-     - tiiny.host: 1 project per free account, small banner, log in every 3 months, a
-       "Start your free trial" popup whose way out is "Skip"; "Upload file", "Update".
-     Either way, the last steps carry the code + numbers from the file to the new address in one
-     link (dd.pair), then bookmark it (the page title is the bookmark name). */
-  function fileName() {
-    try { return decodeURIComponent(location.pathname.split("/").pop()) || "the program file"; } catch (e) { return "the program file"; }
+  /* ---------- "Put it on your phone": the buyer's own copy ----------
+     The program file has to be online before a phone can open it. Offered (checked with Oran
+     2026-10-07): GitHub Pages (recommended), tiiny.host (1 project per free account, small banner,
+     log in every 3 months, a "Start your free trial" popup whose way out is "Skip"; "Upload file",
+     "Update"), or the buyer's own host. Each wizard's last steps carry the code + numbers from the
+     file to the new address in one link (dd.pair), then bookmark it (the page title is the
+     bookmark name). */
+  /* The file's PROPER name (audit 2026-10-08). Browsers name repeat downloads "demo (1).html",
+     "demo (10).html"…; uploaded as-is, that ends up in the web address, and the next download gets a
+     different name, so "same place, same name" stops working. The build stamps the real name
+     (DD_BUILD.file) and the wizards ask buyers to rename the file to it before uploading. */
+  function currentFileName() {
+    try { return decodeURIComponent(location.pathname.split("/").pop()) || ""; } catch (e) { return ""; }
   }
+  function fileName() {
+    var b = window.DD_BUILD && window.DD_BUILD.file;
+    if (b && /^[a-z0-9-]+\.html$/.test(b)) return b;
+    return currentFileName() || "the program file";
+  }
+  /* Shown on the upload screens when the file on this computer has a different name. */
+  function renameNote() {
+    var now = currentFileName();
+    if (!dd.env.isFile || !now || now === fileName()) return "";
+    return '<p class="dd-todo"><span aria-hidden="true">✏️</span> <b>Rename it first.</b> Your file is called <b>' + esc(now) + '</b>. ' +
+      'Rename it to <b>' + esc(fileName()) + '</b> before you upload it, so the address stays the same when you get a new version.</p>';
+  }
+  setup.renameNote = renameNote;
+  setup.currentFileName = currentFileName;
   function hostState(v) { var s = state(); if (v !== undefined) { s.hostUrl = v; saveState(s); } return s.hostUrl || ""; }
   setup.ownAddress = hostState;
   setup.hostInProgress = function (svc) { return !!state().wizards["host_" + svc]; };
@@ -2863,76 +2920,19 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
       return u.href;
     } catch (e) { return null; }
   };
-  /* Neocities: a username (or a pasted address) -> https://<name>.neocities.org/<this file's name> */
-  setup.neocitiesAddress = function (raw) {
-    var t = String(raw || "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/\.neocities\.org$/, "");
-    if (!/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(t)) return null;
-    return "https://" + t + ".neocities.org/" + encodeURIComponent(fileName());
-  };
-
   var facts = '<ul class="dd-facts"><li>✓ Free. No credit card.</li><li>✓ About 5 to 10 minutes.</li><li>✓ Your numbers and your code are never uploaded.</li></ul>';
   var publicNote = '<p class="dd-note">The page itself can be opened by anyone who has its address, like a shared link. What you type into it stays on each of your own devices.</p>';
   function phoneWarn() { return dd.env.isPhone ? '<p class="dd-status show warn">Do this step on the computer where you saved the program file. Then come back to your phone at the end.</p>' : ""; }
 
-  /* Which services the wizard offers. Neocities is PARKED (2026-10-07): its free plan sends
+  /* Which services are offered. Neocities was dropped (2026-10-07): its free plan sends
      "connect-src 'self'", so a page there can't reach Google, Firebase or the noticeboard.
-     Seen on Oran's site; the helper said "no internet". Its wizard stays below for a paid plan
-     or a policy change, but isn't offered. When only one service is offered, the choice screen
-     is skipped. */
+     When only one service is offered, the choice screen is skipped. */
   setup.hostChoices = ["github", "tiiny", "other"];
   function hostChoice() { return setup.hostChoices.length === 1 ? setup.hostChoices[0] : null; }
 
-  /* ease = how easy the setup is, lasting = how little looking-after it needs later (out of 5). */
-  var HOSTS = {
-    github: { name: "GitHub", blurb: "Recommended. Free, no ads, never expires, and one account holds all your DigiDoughnut programs. About 10 minutes.", ease: 3, lasting: 5 },
-    tiiny: { name: "tiiny.host", blurb: "Quicker to set up, but one program per free account, and you log in every 3 months to keep it online. About 5 minutes.", ease: 4, lasting: 2 },
-    other: { name: "My own website or another host", blurb: "Already have web hosting? Put the file there. The helper can give you steps for your host.", ease: 0, lasting: 0 },
-    neocities: { name: "Neocities", blurb: "Free, but its free plan blocks the helper.", ease: 4, lasting: 4 }
-  };
-  function bars(label, n) {
-    if (!n) return "";
-    var cells = ""; for (var i = 1; i <= 5; i++) cells += '<i class="' + (i <= n ? "on" : "") + '"></i>';
-    return '<span class="dd-bars"><span class="dd-bars-label">' + esc(label) + '</span><span class="dd-bars-cells" aria-label="' + n + ' out of 5">' + cells + '</span></span>';
-  }
-
-  /* Screen 1, shared. Phase 7.2: when there is a DigiDoughnut version (DD_BUILD.home), the first
-     choice is "Ready to go (recommended)", which opens the Move sheet aimed at it; "My own copy
-     (advanced)" shows today's chooser, unchanged. Without a home address, only the chooser. */
-  function hostChooser() {
-    return facts + phoneWarn() +
-      '<div class="dd-choice">' + setup.hostChoices.map(function (id) { var o = HOSTS[id];
-        return '<button class="dd-choice-btn" data-host="' + id + '"><b>' + esc(o.name) + '</b><span>' + esc(o.blurb) + '</span>' +
-          (o.ease ? '<span class="dd-bars-wrap">' + bars("Easy to set up", o.ease) + bars("Looks after itself", o.lasting) + '</span>' : "") + '</button>'; }).join("") +
-      '</div>' + publicNote;
-  }
-  function offerHome() { return !dd.env.isHome && !!dd.move; }   // always offered, address or not
-  setup.wizards.host = {
-    title: "Where it lives",
-    screens: [
-      { title: function () { return offerHome() ? "Where should it live?" : "Put it online, for free"; },
-        pic: function () { return { kind: "hero", icons: ["💻", "🌐", "📱"], caption: "Computer → online → phone" }; },
-        todo: function () { return offerHome() ? "Pick one. You can switch later and take your " + esc(program.dataLabel || "numbers") + " with you." : "Pick one of the choices below."; },
-        body: function () {
-          if (!offerHome()) return '<p>Your phone can\'t open a file that lives on this computer. So first we put the program online, at its own web address, using a free service.</p>' + hostChooser();
-          return '<p>Right now ' + esc(program.name) + ' is a file on this computer. To use it on your phone too, it needs a web address.</p>' +
-            '<div class="dd-choice">' +
-              '<button class="dd-choice-btn dd-choice-rec" data-ready><b>Ready to go (recommended)</b><span>Use the DigiDoughnut version. Works on your phone straight away, nothing to upload.</span></button>' +
-              '<button class="dd-choice-btn" data-own><b>My own copy (advanced)</b><span>Put the file on your own free web space: GitHub, tiiny.host or your own website. About 10 minutes.</span></button>' +
-            '</div><div data-ownlist hidden>' + hostChooser() + '</div>';
-        },
-        mount: function (c) {
-          var r = c.el.querySelector("[data-ready]"), o = c.el.querySelector("[data-own]");
-          if (r) r.addEventListener("click", function () { dd.move.open({ to: "home" }); });
-          if (o && cur && cur.own) { o.classList.add("picked"); c.el.querySelector("[data-ownlist]").hidden = false; }
-          if (o) o.addEventListener("click", function () { o.classList.add("picked"); var l = c.el.querySelector("[data-ownlist]"); l.hidden = false; try { l.scrollIntoView({ block: "nearest" }); } catch (e) {} });
-          c.el.querySelectorAll("[data-host]").forEach(function (b) { b.addEventListener("click", function () {
-            var s = state(); s.hostWith = b.dataset.host; saveState(s);
-            setup.open("host_" + b.dataset.host);
-          }); });
-        },
-        next: false }
-    ]
-  };
+  /* The choice of where it lives is ONE screen, dd.move.where() (Phase 7.2). The old chooser screen
+     and the Neocities wizard were removed in the 2026-10-08 audit; "host" is still the parent name the
+     host wizards return to (Back / Start over open dd.move.where()). */
 
   /* The last three screens, shared by both services. */
   function finishScreens(svc) {
@@ -2951,7 +2951,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
           c.status(made.left.length ? "warn" : "ok", made.left.length ? "Opened. Your " + made.left.join(" and ") + " were too big to carry, so they stay here for now." : "Opened in a new tab. Check it, then come back here and tap Next.");
         } },
         stuck: ["Nothing opened? Your browser may have blocked the new tab. Allow pop-ups for this page, or tap the button again.",
-                svc !== "tiiny" ? "Page not found? Check the upload finished, and that your username is right: tap Back to fix it."
+                svc !== "tiiny" ? "Page not found? Check the upload finished, and that the address is right: tap Back to fix it."
                                     : "If the new page looks empty, check the address you pasted: tap Back and fix it."], guide: "host_move" },
       { title: "Bookmark it and keep it",
         pic: function () { return { kind: "bookmark", site: "Bookmark", name: setup.bookmarkName() }; },
@@ -2965,60 +2965,13 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
             : svc === "tiiny"
             ? '<li><b>Log in to tiiny.host at least once every 3 months.</b> That keeps your free page online.</li>' +
               '<li><b>Getting an update?</b> On tiiny.host, use <b>' + esc(L("host_update", "Update")) + '</b> on this same project. Don\'t upload it as a new one.</li>'
-            : svc === "other"
-            ? '<li><b>Getting an update?</b> Upload the new file to the same place with the <b>same file name</b>, replacing the old one, so the address stays the same.</li>'
-            : '<li><b>Getting an update?</b> Upload the new file to Neocities with the <b>same file name</b>. It replaces the old one and keeps the same address.</li>') +
+            : '<li><b>Getting an update?</b> Upload the new file to the same place with the <b>same file name</b>, replacing the old one, so the address stays the same.</li>') +
           '</ul>' +
           '<p>Last step: in the new tab, tap the program\'s name at the top left (the menu), then <b>⚙️ Settings</b> → <b>📲 Send to my phone</b>. On your phone, add it to your Home Screen when it asks.</p>' +
           (svc === "tiiny" ? '<p class="dd-note">You can ignore the small tiiny.host banner on your page.</p>' : ""); },
         nextLabel: "Done" }
     ];
   }
-
-  setup.wizards.host_neocities = {
-    title: "Put it on your phone · Neocities", parent: "host",
-    onDone: function () { dd.ui.toast("Use your new address from now on. Bookmark it!", 4500); },
-    screens: [
-      { title: "Make a free Neocities account",
-        body: function () { return '<p>Tap the button. Neocities opens in a new tab. Under <b>' + esc(L("neo_signup", "Sign up for free")) + '</b>:</p>' +
-          '<ul><li><b>Username</b>: this becomes your web address, like <i>yourname</i>.neocities.org. Letters, numbers and hyphens only. Write it down.</li>' +
-          '<li><b>Password</b> and <b>Email</b>.</li>' +
-          '<li>Tick <b>' + esc(L("neo_human", "I am human")) + '</b>. It may ask you to tap a picture: that\'s normal.</li>' +
-          '<li>Tap <b>' + esc(L("neo_create", "Create My Site")) + '</b>.</li></ul>' +
-          '<p><b>You can ignore</b> Tags. Leave it empty.</p>' + phoneWarn(); },
-        action: { label: "Open Neocities", run: function (c) { c.open(link("host_neocities", "https://neocities.org/")); } },
-        stuck: ["Already have a Neocities account? Tap Sign In at the top right, then skip ahead with Next.",
-                "Username taken? Try adding a word or a number, like yourname-tools."], guide: "neo_signup" },
-      { title: "Pick the free plan",
-        body: function () { return '<p>Neocities shows two plans. Under <b>Free</b>, tap <b>' + esc(L("neo_free_continue", "Continue")) + '</b>.</p>' +
-          '<p><b>You can ignore</b> the Supporter plan and its card boxes. You don\'t need them.</p>'; },
-        stuck: ["Didn't see the plans? That's fine. Tap Next."], guide: "neo_plan" },
-      { title: "Confirm your email",
-        body: function () { return '<p>Neocities emails you a code. Open that email, copy the code, paste it into <b>' + esc(L("neo_token", "Email Confirmation Token")) + '</b>, and tap <b>' + esc(L("neo_confirm", "Confirm Email")) + '</b>.</p>' +
-          '<p><b>You can ignore</b> the rules box above it. This program is your own private tool, which is fine there.</p>'; },
-        stuck: ["No email after a few minutes? Check your spam folder, or tap Resend Confirmation Email."], guide: "neo_email" },
-      { title: "Upload this program",
-        body: function () { return '<p>Go to your Neocities <b>dashboard</b>. (If you see a page about learning to make websites, tap <b>' + esc(L("neo_dashboard", "Head to your dashboard")) + '</b>.)</p>' +
-          '<p>Tap <b>' + esc(L("neo_upload", "Upload")) + '</b> and choose this file:</p>' +
-          '<p class="dd-filename">' + esc(fileName()) + '</p>' +
-          '<p class="dd-note">It\'s wherever you saved it from Etsy, often the Downloads folder.</p>' +
-          '<p><b>You can ignore</b> index.html and the other files Neocities made for you. Leave them alone.</p>'; },
-        stuck: ["Can't find the file? On Windows, open File Explorer and look in Downloads. On a Mac, open Finder and look in Downloads.",
-                "Don't rename the file. Its name becomes part of its address."], guide: "neo_upload" },
-      { title: "Your Neocities username",
-        body: function () { var s = state(); return '<p>Type the username you picked when you signed up.</p>' +
-          '<input class="dd-input" id="dd-wiz-addr" placeholder="e.g. smith-tools" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + esc(s.neoUser || "") + '">' +
-          '<p class="dd-note">It\'s at the top right of Neocities, and in your site\'s address: <i>username</i>.neocities.org.</p>'; },
-        mount: function (c) { var i = c.el.querySelector("#dd-wiz-addr"); if (!dd.env.isPhone && !i.value) i.focus(); },
-        check: function (c) {
-          var raw = c.el.querySelector("#dd-wiz-addr").value, url = setup.neocitiesAddress(raw);
-          if (!url) { c.status("warn", "Type your Neocities username first.", "Letters, numbers and hyphens only, like smith-tools."); return false; }
-          var s = state(); s.neoUser = raw.trim(); saveState(s);
-          hostState(url); return true;
-        },
-        guide: "neo_address" }
-    ].concat(finishScreens("neocities"))
-  };
 
   /* GitHub Pages (Oran's number one, 2026-10-07): the buyer's own free GitHub account, one
      repository named <username>.github.io that holds every DigiDoughnut program they buy, at
@@ -3124,9 +3077,9 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
         pic: function () { return { kind: "page", site: "github.com · your repository", items: [{ type: "menu", label: L("gh_add_file", "Add file"), value: L("gh_upload", "Upload files") }, { type: "file", value: fileName() }], btn: L("gh_commit", "Commit changes") }; },
         todo: function () { return "<b>" + esc(L("gh_add_file", "Add file")) + "</b> → <b>" + esc(L("gh_upload", "Upload files")) + "</b>, pick the file, then tap <b>" + esc(L("gh_commit", "Commit changes")) + "</b>."; },
         body: function () { return '<p>On your new repository\'s page, tap <b>' + esc(L("gh_add_file", "Add file")) + '</b>, then <b>' + esc(L("gh_upload", "Upload files")) + '</b>, and choose this file:</p>' +
-          '<p class="dd-filename">' + esc(fileName()) + '</p>' +
+          renameNote() + '<p class="dd-filename">' + esc(fileName()) + '</p>' +
           '<p>Then tap the green <b>' + esc(L("gh_commit", "Commit changes")) + '</b> button at the bottom.</p>' +
-          '<p><b>You can ignore</b> the boxes for a message or description. Don\'t rename the file: its name becomes part of its address.</p>'; },
+          '<p><b>You can ignore</b> the boxes for a message or description. Its name becomes part of its address, so it must be exactly <b>' + esc(fileName()) + '</b>.</p>'; },
         action: { label: "Open my repository", run: function (c) { var a = setup.githubAddress(ghUser()); c.open(a ? "https://github.com/" + a.user + "/" + a.repo : "https://github.com/"); } },
         stuck: ["Can't find the file? On Windows, open File Explorer and look in Downloads. On a Mac, open Finder and look in Downloads.",
                 "You can also drag the file from your folder onto the GitHub page, onto Drag files here to add them to your repository.",
@@ -3194,8 +3147,8 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
         pic: function () { return { kind: "page", site: "your host's file manager", items: [{ type: "file", value: fileName() }], btn: "Upload" }; },
         todo: "Upload this program's file to your host, the same way you'd upload any web page.",
         body: function () { return '<p>Use your host\'s usual way to put a web page online (a file manager, an upload button, or a drag-and-drop page). Upload this file:</p>' +
-          '<p class="dd-filename">' + esc(fileName()) + '</p>' +
-          '<ul><li><b>Don\'t change the file.</b> Upload it exactly as it is, and keep its name.</li>' +
+          renameNote() + '<p class="dd-filename">' + esc(fileName()) + '</p>' +
+          '<ul><li><b>Don\'t change what\'s inside the file.</b> Upload it as it is, named <b>' + esc(fileName()) + '</b>.</li>' +
           '<li>The address must start with <b>https://</b>.</li>' +
           '<li>Don\'t put it in a password-protected or members-only area.</li></ul>' +
           '<p class="dd-note">Not sure how on your host? Ask the helper in the box below and say which host you use, for example "How do I upload it to Netlify?". ' +
@@ -3236,7 +3189,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
         pic: function () { return { kind: "page", site: "tiiny.host", items: [{ type: "file", value: fileName() }], btn: L("host_upload", "Upload file") }; },
         todo: function () { return "Tap <b>" + esc(L("host_upload", "Upload file")) + "</b> and pick this program's file."; },
         body: function () { return '<p>On tiiny.host, tap <b>' + esc(L("host_upload", "Upload file")) + '</b> and choose this file:</p>' +
-          '<p class="dd-filename">' + esc(fileName()) + '</p>' +
+          renameNote() + '<p class="dd-filename">' + esc(fileName()) + '</p>' +
           '<p class="dd-note">It\'s wherever you saved it from Etsy, often the Downloads folder.</p>' +
           '<p><b>You can ignore</b> options for passwords, domains or names. The address tiiny.host picks is fine.</p>'; },
         stuck: ["Can't find the file? On Windows, open File Explorer and look in Downloads. On a Mac, open Finder and look in Downloads.",
@@ -3406,7 +3359,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     });
   };
 
-  if (dd.menu) dd.menu.add({ id: "setup", icon: "⚙️", label: "Setup & connections", order: 10,
+  if (dd.menu) dd.menu.add({ id: "setup", icon: "🧰", label: "Setup & connections", order: 10,
     show: function () { var p = dd.getProgram && dd.getProgram(); return !!(p && p.setup !== false); },
     note: function () { var n = setup.doneCount(), t = visibleSteps().length; return n === t ? "All set up" : n + " of " + t + " steps done"; },
     run: function () { setup.openSheet(); } });
@@ -3456,6 +3409,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
   var msgs = [], undos = {}, busy = false, lastTurn = null, root = null, mode = null, mq = null;
   var esc = function (s) { return dd.ui.esc(s); };
 
+  helper.SUMMARY_MAX = 12000;   // characters of summarizeForAI sent per message
   helper.name = function () { return (cfg && cfg.name) || "Penny"; };
   helper.enabled = function () { return !!cfg; };
 
@@ -3649,6 +3603,8 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
   helper.systemPrompt = function () {
     var name = helper.name(), c = dd.ctx();
     var data = ""; try { data = program.summarizeForAI ? String(program.summarizeForAI(c) || "") : ""; } catch (e) { dd.errors.record("summarizeForAI", e); }
+    // A big program's summary goes with every message and eats the free daily share: cap it.
+    if (data.length > helper.SUMMARY_MAX) { dd.errors.record("helper", "summary cut from " + data.length + " characters"); data = data.slice(0, helper.SUMMARY_MAX) + "\n(The rest was cut short to keep messages small. Say so if the person asks about something not shown.)"; }
     return "You are " + name + ", the friendly helper inside " + program.name + ", a one-page program made by DigiDoughnut. " +
       "The person using it is not technical. " + (program.knowledge ? "About the program: " + program.knowledge + " " : "") +
       ((program.tools || []).length ? "You have tools that change the program directly. When the person asks you to add, change, tick, remove or clear something, " +
@@ -3683,7 +3639,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
 
   var STATUS = { thinking: " is thinking…", working: " is working on it…", retrying: " is still working: trying again…" };
   function turn(text) {
-    var name = helper.name(), before = snapshot(), pendings = [], started = Date.now();
+    var name = helper.name(), before = snapshot(), wasExample = dd.isExample(), pendings = [], started = Date.now();
     setBusy(true, name + STATUS.thinking);
     var hist = history();
     var tools = (program.tools || []).map(function (t) {
@@ -3712,7 +3668,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
         if (r.type !== "bad_code" && r.type !== "not_allowed" && r.type !== "host_blocked") m.retry = text;
         if (r.type === "bad_code" || r.type === "not_allowed") m.fix = true;
       }
-      if (changed) { m.undo = true; m.id = dd.ui.uid("m"); undos[m.id] = { before: before, after: after }; }
+      if (changed) { m.undo = true; m.id = dd.ui.uid("m"); undos[m.id] = { before: before, after: after, example: wasExample }; }
       if (pendings.length) m.pending = pendings[0];   // one question at a time
       add(m);
       setBusy(false);
@@ -3733,12 +3689,12 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     p.state = yes ? "yes" : "no";
     if (!yes) { add({ who: "note", text: "The person tapped No, so nothing was changed." }); paint(); return; }
     var tool = (program.tools || []).filter(function (t) { return t.name === p.tool; })[0];
-    var before = snapshot(), res;
+    var before = snapshot(), wasExample = dd.isExample(), res;
     try { res = tool ? tool.run(p.args || {}, dd.ctx()) : { ok: false, message: "That can't be done any more." }; }
     catch (e) { dd.errors.record("tool:" + p.tool, e); res = { ok: false, message: "That didn't work." }; }
     var done = function (out) {
       var after = snapshot(), r = { who: "bot", text: (out && out.message) || (out && out.ok ? "Done." : "That didn't work.") };
-      if (after !== before) { r.id = dd.ui.uid("m"); r.undo = true; undos[r.id] = { before: before, after: after }; }
+      if (after !== before) { r.id = dd.ui.uid("m"); r.undo = true; undos[r.id] = { before: before, after: after, example: wasExample }; }
       add(r); paint();
     };
     if (res && typeof res.then === "function") res.then(done, function () { done({ ok: false }); }); else done(res);
@@ -3749,7 +3705,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     var u = undos[m.id]; if (!u || busy) return;
     var go = function () {
       var before; try { before = JSON.parse(u.before); } catch (e) { before = null; }
-      if (!before || !dd.replaceData(before, { source: "helper-undo" })) { dd.ui.toast("Sorry, that can't be undone any more."); return; }
+      if (!before || !dd.replaceData(before, { source: "helper-undo", example: !!u.example })) { dd.ui.toast("Sorry, that can't be undone any more."); return; }
       delete undos[m.id]; m.undo = false; m.undone = true;
       add({ who: "note", text: "The person tapped Undo, so that change was reversed." });
       paint();
@@ -4469,10 +4425,19 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     var p = dd.getProgram();
     return p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + "-backup-" + dd.ui.isoDate() + ".json";
   };
+  /* With live sync on, the backup also carries this program's sync address and the setup code
+     (audit 2026-10-08), so restoring it on a cleared or new device reconnects to the buyer's own
+     database. That makes the file a key to the data: the Backup sheet says to keep it private. */
+  function syncPart() {
+    if (!(dd.sync && dd.sync.isOn && dd.sync.isOn())) return null;
+    var led = dd.sync.ledger && dd.sync.ledger(), cfg = dd.sync.config && dd.sync.config();
+    return led && cfg ? { ledger: led, config: dd.sync.strip(cfg) } : null;
+  }
   backup.make = function () {
-    var p = dd.getProgram();
-    return JSON.stringify({ dd: 1, kind: "backup", program: p.id, name: p.name, schemaVersion: p.schemaVersion,
-                            savedAt: new Date().toISOString(), data: dd.getData() }, null, 1);
+    var p = dd.getProgram(), out = { dd: 1, kind: "backup", program: p.id, name: p.name, schemaVersion: p.schemaVersion,
+                                     savedAt: new Date().toISOString(), data: dd.getData() };
+    var sp = syncPart(); if (sp) out.sync = sp;
+    return JSON.stringify(out, null, 1);
   };
 
   /* Download the file. Returns false (and says why) when there's nothing of the buyer's to keep. */
@@ -4503,7 +4468,12 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     if (v > p.schemaVersion) return { ok: false, type: "backup_newer", title: "That backup was made by a newer version of " + p.name + ".", help: "Open it in the newer version instead, or contact DigiDoughnut and we'll help." };
     try { if (v < p.schemaVersion) body = p.migrate(body, v); } catch (e) { dd.errors.record("backup.migrate", e); return bad(); }
     if (!p.validateData(body)) return bad();
-    return { ok: true, data: body, savedAt: raw.savedAt };
+    var sync = null;
+    if (raw.sync && typeof raw.sync === "object" && /^[0-9a-f]{32}$/.test(String(raw.sync.ledger)) && dd.sync) {
+      var cfg = raw.sync.config && typeof raw.sync.config === "object" ? dd.sync.parseConfig(JSON.stringify(raw.sync.config)) : null;
+      if (cfg) sync = { ledger: raw.sync.ledger, config: cfg };
+    }
+    return { ok: true, data: body, savedAt: raw.savedAt, sync: sync };
   };
 
   /* Ask, then swap in the backup. Keeps what was there so it can be undone. */
@@ -4519,6 +4489,16 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
       var before = JSON.stringify(dd.getData()), wasExample = dd.isExample();
       if (!dd.replaceData(r.data, { example: false, source: "restore" })) { var f = dd.errors.friendly("backup_bad"); dd.ui.toast(f.title, 5000); return { ok: false, type: "backup_bad" }; }
       last.restored = new Date().toLocaleTimeString();
+      // Live sync isn't on here but the backup knows the buyer's database: reconnect (this device was
+      // probably cleared). Anything newer in the database comes back too. On a device that already
+      // syncs somewhere, nothing changes: the restored data goes to that database as usual.
+      if (r.sync && !dd.sync.isOn()) {
+        dd.sync.join(r.sync.ledger, r.sync.config).then(function (j) {
+          last.restored += j.ok ? " · live sync reconnected" : " · live sync not reconnected (" + j.type + ")";
+          if (j.ok) dd.ui.toast("Live sync is back on. Anything newer from your other devices comes in too.", 4500);
+          else dd.ui.notice("sync", "Your backup was restored, but live sync couldn't reconnect. " + j.title + " " + j.help, "warn");
+        });
+      }
       dd.ui.notice("restore", "Restored the backup from " + when + ".", "info", [
         { label: "Undo", onClick: function () { dd.replaceData(JSON.parse(before), { example: wasExample, source: "restore-undo" }); dd.ui.clearNotice("restore"); dd.ui.toast("Put back the way it was."); } },
         { label: "OK", primary: true, onClick: function () { dd.ui.clearNotice("restore"); } }
@@ -4556,10 +4536,13 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
       '<h3 class="dd-sub">Keep a copy</h3>' +
       '<p class="dd-note">A backup is a small file you keep (your Documents folder, a USB stick or your email). Last backup on this device: <b>' +
         (last ? esc(last.toLocaleDateString()) : "never") + '</b>.</p>' +
+      (on ? '<p class="dd-note">With live sync on, the backup also holds your live sync address, so restoring it on a new or cleared device reconnects everything. <b>Keep it private</b>: anyone with the file could open your ' + esc(thing) + '.</p>' : "") +
+      '<p class="dd-note"><b>Careful when clearing your browser:</b> clearing "cookies and site data" (or "history and website data") removes your ' + esc(thing) + ', your access code and your live sync address from this device. ' +
+        (on ? 'Your live copy stays safe in your own Firebase; restore a recent backup to reconnect.' : 'Download a backup first.') + '</p>' +
       '<div class="dd-btnrow"><button class="dd-btn" data-down>⬇ Download a backup</button><button class="dd-btn ghost" data-up>Restore from a backup</button></div>' +
       '<h3 class="dd-sub">Moving to a new version?</h3>' +
       '<ol class="dd-home-steps">' +
-        '<li><b>Same place, same name:</b> upload the new file over the old one, keeping its file name. Your ' + esc(thing) + ' just stays. This is the easiest way.</li>' +
+        '<li><b>Same place, same name:</b> upload the new file over the old one, with exactly the same file name (if your browser called the download something like "(1)", rename it first). Your ' + esc(thing) + ' just stays. This is the easiest way.</li>' +
         '<li><b>Live sync on:</b> ' + (on ? "you're all set. Open the new version, turn on live sync there, and everything comes across."
             : 'turn it on first (setup step 4), and the new version gets everything from your own database.') + '</li>' +
         '<li><b>Neither:</b> tap <b>Download a backup</b> here. Then, in the new version, tap <b>💾 Backup &amp; new versions</b> at the bottom and <b>Restore from a backup</b>.</li>' +
@@ -4707,6 +4690,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
         (example ? "Bring my " + esc(t) + " along (what you see now are only examples, so there's nothing of yours to bring yet)" : "Bring my " + esc(bring) + " along") + '</label>' +
       others.map(function (id) { return placeCard(id, false); }).join("") +
       '<p class="dd-note">Got a newer version of the file? Put it in the same place with the same file name, and your ' + esc(t) + ' stays.</p>' +
+      '<p class="dd-note">Each place keeps its own ' + esc(t) + ' in this browser. Clearing the browser\'s "cookies and site data" removes it from this device, so keep a backup (menu → ⚙️ Settings → 💾 Backup &amp; new versions).</p>' +
       '<div class="dd-btnrow">' +
         (here.kind !== "file" && !dd.env.isPhone && dd.pair ? '<button class="dd-btn ghost" data-phone>📲 Send to my phone</button>' : "") +
         (here.kind !== "file" && dd.env.isPhone && !dd.env.isStandalone && dd.setup && dd.setup.showHomeScreen ? '<button class="dd-btn ghost" data-homescreen>Add to Home Screen</button>' : "") +
@@ -5078,7 +5062,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
   function run(id, t, args) {
     var note = "";
     if (dd.isExample()) {   // example data never travels: take the examples out first, keep anything the buyer added
-      dd.replaceData(withoutExamples(dd.getData()), { example: false, source: "agent" });
+      dd.replaceData(dd.withoutExamples(dd.getData()), { example: false, source: "agent" });
       note = " (The program was showing example items, so those were removed first.)";
     }
     var before = JSON.stringify(dd.getData());
@@ -5091,22 +5075,6 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
       dd.errors.record("agent tool:" + t.name, e);
       return finish(id, { ok: false, tool: t.name, message: "That didn't work." });
     });
-  }
-
-  /* The data minus the program's example items. Lists: items whose id is one of exampleData()'s
-     are dropped (so example ids must stay fixed). Other values still equal to the example go back to
-     emptyData()'s. Anything the buyer added stays. If the result doesn't check out: empty data. */
-  function withoutExamples(data) {
-    try {
-      var ex = program.exampleData(), empty = program.emptyData(), out = JSON.parse(JSON.stringify(data));
-      Object.keys(out).forEach(function (k) {
-        if (Array.isArray(out[k]) && Array.isArray(ex[k])) {
-          var ids = ex[k].map(function (i) { return i && i.id; }).filter(Boolean);
-          out[k] = out[k].filter(function (i) { return !(i && i.id && ids.indexOf(i.id) >= 0); });
-        } else if (k in ex && JSON.stringify(out[k]) === JSON.stringify(ex[k])) out[k] = empty[k];
-      });
-      return program.validateData(out) ? out : empty;
-    } catch (e) { dd.errors.record("agent.examples", e); return program.emptyData(); }
   }
 
   function finish(id, res) {
@@ -5319,7 +5287,7 @@ const DD_PROGRAM = {
   id: "demo",                       // lowercase letters/digits; becomes dd_demo_data_v1
   name: "Demo List",
   tagline: "A platform test program",
-  version: "0.1.6",
+  version: "0.1.7",
   schemaVersion: 2,
   accent: "#2563eb",
   dataLabel: "list",                // how the QR screen names this program's data ("your list")
@@ -5441,7 +5409,7 @@ const DD_PROGRAM = {
       } },
     { name: "clear_list", description: "Remove every item from the list. The person is asked to confirm first.",
       params: {},
-      confirm: (args, ctx) => ctx.data.items.length ? "Clear all " + ctx.data.items.length + " items from your list?" : null,
+      confirm: (args, ctx) => { const n = ctx.data.items.length; return n ? (n === 1 ? "Clear the 1 item from your list?" : "Clear all " + n + " items from your list?") : null; },
       yesLabel: "Yes, clear it",
       run(args, ctx) {
         const n = ctx.data.items.length;
@@ -5467,14 +5435,6 @@ function pick(items, args) {
   if (near.length === 1) return { item: near[0] };
   if (!near.length) return { problem: "No item matches '" + args.text + "'. Items: " + list() };
   return { problem: "More than one item matches '" + args.text + "': " + near.map((i) => "'" + i.text + "' (id " + i.id + ")").join(", ") + ". Use the id, or ask the person which one." };
-}
-
-/* The item whose text best matches what the helper said: exact first, then "contains". */
-function find(items, words) {
-  const w = String(words || "").trim().toLowerCase();
-  if (!w) return null;
-  return items.find((i) => i.text.toLowerCase() === w) || items.find((i) => i.text.toLowerCase().includes(w)) ||
-         items.find((i) => w.includes(i.text.toLowerCase()));
 }
 
 </script>

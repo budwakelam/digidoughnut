@@ -107,6 +107,7 @@
         (example ? "Bring my " + esc(t) + " along (what you see now are only examples, so there's nothing of yours to bring yet)" : "Bring my " + esc(bring) + " along") + '</label>' +
       others.map(function (id) { return placeCard(id, false); }).join("") +
       '<p class="dd-note">Got a newer version of the file? Put it in the same place with the same file name, and your ' + esc(t) + ' stays.</p>' +
+      '<p class="dd-note">Each place keeps its own ' + esc(t) + ' in this browser. Clearing the browser\'s "cookies and site data" removes it from this device, so keep a backup (menu → ⚙️ Settings → 💾 Backup &amp; new versions).</p>' +
       '<div class="dd-btnrow">' +
         (here.kind !== "file" && !dd.env.isPhone && dd.pair ? '<button class="dd-btn ghost" data-phone>📲 Send to my phone</button>' : "") +
         (here.kind !== "file" && dd.env.isPhone && !dd.env.isStandalone && dd.setup && dd.setup.showHomeScreen ? '<button class="dd-btn ghost" data-homescreen>Add to Home Screen</button>' : "") +
