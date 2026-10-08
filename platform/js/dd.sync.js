@@ -557,7 +557,8 @@
   function paint() {
     var slot = document.getElementById("dd-top-slot"); if (!slot) return;
     var chip = document.getElementById("dd-sync-chip");
-    if (state === "off" && !wasOn()) { if (chip) chip.remove(); return; }
+    // Always shown, "Sync off" too (audit 2026-10-08, #17): the off state is a fact the buyer
+    // should see, and tapping it explains sync and offers to set it up.
     if (!chip) {
       chip = document.createElement("button"); chip.id = "dd-sync-chip"; chip.className = "dd-sync-chip";
       chip.addEventListener("click", function () { sync.openSheet(); });
@@ -575,7 +576,7 @@
     if (state === "on") return { kind: "wait", short: "Offline", long: "Can't reach your database right now. Your changes are kept here and go across when you're back online." };
     if (state === "newer") { var n = dd.errors.friendly("sync_newer"); return { kind: "bad", short: "Update needed", long: n.title + " " + n.help }; }
     if (state === "problem") { var f = dd.errors.friendly(problem, { company: "Firebase" }); return { kind: "bad", short: "Not syncing", long: f.title + " " + f.help }; }
-    return { kind: "off", short: "Sync off", long: "Live sync is off on this device." };
+    return { kind: "off", short: "Sync off", long: "Live sync is off, so changes made here stay on this device. Tap to set it up." };
   };
 
   /* The sheet behind the chip (also Setup step 4's "Change"). */

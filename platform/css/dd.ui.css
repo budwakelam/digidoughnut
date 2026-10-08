@@ -69,6 +69,9 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
 .dd-qr svg{display:block;max-width:100%;height:auto}
 .dd-qr-timer{text-align:center;font-size:.85rem;color:var(--dd-muted);margin:4px 0 10px}
 .dd-qr-expired{padding:40px 10px;text-align:center}
+.dd-qr-inline{margin:0;padding:10px}
+.dd-qr-inline .dd-qr-expired{min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--dd-muted)}
+.dd-qr-file{margin:0 0 10px}
 .dd-check{display:flex;gap:8px;align-items:flex-start;font-size:.92rem;margin:6px 0}
 .dd-check input{width:20px;height:20px;margin-top:2px;accent-color:var(--dd-brand)}
 
@@ -304,6 +307,15 @@ body.dd-has-side{padding-right:360px}
                background:var(--dd-brand);color:#fff;border:none;border-radius:99px;padding:12px 18px;font:inherit;font-weight:700;cursor:pointer;
                min-height:48px;box-shadow:0 6px 18px rgba(0,0,0,.25)}
 .dd-helper-fab[hidden]{display:none}
+.dd-helper-fab .dd-helper-fab-face{font-size:1.2rem;line-height:1}
+.dd-helper-fab-alert::after{content:"";position:absolute;top:2px;right:2px;width:12px;height:12px;border-radius:50%;background:#ef4444;border:2px solid #fff}
+.dd-helper-bubble .dd-helper-head{padding-bottom:6px;border-bottom:1px solid var(--dd-line)}
+/* Phones: the bubble opens as a sheet from the bottom edge (audit 2026-10-08, #8). */
+@media (max-width:640px){
+  .dd-helper-bubble{left:0;right:0;bottom:0;width:auto;height:min(78vh,620px);border-radius:18px 18px 0 0;
+                    padding-bottom:calc(14px + var(--dd-host-bottom,0px) + env(safe-area-inset-bottom));box-shadow:0 -10px 40px rgba(0,0,0,.28)}
+  .dd-helper-fab{padding:11px 16px}
+}
 
 /* ===== live sync chip (dd.sync) + "Your data" sheet (dd.backup) ===== */
 .dd-sync-chip{display:inline-flex;align-items:center;gap:6px;background:var(--dd-card);border:1px solid var(--dd-line);border-radius:99px;padding:5px 11px;

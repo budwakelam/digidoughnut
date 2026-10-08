@@ -90,7 +90,7 @@
       if (mode === "bubble") {
         fab = document.createElement("button");
         fab.id = "dd-helper-fab"; fab.className = "dd-helper-fab";
-        fab.innerHTML = '<span aria-hidden="true">' + esc(cfg.face) + '</span> Ask ' + esc(helper.name());
+        fab.innerHTML = '<span class="dd-helper-fab-face" aria-hidden="true">' + esc(cfg.face) + '</span> Ask ' + esc(helper.name());
         fab.addEventListener("click", function () { helper.open(); });
         document.body.appendChild(fab);
       }
@@ -107,11 +107,18 @@
     if (mode === "inline") try { root.scrollIntoView({ block: "nearest", behavior: "smooth" }); } catch (e) {}
     var i = root.querySelector(".dd-helper-in"); if (i && !dd.env.isPhone) i.focus();
   };
-  function closeBubble() { if (!root) return; root.classList.remove("open"); var f = document.getElementById("dd-helper-fab"); if (f) f.hidden = false; }
+  function closeBubble() { if (!root) return; root.classList.remove("open"); var f = document.getElementById("dd-helper-fab"); if (f) { f.hidden = false; try { f.focus({ preventScroll: true }); } catch (e) {} } }
+  helper.close = closeBubble;
+  // Esc closes the bubble panel (a sheet on top of it handles Esc itself).
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && mode === "bubble" && root && root.classList.contains("open") && !document.querySelector(".dd-overlay")) closeBubble();
+  });
 
   /* ---------- drawing ---------- */
   function paint() {
     if (!root) return;
+    var fab = document.getElementById("dd-helper-fab");
+    if (fab) fab.classList.toggle("dd-helper-fab-alert", waitingAsks().length > 0);
     var name = helper.name(), live = dd.ai && dd.ai.hasCode();
     var keep = root.querySelector(".dd-helper-in"), typed = keep ? keep.value : "";
     root.innerHTML =
@@ -151,7 +158,7 @@
   function bubble(box, m) {
     var el = document.createElement("div");
     el.className = "dd-helper-msg " + m.who;
-    var t = document.createElement("div"); t.className = "dd-helper-text"; t.textContent = m.text; el.appendChild(t);
+    var t = document.createElement("div"); t.className = "dd-helper-text"; t.textContent = m.who === "me" ? m.text : dd.ui.plain(m.text); el.appendChild(t);
     if (m.help) { var h = document.createElement("div"); h.className = "dd-helper-help"; h.textContent = m.help; el.appendChild(h); }
     var row = document.createElement("div"); row.className = "dd-helper-acts";
     function btn(label, cls, fn) { var b = document.createElement("button"); b.className = "dd-btn small " + (cls || "ghost"); b.textContent = label; b.addEventListener("click", fn); row.appendChild(b); return b; }
@@ -391,7 +398,7 @@
   // The helper is part of the app, so it sits with the program's own menu items.
   if (dd.menu) dd.menu.add({ id: "helper", icon: "💬", group: "app", order: 50,
     get label() { return "Ask " + helper.name(); },
-    show: function () { return helper.enabled(); }, note: function () { return "Your AI helper"; },
+    show: function () { return helper.enabled() && mode !== "bubble"; }, note: function () { return "Your AI helper"; },
     run: function () { helper.open(); } });
 
   if (dd.diag) dd.diag.addSection("Helper", function () {

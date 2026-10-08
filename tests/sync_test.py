@@ -93,7 +93,7 @@ with sync_playwright() as p:
     check("merge: keeps my edit and my delete, takes their edit and their new item", m.get("lists/l/items/a") == '"A2"' and "lists/l/items/b" not in m and m.get("fields/x") == "2" and m.get("lists/l/items/c") == '"C"', m)
     m = page.evaluate("() => dd.sync.merge(null, {'lists/l/items/a': '1', 'lists/l/items/m': '9', 'lists/l/order': 'o:a,m'}, {'lists/l/items/a': '2', 'lists/l/items/r': '5', 'lists/l/order': 'o:r,a'})")
     check("first join: union by id, database wins the same id, my extras go last", m == {"lists/l/items/a": "2", "lists/l/items/m": "9", "lists/l/items/r": "5", "lists/l/order": "o:r,a,m"}, m)
-    check("no sync chip while sync has never been on", chip(page) == "")
+    check("the chip says Sync off while sync has never been on", chip(page) == "Sync off")
     ctx.close()
 
     # ------------------------------------------------------------------

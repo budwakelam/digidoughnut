@@ -148,6 +148,60 @@
     }
   };
 
+  /* ---------- the same QR, drawn right on the page (audit 2026-10-08, #4) ----------
+     pair.inline(el, {size}) fills `el` with a big QR, its timer and the access-code switch. The code
+     is only made once the box is on screen, a used-up code is replaced the next time it scrolls into
+     view, and a change to the data makes a fresh one (the old square would carry old numbers).
+     Programs never call this on a phone: scanning your own screen makes no sense. */
+  pair.inline = function (el, opts) {
+    opts = opts || {};
+    if (!el) return null;
+    if (dd.env.isFile) {
+      el.innerHTML = '<p class="dd-qr-file">Your phone can\'t open a file that lives on this computer. Put the program online first, then open it from its web address: the code to scan shows up right here.</p>' +
+        (dd.move ? '<button class="dd-btn small" data-where>🏠 Put it online</button>' : "");
+      var w = el.querySelector("[data-where]"); if (w) w.addEventListener("click", function () { dd.move.where(); });
+      return null;
+    }
+    var hasCode = dd.ai && dd.ai.hasCode(), made = null, t = null, again = null, seen = false;
+    el.innerHTML = '<div class="dd-qr dd-qr-inline" data-qr></div><p class="dd-qr-timer" data-timer></p>' +
+      (hasCode ? '<label class="dd-check"><input type="checkbox" data-code checked> Include my free access code</label>' : "") +
+      '<p class="dd-note" data-left></p>';
+    var q = function (s) { return el.querySelector(s); }, box = q("[data-code]");
+    function draw() {
+      if (!document.body.contains(el)) { clearInterval(t); return; }
+      var include = box ? box.checked : false;
+      made = pair.makeLink({ includeCode: include });
+      q("[data-qr]").innerHTML = pair.qrSvg(made.link, opts.size || 260).svg;
+      q("[data-left]").textContent = pair.whatTravels(made) + (include ? " The square holds your access code: only scan it with your own phone." : "");
+      clearInterval(t);
+      var tick = function () {
+        if (!document.body.contains(el)) { clearInterval(t); return; }
+        var s = Math.round((made.expiresAt - Date.now()) / 1000);
+        if (s <= 0) {
+          clearInterval(t); made = null;
+          q("[data-qr]").innerHTML = '<div class="dd-qr-expired">This code timed out.<br><button class="dd-btn small" data-again>Show a new code</button></div>';
+          q("[data-qr] [data-again]").addEventListener("click", draw);
+          q("[data-timer]").textContent = "";
+          return;
+        }
+        q("[data-timer]").textContent = "Works for " + Math.floor(s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60) + " more.";
+      };
+      tick(); t = setInterval(tick, 1000);
+    }
+    if (box) box.addEventListener("change", draw);
+    function show() { seen = true; if (!made) draw(); }
+    if (window.IntersectionObserver) {
+      var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) show(); }); });
+      io.observe(el);
+    } else show();
+    if (!seen) q("[data-qr]").innerHTML = '<div class="dd-qr-expired">…</div>';
+    dd.on("change", function (ev) {
+      if (!made || !document.body.contains(el) || (ev && ev.source === "sync")) return;
+      clearTimeout(again); again = setTimeout(draw, 1200);
+    });
+    return { redraw: draw };
+  };
+
   /* One plain sentence: what this square carries, and what stays behind and why.
      Oran (2026-10-07): buyers expect their numbers to come along, so always say. */
   pair.whatTravels = function (made) {

@@ -149,7 +149,7 @@
       '<span>' + (dd.env.isPhone ? "" : "or ") + '<button class="dd-btn small" data-pick>Choose a file</button></span></div>' +
       '<div class="dd-status" id="dd-drop-status"></div>' +
       (c.howTo ? '<div class="dd-drop-how">' + c.howTo + '</div>' : "") +
-      '<p class="dd-note">The file is read on this device only. Nothing is uploaded.</p>' +
+      '<p class="dd-note">Your file never leaves this device: it is read right here and nothing is uploaded.</p>' +
       '<div class="dd-btnrow"><button class="dd-btn ghost" data-close>Close</button></div>', { sticky: true });
     var go = function (f) {
       if (!f) return;
@@ -182,7 +182,7 @@
 
   if (dd.menu) dd.menu.add({ id: "file", icon: "📂", group: "app", order: 40,
     get label() { return "Add " + files.label(); },
-    show: function () { return files.enabled(); }, note: function () { return "Read on this device only"; },
+    show: function () { return files.enabled(); }, note: function () { return "Your file never leaves this device"; },
     run: function () { files.open(); } });
 
   if (dd.diag) dd.diag.addSection("Files", function () {

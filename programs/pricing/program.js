@@ -112,7 +112,7 @@ const DD_PROGRAM = {
   id: "pricing",
   name: "Price Pilot",
   tagline: "Etsy pricing & profit, with an AI helper",
-  version: "0.1.0",
+  version: "0.2.0",
   schemaVersion: 1,
   accent: "#c2410c",
   dataLabel: "shop numbers",
@@ -210,9 +210,10 @@ const DD_PROGRAM = {
 
   helper: {
     name: "Margo", face: "🧮", role: "your pricing helper",
-    greeting: "Hi, I'm Margo! I can run this whole page for you. Try: \"Price my mug so I make $20 on each one\", \"Add a product: soap bar, $3 materials, 10 minutes\" or \"What did I sell most last month?\". You can undo anything I change.",
-    place: { computer: "side", phone: "inline" },
-    slot: "ppHelper"
+    // One line: the suggestion chips under it teach by example (audit 2026-10-08, #9).
+    greeting: "Hi, I'm Margo. Tell me what to price, add or compare, and I'll do it. You can undo anything I change.",
+    // A corner button on every screen; on phones it opens as a sheet from the bottom (#8).
+    place: "bubble"
   },
 
   files: {
@@ -233,6 +234,7 @@ const DD_PROGRAM = {
     "(5) 'My shop & Etsy's fees': the country their Etsy payment account is in (sets currency and fees), whether most buyers are in another country, whether the shop sold over US$10,000 in the last year (offsite ads 12% instead of 15%), whether Etsy charges them GST/VAT on its fees, default hourly rate, monthly income goal, and each fee rate (all fixable by hand). " +
     "Etsy fees used: listing fee US$0.20 per sale (it renews when it sells), transaction fee 6.5% of item price plus shipping, payment processing (percent plus a fixed amount, by country), offsite ads 15% or 12% capped at US$100 per order when a sale comes from an Etsy ad on another site, a regulatory operating fee in some countries, and GST/VAT on the fees. Rates were checked on " + PP_CHECKED + "; Etsy can change them. " +
     "To get an Etsy download: Shop Manager → Settings → Options → Download Data (Order Items or Orders), or Shop Manager → Finances → Monthly statements → Download CSV. " +
+    "Never show the person an id (like 'ex-mug' or 'p1a2b…'): call things by their names. " +
     "RULES FOR NUMBERS: never work out prices, fees or profit yourself. Use price_for_goal to set a price for a target, explain_price for a breakdown or a what-if, compare_scenarios to compare, sales_report for sales questions, and quote their numbers exactly. " +
     "If the person names a product loosely ('my mug'), use the matching product. If they want a new product, add it with whatever numbers they gave; missing costs can stay 0 and you can ask about them after. " +
     "Sending the program to a phone, live sync, backups and the free access code are in the menu under Settings.",
@@ -308,7 +310,7 @@ DD_PROGRAM.tools = [
       ctx.update(function (d) { d.products.push(p); });
       ppSel = p.id;
       var c = ppCalc(p, dd.getData().settings);
-      return { ok: true, message: "Added '" + p.name + "' (id " + p.id + "). At " + ppMoney(p.price, dd.getData().settings) + " it makes " + ppMoney(c.profit, dd.getData().settings) + " profit per sale." };
+      return { ok: true, message: "Added '" + p.name + "'. At " + ppMoney(p.price, dd.getData().settings) + " it makes " + ppMoney(c.profit, dd.getData().settings) + " profit per sale." };
     } },
   { name: "update_product", description: "Change a product's name, price, costs, photo link or notes. Only the fields given change.",
     params: { product: { type: "string", description: "The product's id (best) or its name" },
@@ -553,7 +555,10 @@ function ppReport(d, month) {
     orders: { count: orders.length, value: tot(orders, "value"), shipping: tot(orders, "shipping"), discount: tot(orders, "discount"), procFee: tot(orders, "procFee"), net: tot(orders, "net") }
   };
 }
-var PP_CHARGES = ["Transaction fees", "Processing fees", "Listing fees", "Offsite ads", "Etsy Ads", "Regulatory fees", "Shipping labels", "Tax on fees", "Other fees"];
+var PP_CHARGES = ["Transaction fees", "Processing fees", "Listing fees", "Offsite ads", "Etsy Ads", "Regulatory fees", "Tax on fees", "Other fees"];
+/* Shipping labels are postage bought through Etsy, not an Etsy fee: shown on their own so the
+   "% of sales" line only counts what Etsy keeps (audit 2026-10-08, #13). */
+var PP_POSTAGE = "Shipping labels";
 function ppReportText(d, month) {
   var s = d.settings, r = ppReport(d, month), m = function (n) { return ppMoney(n, s); }, out = [];
   if (r.count) {
@@ -569,8 +574,9 @@ function ppReportText(d, month) {
   if (charged.length) {
     var total = charged.reduce(function (n, k) { return n + r.fees[k]; }, 0);
     out.push("Etsy statement" + (month ? "" : " (" + r.feeMonths.join(", ") + ")") + ": " + charged.map(function (k) { return k.toLowerCase() + " " + m(r.fees[k]); }).join(", ") +
-      ". Total charged " + m(total) + (r.fees.Sales ? " on " + m(r.fees.Sales) + " of sales (" + ppPct(total / r.fees.Sales * 100) + ")" : "") + ".");
+      ". Etsy's fees total " + m(total) + (r.fees.Sales ? " on " + m(r.fees.Sales) + " of sales (" + ppPct(total / r.fees.Sales * 100) + ")" : "") + ".");
   }
+  if (r.fees[PP_POSTAGE]) out.push("Shipping labels bought through Etsy (postage, not an Etsy fee): " + m(r.fees[PP_POSTAGE]) + ".");
   return out.join(" ") || "Nothing added for that month.";
 }
 
@@ -708,6 +714,13 @@ var PP_INPUTS = [
   ["ppMinutes", "minutes"], ["ppHourly", "hourly"], ["ppPackaging", "packaging"], ["ppShipCost", "shipCost"],
   ["ppPhoto", "photo", "text"], ["ppNotes", "notes", "text"]
 ];
+/* Only scroll when the calculator's top isn't already comfortably on screen: on a computer it sits
+   right under the products, and jumping the page on every click is disorienting. */
+function ppScrollIfHidden(id) {
+  var el = document.getElementById(id); if (!el) return;
+  var top = el.getBoundingClientRect().top;
+  if (top < 60 || top > window.innerHeight * 0.55) ppScrollTo(id);
+}
 function ppScrollTo(id) { var el = document.getElementById(id); if (el) try { el.scrollIntoView({ block: "start", behavior: "smooth" }); } catch (e) {} }
 function ppSelected(d) {
   var p = d.products.filter(function (x) { return x.id === ppSel; })[0];
@@ -739,7 +752,6 @@ function ppMount(ctx) {
       dd.update(function (d) { var q = d.products.filter(function (x) { return x.id === id; })[0]; if (q) q[f[1]] = v; });
     });
   });
-  $("ppPick").addEventListener("change", function (e) { ppSel = e.target.value; ppWhatIf = { discount: 0, ad: false }; ppRender(dd.ctx()); });
   $("ppNew").addEventListener("click", function () { ppNewProduct(dd.ctx()); });
   $("ppNew2").addEventListener("click", function () { ppNewProduct(dd.ctx()); });
   $("ppDelete").addEventListener("click", function () {
@@ -768,16 +780,16 @@ function ppMount(ctx) {
   $("ppGoal").addEventListener("input", function (e) { var n = parseFloat(e.target.value); if (isFinite(n) && n >= 0) dd.update(function (d) { d.settings.goal = Math.round(n * 100) / 100; }); });
   $("ppShopBtn").addEventListener("click", ppOpenShop);
   $("ppAddFile").addEventListener("click", function () { dd.files.open(); });
-  $("ppPhone").addEventListener("click", function () { dd.pair.open(); });
   dd.files.dropZone($("ppSalesDrop"));
+  ppPhoneCard(ctx);
+  dd.on("sync:changed", function () { ppPhoneCard(dd.ctx()); });
 }
 
 function ppRender(ctx) {
   var d = ctx.data, s = d.settings, $ = ctx.ui.$, esc = ctx.ui.esc, m = function (n) { return ppMoney(n, s); };
   var p = ppSelected(d), R = ppRates(s);
-  // product picker
-  $("ppPick").innerHTML = d.products.map(function (x) { return '<option value="' + esc(x.id) + '"' + (p && x.id === p.id ? " selected" : "") + ">" + esc(x.name) + "</option>"; }).join("");
-  $("ppEmpty").hidden = !!p; $("ppForm").hidden = !p; $("ppPickRow").hidden = !p;
+  // No products yet: the products card says how to start, and the calculator and what-ifs wait.
+  $("ppEmpty").hidden = !!p; $("ppCalcCard").hidden = !p; $("ppScCard").hidden = !p;
   $("ppShopLine").textContent = "Selling from " + R.c.label + " · " + R.c.cur + " · fees checked " + PP_CHECKED;
   $("ppCurr").textContent = "(" + R.c.cur + ")";
   document.querySelectorAll(".pp-sym").forEach(function (el) { el.textContent = R.c.sym; });
@@ -820,7 +832,9 @@ function ppRender(ctx) {
     if ($("ppGoal") !== active) $("ppGoal").value = String(s.goal);
     $("ppNeed").innerHTML = need ? "<b>" + need + "</b> sales a month (about " + Math.ceil(need / 4.33) + " a week)" : "<b>Not reachable</b> until each sale makes a profit";
     var t = parseFloat($("ppTarget").value), tp = isFinite(t) ? c.priceFor(t, false) : null;
-    $("ppTargetOut").textContent = isFinite(t) ? (tp == null ? "Not possible" : "Price it at " + m(tp)) : "";
+    // Empty box: say what it does, so it's clear before anything is typed (audit #16).
+    $("ppTargetOut").innerHTML = isFinite(t) ? (tp == null ? "<b>Not possible</b> after Etsy's fees" : Math.abs(tp - p.price) < 0.005 ? "Your price already does that" : "Price it at <b>" + m(tp) + "</b>")
+                                             : '<span class="pp-hint">Type a profit to see the price that gets it</span>';
     $("ppUseTarget").hidden = !(isFinite(t) && tp != null && Math.abs(tp - p.price) >= 0.005);
     ppRenderScenarios(ctx, p);
   }
@@ -831,7 +845,7 @@ function ppRender(ctx) {
 function ppRenderProducts(ctx) {
   var d = ctx.data, s = d.settings, esc = ctx.ui.esc, box = ctx.ui.$("ppProducts");
   ctx.ui.$("ppProdCount").textContent = d.products.length ? d.products.length + (d.products.length === 1 ? " product" : " products") : "";
-  if (!d.products.length) { box.innerHTML = '<p class="dd-note">No products yet. Add one, or ask Margo: "Add a product: tote bag, $14 materials, 40 minutes".</p>'; return; }
+  if (!d.products.length) { box.innerHTML = ""; return; }
   box.innerHTML = '<div class="pp-plist">' + d.products.map(function (p) {
     var c = ppCalc(p, s);
     return '<button class="pp-prow' + (p.id === ppSel ? " on" : "") + '" data-p="' + esc(p.id) + '">' +
@@ -840,7 +854,7 @@ function ppRenderProducts(ctx) {
       '<span class="pp-pprofit ' + (c.profit > 0 ? "pp-good" : "pp-bad-text") + '">' + ppMoney(c.profit, s) + '<small>' + ppPct(c.margin) + '</small></span></button>';
   }).join("") + '</div>';
   box.querySelectorAll("[data-p]").forEach(function (b) {
-    b.addEventListener("click", function () { ppSel = b.getAttribute("data-p"); ppWhatIf = { discount: 0, ad: false }; ppRender(dd.ctx()); ppScrollTo("ppCalcCard"); });
+    b.addEventListener("click", function () { ppSel = b.getAttribute("data-p"); ppWhatIf = { discount: 0, ad: false }; ppRender(dd.ctx()); ppScrollIfHidden("ppCalcCard"); });
   });
 }
 
@@ -903,10 +917,11 @@ function ppRenderSales(ctx) {
     var total = charged.reduce(function (n, k) { return n + r.fees[k]; }, 0);
     html += '<h3 class="pp-h3">What Etsy charged <small>(' + esc(r.feeMonths.join(", ")) + ')</small></h3><table class="pp-table">' +
       charged.map(function (k) { return '<tr><td>' + esc(k) + '</td><td>' + m(r.fees[k]) + '</td></tr>'; }).join("") +
-      '<tr class="pp-sub"><td>Total' + (r.fees.Sales ? ' <small>' + ppPct(total / r.fees.Sales * 100) + ' of ' + m(r.fees.Sales) + ' sales</small>' : "") + '</td><td>' + m(total) + '</td></tr></table>';
+      '<tr class="pp-sub"><td>Etsy\'s fees' + (r.fees.Sales ? ' <small>' + ppPct(total / r.fees.Sales * 100) + ' of ' + m(r.fees.Sales) + ' sales</small>' : "") + '</td><td>' + m(total) + '</td></tr></table>';
   }
+  if (r.fees[PP_POSTAGE]) html += '<table class="pp-table pp-postage"><tr><td>Shipping labels <small>Postage you bought through Etsy. Not a fee, so it isn\'t in the total above.</small></td><td>' + m(r.fees[PP_POSTAGE]) + '</td></tr></table>';
   if (r.orders.count) html += '<p class="dd-note">Orders file: ' + r.orders.count + ' orders · ' + m(r.orders.shipping) + ' shipping charged · ' + m(r.orders.discount) + ' discounts · ' + m(r.orders.procFee) + ' processing fees.</p>';
-  html += '<div class="dd-btnrow"><button class="dd-btn ghost small" id="ppAddFile2">📂 Add another download</button><button class="dd-linkbtn" id="ppClearSales">Remove added sales</button></div>';
+  html += '<div class="pp-salesfoot"><button class="dd-btn ghost small" id="ppAddFile2">📂 Add another download</button><button class="dd-linkbtn pp-quiet" id="ppClearSales">Remove added sales…</button></div>';
   $("ppSalesBody").innerHTML = html;
   $("ppAddFile2").addEventListener("click", function () { dd.files.open(); });
   $("ppClearSales").addEventListener("click", function () {
@@ -927,6 +942,42 @@ function ppRenderSales(ctx) {
       } else ppLink(dd.ctx(), item.item, sel.value);
     });
   });
+}
+
+/* The phone card (audit 2026-10-08, #4-#6, #15).
+   Computers: a big QR to scan, right on the page. Phones: never a QR (you can't scan your own screen);
+   instead, plainly, what happens with sync off, and the Home Screen. Synced phone: nothing to say. */
+var ppQrMounted = false;
+function ppPhoneCard(ctx) {
+  var box = ctx.ui.$("ppPhoneCard"); if (!box) return;
+  var synced = !!(dd.sync && dd.sync.isOn && dd.sync.isOn()), thing = DD_PROGRAM.dataLabel;
+  if (!dd.env.isPhone) {
+    if (ppQrMounted) return;
+    ppQrMounted = true;
+    box.innerHTML = '<div class="pp-phone"><div class="pp-phone-qr" id="ppQr"></div><div class="pp-phone-text">' +
+      '<h2>📲 Use it on your phone</h2>' +
+      '<p class="pp-phone-big">Scan this square with your phone\'s camera, then tap the link that appears.</p>' +
+      '<p>Price Pilot opens on your phone with your ' + ctx.ui.esc(thing) + ' and Margo ready to go. No app store, nothing to install.</p>' +
+      '<p class="dd-note" id="ppPhoneSync"></p></div></div>';
+    dd.pair.inline(ctx.ui.$("ppQr"), { size: 240 });
+    ppPhoneSyncLine(ctx);
+    dd.on("sync:changed", function () { ppPhoneSyncLine(dd.ctx()); });
+    return;
+  }
+  // The Home Screen reminder is the platform's (one dismissible notice), so it isn't repeated here.
+  if (synced) { box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = '<h2>📱 On this phone</h2>' +
+    '<p class="pp-warnline">⚠️ <b>Sync is off</b>, so changes you make on this phone won\'t appear on your computer, and changes on your computer won\'t show up here.</p>' +
+    '<div class="dd-btnrow"><button class="dd-btn small" id="ppSyncOn">Turn on sync</button></div>';
+  ctx.ui.$("ppSyncOn").addEventListener("click", function () { dd.sync.config() ? dd.sync.openSheet() : dd.setup.open("sync"); });
+}
+function ppPhoneSyncLine(ctx) {
+  var el = ctx.ui.$("ppPhoneSync"); if (!el) return;
+  var synced = !!(dd.sync && dd.sync.isOn && dd.sync.isOn());
+  el.innerHTML = synced ? "🔄 Live sync is on: a change on either device shows up on the other."
+    : "Sync is off, so after this your phone and computer each keep their own numbers. <button class=\"dd-linkbtn\" id=\"ppSyncSetup\" style=\"padding:0\">Turn on sync</button> to keep them together.";
+  var b = ctx.ui.$("ppSyncSetup"); if (b) b.addEventListener("click", function () { dd.sync.config() ? dd.sync.openSheet() : dd.setup.open("sync"); });
 }
 
 /* My shop & Etsy's fees: one sheet, everything on it. */

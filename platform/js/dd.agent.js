@@ -255,7 +255,7 @@
   function remember(before, line) {
     if (agent.isAgentDevice()) return;
     if (!undoBefore) undoBefore = before;
-    undoLines.push(line); if (undoLines.length > 3) undoLines.shift();
+    undoLines.push(dd.ui.plain(line)); if (undoLines.length > 3) undoLines.shift();
     dd.ui.notice("agent-undo", "Your AI agent made a change: " + undoLines.join(" · "), "info", [
       { label: "Undo", onClick: function () {
           var b = undoBefore; undoBefore = null; undoLines = []; dd.ui.clearNotice("agent-undo");

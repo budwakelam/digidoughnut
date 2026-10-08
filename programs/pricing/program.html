@@ -1,15 +1,16 @@
 <!-- PROGRAM-SPECIFIC markup for Price Pilot. Goes inside <main id="dd-app">. -->
-<div class="dd-card" id="ppCalcCard">
-  <h2>💲 Price a product</h2>
-  <div class="pp-pickrow" id="ppPickRow">
-    <select class="dd-input" id="ppPick" aria-label="Which product"></select>
-    <button class="dd-btn ghost" id="ppNew">➕ New</button>
-  </div>
+<div class="dd-card" id="ppProdCard">
+  <h2>📦 My products <span class="pp-for" id="ppProdCount"></span><button class="dd-btn small" id="ppNew">➕ New product</button></h2>
   <div id="ppEmpty" class="pp-empty" hidden>
     <p>Add your first product to see every Etsy fee and what you really make.</p>
     <button class="dd-btn" id="ppNew2">➕ Add a product</button>
     <p class="dd-note">Or just tell Margo: "Add a soap bar, $3 materials, 10 minutes, $9 price".</p>
   </div>
+  <div id="ppProducts"></div>
+</div>
+
+<div class="dd-card" id="ppCalcCard">
+  <h2>💲 Price a product</h2>
   <div id="ppForm">
     <div class="pp-namerow">
       <img id="ppImg" class="pp-photo" alt="" referrerpolicy="no-referrer" hidden onerror="this.hidden=true">
@@ -43,8 +44,8 @@
         <div class="pp-facts">
           <div><span>Break-even price</span><b id="ppBreakEven"></b></div>
           <div><span>To make <span class="pp-inline"><span class="pp-sym"></span><input class="dd-input pp-mini" id="ppGoal" inputmode="decimal" aria-label="Monthly goal"></span> a month</span><span id="ppNeed"></span></div>
-          <div><span>Profit I want per sale <span class="pp-inline"><span class="pp-sym"></span><input class="dd-input pp-mini" id="ppTarget" inputmode="decimal" aria-label="Profit wanted per sale"></span></span>
-               <span><b id="ppTargetOut"></b> <button class="dd-btn small" id="ppUseTarget" hidden>Use this price</button></span></div>
+          <div class="pp-target"><span>Profit I want per sale <span class="pp-inline"><span class="pp-sym"></span><input class="dd-input pp-mini" id="ppTarget" inputmode="decimal" placeholder="e.g. 20" aria-label="Profit wanted per sale"></span></span>
+               <span class="pp-target-out"><span id="ppTargetOut"></span> <button class="dd-btn small" id="ppUseTarget" hidden>Set this price</button></span></div>
         </div>
       </div>
     </div>
@@ -71,16 +72,9 @@
   </div>
 </div>
 
-<div id="ppHelper"></div>   <!-- Margo sits here on phones -->
-
-<div class="dd-card">
+<div class="dd-card" id="ppScCard">
   <h2>🧪 What-ifs <span class="pp-for" id="ppScFor"></span></h2>
   <div id="ppScenarios"></div>
-</div>
-
-<div class="dd-card">
-  <h2>📦 My products <span class="pp-for" id="ppProdCount"></span></h2>
-  <div id="ppProducts"></div>
 </div>
 
 <div class="dd-card" id="ppSalesCard">
@@ -91,11 +85,10 @@
       <b>See what really sold, and what Etsy really took</b>
       <span>Drop an Etsy download here, or <button class="dd-btn small" id="ppAddFile">Add an Etsy download</button></span>
     </div>
-    <p class="dd-note">Read on this device only. Names and addresses in the file are skipped.</p>
+    <p class="dd-note">Your file never leaves this device. Names and addresses in it are skipped.</p>
   </div>
   <div id="ppSalesBody" hidden></div>
 </div>
 
-<div class="dd-card pp-phonecard">
-  <p class="dd-note" style="margin:0">Your shop numbers are saved in this browser. <button class="dd-linkbtn" id="ppPhone">📲 Send to my phone</button></p>
-</div>
+<!-- Computers: a QR code to scan. Phones: what sync and the Home Screen mean here. -->
+<div class="dd-card pp-phonecard" id="ppPhoneCard"></div>

@@ -163,6 +163,11 @@
   };
 
   /* ---------- formatting helpers ---------- */
+  /* Internal ids mean nothing to a buyer ("Added 'Mug' (id pmuztcfz99…)", audit 2026-10-08 #11).
+     Text written for the AI or an agent may carry them; take them out before a buyer sees it. */
+  ui.plain = function (text) {
+    return String(text == null ? "" : text).replace(/\s*\((?:id|ID|Id)\s*[:=]?\s*[A-Za-z0-9_-]{3,}\)/g, "");
+  };
   ui.money = function (n) {
     n = Number(n) || 0;
     return (n < 0 ? "-$" : "$") + Math.abs(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");

@@ -443,3 +443,25 @@ yes. 4 AI companies at launch: Google, Groq, OpenRouter, OpenAI, Anthropic. (5 a
     example mode" makes a new object; it only showed once aitest was rebuilt.
   - Suites: platform 134 · ai 61 · setup 190 · helper 81 · sync 109 · agent 91 · move 108 · pair 22 ·
     **pricing 89**. pair: `QR_DECODER=/path/qr.js` (the test runs `node` itself).
+- Oran (10:56, 10-08): **Price Pilot UI pass** from the layout audit (price-pilot-layout-audit-2026-10-08.md). Price Pilot 0.2.0.
+  - Page order: **My products → Price a product → What-ifs → My Etsy sales → phone**. The product dropdown is gone; the
+    products card (a grid on computers) is the navigation, with ➕ New product in its header and the empty state.
+    Calculator + what-ifs hide until there's a product. Clicking a product only scrolls when the calculator is off screen.
+  - Desktop measure 1000 px (program CSS overrides `.dd-wrap`/`.dd-footer`).
+  - Margo is `place: "bubble"`: corner "🧮 Ask Margo" button, panel on computers, **bottom sheet on phones** (platform CSS,
+    max-width 640). Esc closes it; the button gets a red dot while the AI agent waits for a Yes. "Ask <helper>" leaves the
+    menu in bubble mode. Greeting is one line; the chips teach.
+  - Phone card: computers get a **big QR right on the page** (new `dd.pair.inline(el, {size})`: made when scrolled into
+    view, redrawn 1.2 s after a data change, "Show a new code" after 10 min; a file copy gets "Put it online" instead).
+    Phones never see a QR: unsynced phones get "Sync is off, so changes on this phone won't appear on your computer" +
+    Turn on sync; synced phones see nothing.
+  - Platform `dd.setup.homeNudge()`: one dismissible "Add to Home Screen" notice on a phone browser tab once the buyer has
+    their own data and sync is off (iPhone text: can clear saved data after ~7 days). "Not now" = never again.
+  - Sync chip always shows, **"Sync off"** included (tap → sync sheet / setup). sync_test updated.
+  - `dd.ui.plain(text)` strips "(id …)" from buyer-facing text: the agent's change notice and Margo's replies. add_product's
+    message no longer carries the id; Margo is told never to show ids.
+  - Sales: "Shipping labels" are shown apart from Etsy's fees (postage, not a fee), so "% of sales" only counts fees
+    (example: 20% instead of 34.3%). "Remove added sales…" is a quiet grey link. "Your file never leaves this device."
+  - "Profit I want per sale": "e.g. 20" placeholder, a hint until something's typed, button "Set this price".
+  - Duplicate "saved in this browser" line removed (footer keeps it).
+  - Suites: platform 134 · ai 61 · setup 190 · helper 81 · sync 109 · agent 91 · move 108 · pair 22 · **pricing 105**.

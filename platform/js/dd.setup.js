@@ -967,13 +967,29 @@
     var s = state(); s.homeShown = Date.now(); saveState(s);
   };
   function needsHomeScreen() { return dd.env.isPhone && dd.env.isHosted && !dd.env.isStandalone; }
+  setup.needsHomeScreen = needsHomeScreen;
+
+  /* One dismissible reminder on a phone browser tab, once the buyer has numbers of their own and
+     live sync isn't keeping a copy (audit 2026-10-08, #7). Not now = never again on this phone. */
+  setup.homeNudge = function () {
+    if (!program || !needsHomeScreen() || dd.isExample() || (dd.sync && dd.sync.isOn && dd.sync.isOn())) { dd.ui.clearNotice("home"); return; }
+    var st = state(); if (st.homeShown || st.homeNudgeOff) return;
+    var thing = program.dataLabel || "numbers";
+    dd.ui.notice("home", "Add " + program.name + " to your Home Screen so your " + thing + (/s$/.test(thing) ? " don't" : " doesn't") + " get cleared." +
+      (dd.env.isIOS ? " An iPhone can clear a website's saved data if you don't open it for about 7 days. Home Screen apps are kept." : " It also opens like an app."), "info", [
+      { label: "Show me how", primary: true, onClick: function () { dd.ui.clearNotice("home"); setup.showHomeScreen(); } },
+      { label: "Not now", onClick: function () { var s = state(); s.homeNudgeOff = Date.now(); saveState(s); dd.ui.clearNotice("home"); } }
+    ]);
+  };
 
   /* ---------- start ---------- */
   setup.start = function (p) {
     program = p;
     setup.paint();
     dd.on("ai:changed", setup.paint);
-    dd.on("sync:changed", setup.paint);
+    dd.on("sync:changed", function () { setup.paint(); setup.homeNudge(); });
+    dd.on("ready", function () { setTimeout(setup.homeNudge, 1500); });
+    dd.on("change", function (ev) { if (ev && ev.source !== "sync") setup.homeNudge(); });
     dd.on("pair:received", function (ev) {
       setup.paint();
       // Just arrived on the phone by QR: the best moment to add it to the Home Screen.
