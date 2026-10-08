@@ -55,16 +55,20 @@
     var host = document.getElementById("dd-setup"); if (!host || !program) return;
     var st = state(), n = setup.doneCount(), total = visibleSteps().length;
     if (dd.menu) dd.menu.refreshDot();
+    // Hidden for good (Oran, 2026-10-08): nothing on the page; Setup stays in Menu → Settings.
+    if (st.hidden) { host.innerHTML = ""; return; }
     if (st.folded || n === total) {
-      host.innerHTML = '<button class="dd-setup-chip" id="dd-setup-chip">' + (n === total ? "✓ All set up" : "Setup: " + n + " of " + total + " done") + '</button>';
+      host.innerHTML = '<span class="dd-setup-chipwrap"><button class="dd-setup-chip" id="dd-setup-chip">' + (n === total ? "✓ All set up" : "Setup: " + n + " of " + total + " done") + '</button>' +
+        '<button class="dd-setup-chip-x" id="dd-setup-hide" aria-label="Hide the setup reminder" title="Hide the setup reminder">✕</button></span>';
       document.getElementById("dd-setup-chip").addEventListener("click", function () { var s = state(); s.folded = false; saveState(s); setup.paint(); });
+      document.getElementById("dd-setup-hide").addEventListener("click", setup.askHide);
       return;
     }
     host.innerHTML = '<div class="dd-card dd-setup-card"><h2>Set up ' + esc(program.name) + ' <span class="dd-setup-count">' + n + ' of ' + total + ' done</span></h2>' +
       '<p class="dd-note" style="margin:0 0 8px">Each step is optional. Do them in any order, any time.</p><ol class="dd-steps">' + stepRows() + '</ol>' +
-      '<div class="dd-btnrow"><button class="dd-linkbtn" id="dd-setup-fold">Hide this for now</button></div></div>';
+      '<div class="dd-btnrow"><button class="dd-linkbtn" id="dd-setup-fold">Hide setup</button></div></div>';
     wireSteps(host);
-    document.getElementById("dd-setup-fold").addEventListener("click", function () { var s = state(); s.folded = true; saveState(s); setup.paint(); });
+    document.getElementById("dd-setup-fold").addEventListener("click", setup.askHide);
   };
 
   function stepRows() {
@@ -96,6 +100,19 @@
     box.querySelectorAll("[data-start]").forEach(function (b) { b.addEventListener("click", function () { setup.open(b.dataset.start); }); });
   }
 
+  /* "Hide setup reminder?" Asked first, so nobody loses it by accident. */
+  setup.askHide = function () {
+    return dd.ui.confirm("Hide the setup reminder?",
+      "You can open it any time from the main menu: tap " + program.name + " at the top left, then ⚙️ Settings → Setup & connections.",
+      "Hide it", "Keep it").then(function (yes) {
+        if (!yes) return false;
+        var s = state(); s.hidden = true; s.folded = true; saveState(s); setup.paint();
+        dd.ui.toast("Hidden. Setup is in the menu, under Settings.", 3500);
+        return true;
+      });
+  };
+  setup.showReminder = function () { var s = state(); s.hidden = false; s.folded = false; saveState(s); setup.paint(); };
+
   /* The Setup Center as a sheet, from the program menu. Works even after "Hide this for now". */
   setup.openSheet = function () {
     if (!program && dd.getProgram) program = dd.getProgram();
@@ -103,12 +120,12 @@
     var sh = dd.ui.sheet('<h2>⚙️ Setup &amp; connections <span class="dd-setup-count">' + n + ' of ' + total + ' done</span></h2>' +
       '<p class="dd-note" style="margin:0 0 8px">Each step is optional. Do them in any order, any time.</p>' +
       '<ol class="dd-steps">' + stepRows() + '</ol>' +
-      '<div class="dd-btnrow">' + (st.folded && n < total ? '<button class="dd-linkbtn" data-unfold>Show the setup card on the page again</button>' : "") +
+      '<div class="dd-btnrow">' + (st.hidden || (st.folded && n < total) ? '<button class="dd-linkbtn" data-unfold>Show the setup reminder on the page again</button>' : "") +
       '<button class="dd-btn ghost" data-close>Close</button></div>', { sticky: true });
     wireSteps(sh);
     sh.querySelector("[data-close]").addEventListener("click", dd.ui.closeSheet);
     var u = sh.querySelector("[data-unfold]");
-    if (u) u.addEventListener("click", function () { var s = state(); s.folded = false; saveState(s); dd.ui.closeSheet(); setup.paint(); });
+    if (u) u.addEventListener("click", function () { dd.ui.closeSheet(); setup.showReminder(); });
     return sh;
   };
 
@@ -632,7 +649,7 @@
             ? '<li><b>Getting an update?</b> Upload the new file to the same place with the <b>same file name</b>, replacing the old one, so the address stays the same.</li>'
             : '<li><b>Getting an update?</b> Upload the new file to Neocities with the <b>same file name</b>. It replaces the old one and keeps the same address.</li>') +
           '</ul>' +
-          '<p>Last step: in the new tab, tap the program\'s name at the top left (the menu) and tap <b>📲 Send to my phone</b>. On your phone, add it to your Home Screen when it asks.</p>' +
+          '<p>Last step: in the new tab, tap the program\'s name at the top left (the menu), then <b>⚙️ Settings</b> → <b>📲 Send to my phone</b>. On your phone, add it to your Home Screen when it asks.</p>' +
           (svc === "tiiny" ? '<p class="dd-note">You can ignore the small tiiny.host banner on your page.</p>' : ""); },
         nextLabel: "Done" }
     ];

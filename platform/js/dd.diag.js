@@ -72,7 +72,7 @@
     }
   }
 
-  if (dd.menu) dd.menu.add({ id: "help", icon: "🛟", label: "Help & support details", order: 60,
+  if (dd.menu) dd.menu.add({ id: "help", icon: "🛟", label: "Help & support details", order: 60, group: "end",
     note: function () { return "If DigiDoughnut support asks for them"; }, run: function () { diag.open(); } });
 
   /* Three clicks/taps on the footer within 600 ms. */

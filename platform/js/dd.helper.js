@@ -362,6 +362,12 @@
     // Data changed by something else (sync, restore): nothing to redraw in the chat itself.
   };
 
+  // The helper is part of the app, so it sits with the program's own menu items.
+  if (dd.menu) dd.menu.add({ id: "helper", icon: "💬", group: "app", order: 50,
+    get label() { return "Ask " + helper.name(); },
+    show: function () { return helper.enabled(); }, note: function () { return "Your AI helper"; },
+    run: function () { helper.open(); } });
+
   if (dd.diag) dd.diag.addSection("Helper", function () {
     if (!cfg) return ["No helper in this program."];
     var n = Object.keys(undos).length;

@@ -381,3 +381,8 @@ yes. 4 AI companies at launch: Google, Groq, OpenRouter, OpenAI, Anthropic. (5 a
   on that device. Safari also clears a website's storage after 7 days without a visit (not for
   Home Screen apps). Proposed (Oran's call): put the sync address in the backup file so Restore
   reconnects; a "your data is only here" reminder; ask the browser to keep storage (already done).
+- Oran (00:27): hide setup with a popup; platform items are settings, the menu belongs to the app.
+  Built (demo 0.1.6): menu = program items (DD_PROGRAM.menu) + Ask Penny, then ⚙️ Settings ›
+  (Setup, Where it lives, Send to my phone, Backup, Privacy), then Help, About. "Hide setup" asks
+  first, then hides everything; Menu → Settings → Setup brings it back. Print hides the frame.
+  Suites: 110·61·202·79·101·22·91·108.

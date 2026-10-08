@@ -372,3 +372,12 @@ body.dd-has-side{padding-right:360px}
 .dd-bring{display:flex;gap:8px;align-items:flex-start;background:var(--dd-brand-soft);border-radius:10px;padding:10px 12px;margin:0 0 12px;font-size:.92rem}
 .dd-bring input{margin-top:4px;width:18px;height:18px;flex:none}
 .dd-step-warn{display:inline-block;font-style:normal;font-size:.76rem;font-weight:600;color:var(--dd-warn);background:var(--dd-warnbg);border:1px solid var(--dd-warnline);border-radius:999px;padding:0 8px;margin-left:2px}
+
+/* ===== menu groups + hide the setup reminder (Oran, 2026-10-08) ===== */
+.dd-menu-sep{height:1px;background:var(--dd-line);margin:10px 4px}
+.dd-menu-back{padding:4px 0;margin:-6px 0 4px;font-weight:600}
+.dd-setup-chipwrap{display:flex;justify-content:flex-end;align-items:center;gap:2px;margin:0 0 14px}
+.dd-setup-chipwrap .dd-setup-chip{margin:0}
+.dd-setup-chip-x{background:none;border:none;color:var(--dd-muted);font-size:.9rem;width:34px;height:34px;border-radius:50%;cursor:pointer}
+.dd-setup-chip-x:hover{background:var(--dd-brand-soft);color:var(--dd-ink)}
+@media print{.dd-top,.dd-footer,#dd-setup,#dd-notices,#dd-helper-home,#dd-helper-fab,.dd-btnrow,.demo-actions{display:none !important}}

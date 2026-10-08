@@ -49,13 +49,18 @@ def fresh(page, url):
 def mine(page, texts):
     """Give this copy the buyer's own list (not example data)."""
     page.evaluate("""(texts) => dd.replaceData({items: texts.map((t, i) => ({id: 'b' + i, text: t, done: false}))}, {example: false, source: 'test'})""", texts)
+SETTINGS = {"setup", "where", "phone", "backup", "privacy"}
 def menu_labels(page):
     page.click("#dd-menu-btn"); page.wait_for_timeout(100)
-    out = page.locator(".dd-menu-item b").all_inner_texts()
+    top = page.locator(".dd-menu-item b").all_inner_texts()
+    page.click("[data-item=settings]"); page.wait_for_timeout(100)
+    sub = page.locator(".dd-menu-item b").all_inner_texts()
     page.click(".dd-sheet [data-close]")
-    return out
+    return top, sub
 def open_item(page, item):
-    page.click("#dd-menu-btn"); page.click(f"[data-item={item}]"); page.wait_for_timeout(150)
+    page.click("#dd-menu-btn")
+    if item in SETTINGS: page.click("[data-item=settings]")
+    page.click(f"[data-item={item}]"); page.wait_for_timeout(150)
 def new_page(ctx, errors):
     p = ctx.new_page()
     p.on("pageerror", lambda e: errors.append(str(e)))
@@ -77,27 +82,40 @@ def main():
                 box = btn.bounding_box(); vw = page.viewport_size["width"]
                 check("menu button is top-left", box and box["x"] < 40 and box["y"] < 80 and box["x"] + box["width"] < vw * 0.7, str(box))
                 check("button shows the program's name", "Demo List" in btn.inner_text())
-                labels = menu_labels(page)
-                want = ["Setup & connections", "Where it lives"] + ([] if dev_name == "iphone" else ["Send to my phone"]) + \
-                       ["Backup & new versions", "Privacy", "Help & support details", "About"]
-                check("items in the fixed order" + (" (no Send to my phone on a phone)" if dev_name == "iphone" else ""), labels == want, str(labels))
+                top, sub = menu_labels(page)
+                want_top = ["Clear the list", "Print my list", "Ask Penny", "Settings", "Help & support details", "About"]
+                want_sub = ["Setup & connections", "Where it lives"] + ([] if dev_name == "iphone" else ["Send to my phone"]) + ["Backup & new versions", "Privacy"]
+                check("menu: the program's own items first, then Settings, Help, About", top == want_top, str(top))
+                check("Settings holds the platform items" + (" (no Send to my phone on a phone)" if dev_name == "iphone" else ""), sub == want_sub, str(sub))
                 # The menu doesn't close on a stray click (rule 9)
                 page.click("#dd-menu-btn"); page.mouse.click(5, page.viewport_size["height"] - 5); page.wait_for_timeout(100)
-                check("a click beside the menu doesn't close it", page.locator(".dd-menu-list").is_visible())
+                check("a click beside the menu doesn't close it", page.locator(".dd-menu-list").first.is_visible())
                 page.keyboard.press("Escape")
                 if mode == "file":
                     open_item(page, "setup")
                     check("Setup & connections opens the steps as a sheet", page.locator(".dd-sheet .dd-steps .dd-step").count() == 5)
                     page.click(".dd-sheet [data-close]")
                     page.click("#dd-setup-fold")
+                    check("Hide setup asks first, and says where to find it", "Hide the setup reminder?" in page.inner_text(".dd-sheet") and "main menu" in page.inner_text(".dd-sheet"))
+                    page.click("[data-no]")
+                    check("Keep it: the card stays", page.locator(".dd-setup-card").is_visible())
+                    page.click("#dd-setup-fold"); page.click("[data-yes]"); page.wait_for_timeout(100)
+                    check("Hide it: nothing about setup left on the page", page.inner_html("#dd-setup") == "")
+                    page.reload(); page.wait_for_timeout(300)
+                    check("stays hidden after a reload", page.inner_html("#dd-setup") == "")
                     open_item(page, "setup")
-                    check("works after Hide this for now", page.locator(".dd-sheet .dd-steps").is_visible() and page.locator(".dd-sheet [data-unfold]").is_visible())
+                    check("Setup still opens from Menu → Settings", page.locator(".dd-sheet .dd-steps").is_visible() and page.locator(".dd-sheet [data-unfold]").is_visible())
                     page.click(".dd-sheet [data-unfold]")
-                    check("Show the setup card again unfolds it", page.locator(".dd-setup-card").is_visible())
+                    check("Show the setup reminder again brings the card back", page.locator(".dd-setup-card").is_visible())
+                    page.click("#dd-menu-btn"); page.click("[data-item=settings]"); page.click("[data-back]")
+                    check("Settings has a way back to the menu", page.locator("[data-item=settings]").is_visible())
+                    page.click("[data-item=app-clear]")
+                    check("a program menu item runs the program's own action", "Clear the whole list?" in page.inner_text(".dd-sheet"))
+                    page.click("[data-no]")
                     open_item(page, "backup"); check("Backup & new versions opens", "Backup & new versions" in page.inner_text(".dd-sheet h2")); page.keyboard.press("Escape")
                     open_item(page, "privacy"); check("Privacy opens", "connects to" in page.inner_text(".dd-sheet h2")); page.keyboard.press("Escape")
                     open_item(page, "help"); check("Help opens the support details", "--- Program ---" in page.inner_text("#dd-diag-text")); page.keyboard.press("Escape")
-                    open_item(page, "about"); check("About shows name and version", "Version 0.1.5" in page.inner_text(".dd-sheet")); page.keyboard.press("Escape")
+                    open_item(page, "about"); check("About shows name and version", "Version 0.1.6" in page.inner_text(".dd-sheet")); page.keyboard.press("Escape")
                     page.click("#dd-footer p", click_count=3); page.wait_for_timeout(100)
                     check("footer triple-click still opens support details", page.locator("#dd-diag-text").is_visible()); page.keyboard.press("Escape")
                     if dev_name == "desktop":

@@ -14,11 +14,11 @@ Anything marked "Oran's call" is his: ask, don't decide.
   the commit (the "Rebuild with commit stamp" commits).
 - **The file sent to Oran is always `demo.html`** (one fixed name; uploading it replaces the old copy
   and keeps the list). The version lives inside: **bump `version` in `programs/demo/program.js`
-  with every send** (now **0.1.5**) and update the `0.1.x` strings in `tests/platform_test.py` and
-  `tests/move_test.py`. Last file sent: demo.html 0.1.5.
-- Tests (headless Chromium, fakes only), all green at 0.1.5:
-  `platform_test.py` 110 · `ai_test.py` 61 · `setup_test.py` 201 · `helper_test.py` 79 ·
-  `sync_test.py` 101 · `agent_test.py` 91 · **`move_test.py` 90 (new)** ·
+  with every send** (now **0.1.6**) and update the `0.1.x` strings in `tests/platform_test.py` and
+  `tests/move_test.py`. Last file sent: demo.html 0.1.6.
+- Tests (headless Chromium, fakes only), all green at 0.1.6:
+  `platform_test.py` 110 · `ai_test.py` 61 · `setup_test.py` 202 · `helper_test.py` 79 ·
+  `sync_test.py` 101 · `agent_test.py` 91 · **`move_test.py` 108 (new)** ·
   `QR_DECODER=<node script> pair_test.py` 22. The decoder: `npm i jsqr pngjs`, then a 6-line
   script reading a PNG with pngjs and printing `jsQR(...).data`. Ignore Playwright's
   `CancelledError` tracebacks; the last line is the verdict.
@@ -44,6 +44,19 @@ dd.setup · dd.helper · dd.sync · dd.backup · **dd.move (new)** · dd.agent.
 | – | Hosted address | Not ready yet, "we will get to that": `DD_BUILD.home` stays blank for now |
 
 ## What was built (Phase 7.1–7.3)
+
+**Menu = the app's menu first (Oran, 2026-10-08).** Top level: the program's own items
+(`DD_PROGRAM.menu = [{id, icon, label, note?, show?, run(ctx)}]`, registered as `app-<id>`; the demo
+has 🧹 Clear the list and 🖨️ Print my list) and 💬 Ask Penny (dd.helper, group app) → separator →
+**⚙️ Settings ›** (submenu `menu.openSettings()`, "‹ Menu" back) → 🛟 Help & support details → ℹ️ About.
+Settings holds every platform item: Setup & connections, Where it lives, Send to my phone, Backup &
+new versions, Privacy. `dd.menu.add` takes `group: "app" | "settings" (default) | "end"`. A new
+platform item goes under Settings unless the buyer needs it daily.
+
+**Hide setup (Oran, 2026-10-08).** The card's "Hide setup" link (and the ✕ beside the chip) asks
+"Hide the setup reminder? You can open it any time from the main menu: tap <name> at the top left,
+then ⚙️ Settings → Setup & connections." Hide it → nothing on the page (`state.hidden`). Menu →
+Settings → Setup shows "Show the setup reminder on the page again" (`setup.showReminder()`).
 
 **7.1 Program menu (`dd.menu`).** The header name is the button `#dd-menu-btn` ("☰ Demo List ▾").
 Modules register items with `dd.menu.add({id, icon, label, order, show, run, note, badge})`:

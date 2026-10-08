@@ -119,6 +119,7 @@
       data = loaded.data; meta = loaded.meta;
       if (loaded.notice) dd.ui.notice("load", loaded.notice, "warn");
       if (program.mount) program.mount(ctx());
+      if (dd.menu) dd.menu.fromProgram(program);   // the program's own menu items, at the top
       render();
       // Sync listens for changes and for pairing links, so it starts before the link is read.
       if (dd.agent) dd.agent.attach(program);   // before sync: an agent link picks the ledger

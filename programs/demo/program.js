@@ -6,11 +6,17 @@ const DD_PROGRAM = {
   id: "demo",                       // lowercase letters/digits; becomes dd_demo_data_v1
   name: "Demo List",
   tagline: "A platform test program",
-  version: "0.1.5",
+  version: "0.1.6",
   schemaVersion: 2,
   accent: "#2563eb",
   dataLabel: "list",                // how the QR screen names this program's data ("your list")
   exampleNotice: "You're looking at an example list so you can try things out.",
+
+  // The program's own menu items, shown at the top of the menu (the platform's are under Settings).
+  menu: [
+    { id: "clear", icon: "🧹", label: "Clear the list", run: () => document.getElementById("demoClear").click() },
+    { id: "print", icon: "🖨️", label: "Print my list", run: () => window.print() }
+  ],
 
   emptyData() { return { items: [] }; },
 
