@@ -136,7 +136,7 @@
       '<div class="dd-btnrow"><button class="dd-btn" data-down>⬇ Download a backup</button><button class="dd-btn ghost" data-up>Restore from a backup</button></div>' +
       '<h3 class="dd-sub">Moving to a new version?</h3>' +
       '<ol class="dd-home-steps">' +
-        '<li><b>Same place, same name:</b> upload the new file over the old one, with exactly the same file name (if your browser called the download something like "(1)", rename it first). Your ' + esc(thing) + ' just stays. This is the easiest way.</li>' +
+        '<li><b>Same place, same name:</b> upload the new file over the old one, keeping its file name. Your ' + esc(thing) + ' just stays. This is the easiest way.</li>' +
         '<li><b>Live sync on:</b> ' + (on ? "you're all set. Open the new version, turn on live sync there, and everything comes across."
             : 'turn it on first (setup step 4), and the new version gets everything from your own database.') + '</li>' +
         '<li><b>Neither:</b> tap <b>Download a backup</b> here. Then, in the new version, tap <b>💾 Backup &amp; new versions</b> at the bottom and <b>Restore from a backup</b>.</li>' +

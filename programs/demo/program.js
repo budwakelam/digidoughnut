@@ -6,7 +6,7 @@ const DD_PROGRAM = {
   id: "demo",                       // lowercase letters/digits; becomes dd_demo_data_v1
   name: "Demo List",
   tagline: "A platform test program",
-  version: "0.1.7",
+  version: "0.1.8",
   schemaVersion: 2,
   accent: "#2563eb",
   dataLabel: "list",                // how the QR screen names this program's data ("your list")

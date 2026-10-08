@@ -412,3 +412,6 @@ yes. 4 AI companies at launch: Google, Groq, OpenRouter, OpenAI, Anthropic. (5 a
   10. QR: "Scan it with your own phone" (one-use is only checked per phone). Setup & connections
       icon 🧰 (Settings keeps ⚙️). Demo: "Clear the 1 item" wording.
   Demo 0.1.7. Suites: 134·61·191·81·108·91·108·22.
+- Oran (07:38, 10-08): **no "rename it first"**. Buyers download once and get the right name; the
+  "(10)" names came from Oran's own testing. Removed the rename note and `DD_BUILD.file`; wizards
+  use the file's own name again ("Don't rename the file"). Demo 0.1.8. Suites: 134·61·188·81·108·91·108.

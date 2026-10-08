@@ -326,7 +326,7 @@
         "Left menu, Settings > General > Your apps > the </> web button > App nickname anything, Firebase Hosting unticked > Register app > under Add Firebase SDK, the copy icon at the bottom right of the big box with firebaseConfig > Continue to console. " +
         "Safe to ignore: Gemini cards and Ask Gemini, the Dynamic Links box, the yellow Sign in with Google bar, SMS Multi-factor, Rules playground, npm install, Use a script tag, the AI coding agent box. Never turn on App Check: it blocks the program. " +
         "The setup code is not a password: it only says where the database is. Google may change button names; if what they see differs, believe their screen. Never ask for passwords." : "") +
-      (cur && /^host/.test(cur.id) ? " Hosting facts: the program is ONE self-contained HTML file. It must be uploaded unchanged, named exactly " + fileName() + " (rename it first if the browser added something like (1)), to an https address, " +
+      (cur && /^host/.test(cur.id) ? " Hosting facts: the program is ONE self-contained HTML file. It must be uploaded unchanged, keeping its file name, to an https address, " +
         "not behind a password. The host must not block outside connections (a Content-Security-Policy with connect-src 'self' breaks the helper; Neocities' free plan does this). " +
         "Updates: upload the new file with the same name to the same place, because each web address keeps its own saved numbers. If the buyer names a host " +
         "(Netlify, Cloudflare Pages, Vercel, cPanel, Hostinger, GoDaddy, Bluehost, WordPress, Wix, Squarespace, Google Sites, etc.), give short, numbered steps for that host and say plainly " +
@@ -358,7 +358,7 @@
     { keys: ["not online", "not live", "404", "not found", "isn t there", "still waiting"], for: /^host_github/, a: "GitHub can take up to 10 minutes to put a new site online. Check Settings, Pages: Branch should say main, and Save should have been tapped." },
     { keys: ["private", "upgrade", "make this repository public", "enable pages"], for: /^host_github/, a: "GitHub only makes free web pages from Public repositories. In your repository: Settings, General, scroll to Danger Zone, Change visibility, Change to public, then confirm." },
     { keys: ["etsy", "folder", "different address", "wrong address", "github io"], for: /^host_github/, a: "Your address is username.github.io, then the repository's name, then the file. On the waiting step, open \"GitHub shows a different address?\" and paste what GitHub shows." },
-    { keys: ["netlify", "cloudflare", "vercel", "cpanel", "hostinger", "godaddy", "bluehost", "file manager"], a: "Most hosts let you upload a file through a file manager or an upload page: upload this file unchanged, named exactly as the setup screen shows. For step-by-step help for your exact host, turn on the AI helper (setup step 2), then ask here." },
+    { keys: ["netlify", "cloudflare", "vercel", "cpanel", "hostinger", "godaddy", "bluehost", "file manager"], a: "Most hosts let you upload a file through a file manager or an upload page: upload this file unchanged and keep its name. For step-by-step help for your exact host, turn on the AI helper (setup step 2), then ask here." },
     { keys: ["wordpress", "wix", "squarespace", "google sites", "website builder"], a: "Most website builders can't host a whole web page file like this one. If yours won't take it, tap Start over and pick GitHub: it's free and made for this." },
     { keys: ["https", "http", "secure", "padlock"], a: "https:// means the page is sent securely (the padlock in the address bar). Phones and the helper need it. Most hosts switch it on for free, often called SSL." },
     { keys: ["readme"], for: /^host_github/, a: "Turn on Add README when you create the repository. It's a small text file GitHub needs to start the repository; you can ignore it after that." },
@@ -520,27 +520,9 @@
      "Update"), or the buyer's own host. Each wizard's last steps carry the code + numbers from the
      file to the new address in one link (dd.pair), then bookmark it (the page title is the
      bookmark name). */
-  /* The file's PROPER name (audit 2026-10-08). Browsers name repeat downloads "demo (1).html",
-     "demo (10).html"…; uploaded as-is, that ends up in the web address, and the next download gets a
-     different name, so "same place, same name" stops working. The build stamps the real name
-     (DD_BUILD.file) and the wizards ask buyers to rename the file to it before uploading. */
-  function currentFileName() {
-    try { return decodeURIComponent(location.pathname.split("/").pop()) || ""; } catch (e) { return ""; }
-  }
   function fileName() {
-    var b = window.DD_BUILD && window.DD_BUILD.file;
-    if (b && /^[a-z0-9-]+\.html$/.test(b)) return b;
-    return currentFileName() || "the program file";
+    try { return decodeURIComponent(location.pathname.split("/").pop()) || "the program file"; } catch (e) { return "the program file"; }
   }
-  /* Shown on the upload screens when the file on this computer has a different name. */
-  function renameNote() {
-    var now = currentFileName();
-    if (!dd.env.isFile || !now || now === fileName()) return "";
-    return '<p class="dd-todo"><span aria-hidden="true">✏️</span> <b>Rename it first.</b> Your file is called <b>' + esc(now) + '</b>. ' +
-      'Rename it to <b>' + esc(fileName()) + '</b> before you upload it, so the address stays the same when you get a new version.</p>';
-  }
-  setup.renameNote = renameNote;
-  setup.currentFileName = currentFileName;
   function hostState(v) { var s = state(); if (v !== undefined) { s.hostUrl = v; saveState(s); } return s.hostUrl || ""; }
   setup.ownAddress = hostState;
   setup.hostInProgress = function (svc) { return !!state().wizards["host_" + svc]; };
@@ -716,9 +698,9 @@
         pic: function () { return { kind: "page", site: "github.com · your repository", items: [{ type: "menu", label: L("gh_add_file", "Add file"), value: L("gh_upload", "Upload files") }, { type: "file", value: fileName() }], btn: L("gh_commit", "Commit changes") }; },
         todo: function () { return "<b>" + esc(L("gh_add_file", "Add file")) + "</b> → <b>" + esc(L("gh_upload", "Upload files")) + "</b>, pick the file, then tap <b>" + esc(L("gh_commit", "Commit changes")) + "</b>."; },
         body: function () { return '<p>On your new repository\'s page, tap <b>' + esc(L("gh_add_file", "Add file")) + '</b>, then <b>' + esc(L("gh_upload", "Upload files")) + '</b>, and choose this file:</p>' +
-          renameNote() + '<p class="dd-filename">' + esc(fileName()) + '</p>' +
+          '<p class="dd-filename">' + esc(fileName()) + '</p>' +
           '<p>Then tap the green <b>' + esc(L("gh_commit", "Commit changes")) + '</b> button at the bottom.</p>' +
-          '<p><b>You can ignore</b> the boxes for a message or description. Its name becomes part of its address, so it must be exactly <b>' + esc(fileName()) + '</b>.</p>'; },
+          '<p><b>You can ignore</b> the boxes for a message or description. Don\'t rename the file: its name becomes part of its address.</p>'; },
         action: { label: "Open my repository", run: function (c) { var a = setup.githubAddress(ghUser()); c.open(a ? "https://github.com/" + a.user + "/" + a.repo : "https://github.com/"); } },
         stuck: ["Can't find the file? On Windows, open File Explorer and look in Downloads. On a Mac, open Finder and look in Downloads.",
                 "You can also drag the file from your folder onto the GitHub page, onto Drag files here to add them to your repository.",
@@ -786,8 +768,8 @@
         pic: function () { return { kind: "page", site: "your host's file manager", items: [{ type: "file", value: fileName() }], btn: "Upload" }; },
         todo: "Upload this program's file to your host, the same way you'd upload any web page.",
         body: function () { return '<p>Use your host\'s usual way to put a web page online (a file manager, an upload button, or a drag-and-drop page). Upload this file:</p>' +
-          renameNote() + '<p class="dd-filename">' + esc(fileName()) + '</p>' +
-          '<ul><li><b>Don\'t change what\'s inside the file.</b> Upload it as it is, named <b>' + esc(fileName()) + '</b>.</li>' +
+          '<p class="dd-filename">' + esc(fileName()) + '</p>' +
+          '<ul><li><b>Don\'t change the file.</b> Upload it exactly as it is, and keep its name.</li>' +
           '<li>The address must start with <b>https://</b>.</li>' +
           '<li>Don\'t put it in a password-protected or members-only area.</li></ul>' +
           '<p class="dd-note">Not sure how on your host? Ask the helper in the box below and say which host you use, for example "How do I upload it to Netlify?". ' +
@@ -828,7 +810,7 @@
         pic: function () { return { kind: "page", site: "tiiny.host", items: [{ type: "file", value: fileName() }], btn: L("host_upload", "Upload file") }; },
         todo: function () { return "Tap <b>" + esc(L("host_upload", "Upload file")) + "</b> and pick this program's file."; },
         body: function () { return '<p>On tiiny.host, tap <b>' + esc(L("host_upload", "Upload file")) + '</b> and choose this file:</p>' +
-          renameNote() + '<p class="dd-filename">' + esc(fileName()) + '</p>' +
+          '<p class="dd-filename">' + esc(fileName()) + '</p>' +
           '<p class="dd-note">It\'s wherever you saved it from Etsy, often the Downloads folder.</p>' +
           '<p><b>You can ignore</b> options for passwords, domains or names. The address tiiny.host picks is fine.</p>'; },
         stuck: ["Can't find the file? On Windows, open File Explorer and look in Downloads. On a Mac, open Finder and look in Downloads.",
