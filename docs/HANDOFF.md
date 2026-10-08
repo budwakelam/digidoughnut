@@ -1,4 +1,4 @@
-# DigiDoughnut Platform: Handoff (end of Phase 5, start of Phase 6 "Connect your AI agent")
+# DigiDoughnut Platform: Handoff (end of Phase 6, start of Phase 7 "More AI companies + updates")
 
 Written 2026-10-07 (evening). Read this first, then `docs/handoff-notes.md` (running log, newest
 at the bottom), then the spec `digidoughnut-platform-spec-2026-10-06.md` (claude.ai Project).
@@ -11,132 +11,142 @@ Anything marked "Oran's call" is his: ask, don't decide.
 - Build: `node build.mjs` → `dist/<program>.html`. Rebuild after committing (the support report
   shows the commit). Before a handoff, diff the last file sent to Oran against the repo build.
 - Tests (headless Chromium, fakes only): `platform_test.py` 110 · `ai_test.py` 61 ·
-  `setup_test.py` 200 · `helper_test.py` 79 · `sync_test.py` 90 ·
-  `QR_DECODER=<node jsqr+pngjs script> pair_test.py` 22. Ignore Playwright's `CancelledError`
-  noise; the last line is the verdict. The QR decoder is 6 lines of node (jsqr + pngjs).
-- Files sent to Oran: demo11 (sync, passed both ways on his PC + iPhone, tiiny), demo12 (wizard
-  from his screenshots, short rules), **demo13** (newest edit wins, held offline changes,
-  reconnect nudge) — demo12 and demo13 not yet run by Oran.
+  `setup_test.py` 200 · `helper_test.py` 79 · `sync_test.py` 101 · `agent_test.py` 91 ·
+  `QR_DECODER=<path to node script> pair_test.py` 22 (the decoder is 6 lines of node: jsqr +
+  pngjs; it is run as `node $QR_DECODER file.png`). Ignore Playwright's `CancelledError` noise;
+  the last line is the verdict.
+- Files sent to Oran: demo14 (agent, first build), demo15 (Penny shows the agent's question,
+  Muse's fixes), **demo16** (Backup & new versions). Oran's Muse run of demo14 PASSED.
+  demo13 (offline + backup) and demo15/16 not yet run by Oran.
 - Oran's Firebase test project: "etsy" (etsy-d95c1), Spark plan, Realtime Database us-central1,
-  Anonymous sign-in on, short rules published.
+  Anonymous sign-in on, short rules published. Oran has **Muse** (not Dots; Grok Bot unsure).
 
 ## Modules (platform/js, load order in build.mjs)
 
 dd.core · dd.store · dd.errors · dd.ui · dd.diag · dd.pair · dd.ai · dd.notes · dd.setup ·
-dd.helper · **dd.sync · dd.backup (Phase 5)**. Next: **dd.agent** (Phase 6).
+dd.helper · dd.sync · dd.backup · **dd.agent (Phase 6)**. dd.core calls `dd.agent.attach`
+before `dd.sync.attach` (an agent link picks the ledger).
 
-## Phase 5: what was built
+## Phase 6: what was built
 
-- **dd.sync**: Firebase Realtime Database + Anonymous sign-in (Oran's call, so Google doesn't
-  email buyers an "insecure rules" warning). SDK 12.19.0 by `import()` from gstatic (13.0.0
-  shipped 2026-10-07; wait for it to settle). Setup code shared per web address
-  (`dd_firebase_config_v1`), one ledger per program (`/sync/<program>/<32-hex id>`).
-  Each item travels as sealed JSON text; `times/<path with |>` holds Firebase-clock edit times.
-- **Merging** (three-way, per item): untouched here → take theirs; changed here → keep ours;
-  **both changed → the newer edit wins** (Oran 2026-10-07, option a; Firebase's clock via
-  `.info/serverTimeOffset`; no time = this device wins). First join: union by id, database wins.
-- **Offline**: changes are HELD on the device (not handed to Firebase's queue, which would send
-  them blindly on reconnect and overwrite a newer edit). On reconnect: read the database
-  (`get`), merge by time, then send. Held/unconfirmed changes survive a reload. Reads older
-  than our last write are ignored. Firebase shows our sent-but-unconfirmed writes as if stored:
-  only HELD changes may be forgotten when they match the database.
-- **Phone joins by scan**: QR pieces `s` (ledger) + `f` (setup code). With sync on the list
-  isn't put in the QR; the sheet says it comes through live sync.
-- **Header chip** In step / Offline / Connecting… / Not in step / Update needed → sheet.
-  **Reconnect nudge** when a phone page comes back from the background.
-- **Stale sign-in heals**: if the database says no, sign out, sign in afresh, try once (≤1/min).
-- **Setup step 4 wizard**: screens checked against Oran's screenshots (see the comment above
-  `setup.wizards.sync`); the create-project screens are still unseen. Short rules
-  (`dd.sync.rules`): signed-in + 32-char ledger only.
-- **dd.backup**: footer "Backup" → download `<name>-backup-YYYY-MM-DD.json`, restore with checks
-  (program, version, validateData), confirm, Undo; restore syncs like any change.
+- **The API is the buyer's own Firebase** (Oran's call: no DigiDoughnut server). Under the
+  ledger, `agent/`: `view` (summary text + data and tools as JSON text + server `updatedAt`),
+  `inbox/<id>` (`{tool, args, at}`), `done/<id>` (`{ok, message, tool, at}` or `{waiting:true}`).
+- Instructions run with the program's **own tools** (the same contract as Penny), one at a time,
+  oldest first by server time, across all open devices (claimed with `runTransaction`; a claim
+  goes stale after 60 s). Args are checked against the tool's params. The view is written in the
+  same update as `done`, so a result implies a fresh view. A retried instruction whose result
+  exists is dropped (PUT with the agent's own id is safe to retry). Results pruned after 7 days.
+- **An instruction waits** in the database until the program is open somewhere; the agent is
+  told so, and may open its **agent link** (`#ddagent=<b64url {v,s,f}>`, never expires,
+  reusable) to run it now. API-only agents just wait for the buyer.
+- **Big changes** (tools with `confirm`) wait for the buyer's Yes on their own device: a notice
+  at the top AND a box inside Penny's window ("Penny can still help with anything else"). Never
+  on a copy opened from the agent link. Penny's prompt knows about the waiting question.
+- **"Copy instructions for my agent"** (setup step 5, needs step 4): `dd.agent.brief()` —
+  REST sign-in, read, PUT/POST an instruction, read/stream the result, the actions with inputs,
+  rules. No Google AI code in it. The sheet says plainly that anyone with the instructions can
+  read and change the data, and that Meta gets what Muse reads.
+- **Disconnect my agent** = `dd.sync.newAddress()`: old ledger emptied and marked
+  `meta/moved`; the buyer's other devices stop, keep their data and say "scan again"
+  (`sync_moved`); this device moves to a new ledger and opens the QR sheet.
+- Example data: the agent's first change removes only items whose id is in `exampleData()`
+  (**example ids must stay fixed in every program**) and keeps anything the buyer typed.
+- Program convention (demo shows it): tools that target one record accept its **id**, and
+  words that match more than one record are refused with every match and its id.
+- **Backup & new versions** (footer + live sync sheet): says "backed up live in your own
+  Firebase" or "saved on this device only", the last backup date, the three ways to a new
+  version (same place + same file name, live sync, backup file + Restore), and a gentle monthly
+  nudge when data lives on one device only.
 
-## Decisions log (Oran) — Phase 5
+## Decisions log (Oran) — Phase 6
 
 | Topic | Decision |
 | --- | --- |
-| Sync security | (b) Anonymous sign-in, not open rules |
-| Backup/restore | Build in Phase 5 |
-| Rules length | Short (his POC had 11 lines; 46 was excessive) |
-| Same item changed on two devices | (a) Newest edit wins (whole item) |
-| iPhone background | Expected: syncs when the page is open again; nudge added |
+| Agent access | Through the buyer's own Firebase (REST), no DigiDoughnut server |
+| Setup | Step 5 "Connect your AI agent", needs live sync (step 4) |
+| When the app is closed | The instruction waits; "it happens when you next open the app" |
+| Big changes from an agent | Wait for the buyer's Yes on their own device |
+| Security wording | Say plainly: anyone with the instructions can read and change the data |
+| Program updates | Through the Etsy download link: Oran replaces the file, buyers re-download. No key or update gate (no date-based keys: anything in the file can be read) |
+| Backup | Make it obvious (footer + sync sheet); say live sync already keeps a live copy |
 
-## Phase 5: still open
+## Still open from Phase 5/6
 
-1. Oran's run of demo13: offline on both devices incl. the same-item case; backup → clear →
-   restore → Undo; upload over the old file and check sync resumes with no questions.
-2. Screenshots of Firebase's create-project screens (name, Gemini / Analytics switches).
-3. Watch the "etsy" project's inbox for a few days for any Firebase "insecure rules" email.
-4. Pictures for the sync wizard screens (the hero/done ones exist; console mock-ups are simple).
-5. Tombstones: `times/` entries for deleted items stay in the database (~60 bytes each). Prune
-   ones older than ~60 days if a program deletes a lot.
+1. Oran's runs: demo13 (offline both devices incl. the same item; backup → clear → restore →
+   Undo; upload over the old file), demo15 (Penny's box while Muse waits; re-copy the
+   instructions — they changed), demo16 (Backup & new versions on PC + iPhone).
+2. Oran reported "Penny wasn't working while the agent's change waited". Not reproduced (tests
+   show Penny editing fine). If it happens again: get the support report from that moment.
+3. Muse said example items were kept as real after its first add. Not reproduced; most likely
+   "Keep these" had been tapped. Asked Oran.
+4. Firebase create-project screenshots; watch the "etsy" inbox for any "insecure rules" email.
+5. Agent panel (forms) for browsing-only agents: not built, Muse didn't need it.
+6. Undo for an agent's change only shows on the device that ran it. Each agent sign-in makes a
+   new anonymous user (harmless).
+7. Tombstones: `times/` entries for deleted items stay (~60 bytes each); prune after ~60 days if a
+   program deletes a lot.
 
 ---
 
-## Phase 6: Connect your AI agent (to plan, then build)
+## Phase 7: more AI companies, and "update available" (to plan with Oran, then build)
 
-**Oran's ask (2026-10-07):** "add a fourth setup option: connect an agent like Muse or Dots or
-Grokbots." The setup card already has four steps, so this is probably a fifth, optional step
-("Connect your AI agent"). **Oran's call:** its place and wording.
+**Oran's ask (2026-10-07):** future-proof the AI side ("Gemini may not be free tomorrow"), and
+let buyers use other AI companies in setup step 2, with Google as the free default.
 
-### What these agents are (checked 2026-10-07, from news coverage, not their docs)
+### What already copes (audited 2026-10-07)
 
-| Agent | Who | Launched | Access | How it reaches other things |
-| --- | --- | --- | --- | --- |
-| Muse | Meta | announced 2026-09-08 | US first (iOS, Android, web, WhatsApp); free + paid tiers | its own cloud computer and browser (navigates sites, fills forms); writes custom connectors for services with an API or CLI |
-| Dots | OpenAI | announced 2026-09-29 | ChatGPT Pro / Business Premium first | its own cloud computer and browser; "4,000+ apps" through its plugin ecosystem; Slack and Teams |
-| Grok Bot | xAI | ~Aug 2026, with Grok 4.6 | desktop + mobile app; pricing still settling | plugin panel (Gmail, Drive, Calendar, Slack, Notion…); its own cloud computer with browser, files and terminal; "teach a task" |
+- Model names: never baked in. dd.ai lists Google's models, ranks Flash / Flash-Lite, races
+  slow ones, falls back on busy or retired models. New Gemini models are picked up by themselves.
+- The noticeboard (`dd.notes`, weekly, `noticeboard/notes.json`) can carry: help links, wizard
+  button labels, one notice, model prefer/avoid hints, and code-recognition patterns. It can
+  **never** change where codes or data are sent (deliberate: if the GitHub account were taken
+  over, nobody could redirect buyers' codes).
 
-None of the coverage mentions MCP or a way for an outside website to register itself. Every
-one of them has **its own cloud browser**. Oran is in Canada: Muse may not be available to him.
-**First job: verify with Oran which agents he can actually use, and take screenshots.**
+### The gaps
 
-### The core problem
+1. Only one AI company (Google) is built in (`ai.providers`, `ai.adapters.gemini`).
+2. The noticeboard can't add a company (by design; keep it so — Oran's call 1 below).
+3. No "a newer version is ready" notice for the program file itself.
 
-The program's data lives in each browser's storage. An agent's cloud browser is just another
-device, with empty storage. So an agent can only see and change the buyer's data the same way the
-phone does: **by joining live sync**. Step 4 (sync) is therefore a prerequisite for step 5.
+### Proposed plan (for Oran to approve)
 
-### Proposed design (for Oran to approve)
+1. **Several companies built in**, switched on/off, set as default, marked free, by the
+   noticeboard. Three dialects cover nearly everyone: Gemini (have it), OpenAI-style chat
+   completions with tools, Anthropic messages with tools. Candidates — free: Google (default),
+   Groq, OpenRouter (free models), Mistral (free tier); paid: OpenAI, Anthropic (needs the
+   `anthropic-dangerous-direct-browser-access` header), xAI, DeepSeek. **Before promising any:
+   live-test each one from a browser page** (does it allow direct calls from a web page / CORS?
+   is the free tier still real? does tool calling work?). Rule 1 and rule 3 apply.
+2. **Setup step 2 becomes a choice**: "Free with Google (recommended)" stays the big button;
+   "Use a different AI company" opens a picker with the same wizard engine per company. Code
+   detection already exists (`ai.detectProvider`). Storage already has `backup` next to `main`
+   in `dd_ai_connections_v1`: a second company Penny falls back to.
+3. **"My own AI server"** (advanced): the buyer types an OpenAI-compatible address themselves
+   (their choice, their risk; e.g. something on their own computer).
+4. **"Update available"**: the noticeboard lists the newest version per program; a program
+   that's behind shows "A newer version is ready", the Etsy re-download note and the
+   "Backup & new versions" steps (same place + same file name).
 
-1. **Agent link**: like the phone QR (`dd.pair.makeLink`), carrying `s` + `f` (and optionally
-   `k`, so Penny works for the agent too). Unlike the phone QR it can't expire in 10 minutes or
-   be single-use: an agent may open it hours later, and some agents start a fresh browser for
-   every task. **Oran's call:** lifetime (forever until revoked? 30 days?) and whether the access
-   code goes in it.
-2. **Instructions card**: a "Copy instructions for my agent" button that produces a short
-   plain-text brief to paste into Muse / Dots / Grok Bot: what the program is, the link, what it
-   may do, what it must ask the buyer first. Generated from `DD_PROGRAM` (name, knowledge, tools).
-3. **Agent panel** (`#agent` or `?agent=1` on the link): a plain, stable section of the page made
-   for a browsing agent: the current data as text (`summarizeForAI`) and one simple form per
-   program tool (`DD_PROGRAM.tools`: name, description, labelled inputs, a button), with clear
-   result messages. It reuses the contract Penny already uses, so every program gets it free.
-   Also `window.dd.agent.call(name, args)` for agents that can run page scripts.
-4. **Big changes** (tools with `confirm`, e.g. "Clear the list"): today only the buyer's tap runs
-   them. **Oran's call:** agents can't run them at all / they run but leave an Undo notice / they
-   wait for the buyer to approve on their own device.
-5. **Revoking**: everyone with the ledger id has full access. "Disconnect my agent" = move this
-   program to a new ledger and re-join the buyer's own devices (one QR scan). Say so plainly.
-6. **Support report**: an "Agent" section (link made, panel opened, tool calls, last result).
-7. **Privacy sheet**: what the agent company receives (the buyer's data, via the agent's
-   browser), in plain words, as with the Google note for Penny.
+### Oran's calls (asked 2026-10-07, not yet answered)
 
-### Not proposed (yet)
-
-- **MCP server / API connector**: needs a server DigiDoughnut runs (e.g. a small Cloudflare
-  Worker), which breaks the "no backend" design. Possible later; Oran's call.
-- **Agents talking to Firebase directly** (REST + anonymous sign-in): Muse might write such a
-  connector itself, but it bypasses the program's checks (validateData). Only if browsing fails.
+1. Keep the rule that the noticeboard can't add new addresses (a new company = a program
+   update)? Recommended: yes.
+2. Which companies at launch? Suggested: Google, Groq, OpenRouter, OpenAI, Anthropic; the rest
+   after live tests.
+3. Turn on the backup code (a second company Penny falls back to)? Suggested: yes, optional.
+4. If Google drops its free tier, may the noticeboard change the default free company for
+   everyone (Google-code buyers get a "switch" message)?
 
 ### Build order
 
-1. With Oran: which agents he has; can each one's browser open a github.io page, keep storage
-   between tasks, click buttons, read page text, run scripts? (Screenshots beat docs.)
-2. `dd.agent` module: agent link, instructions card, agent panel, `window.dd.agent`, diag.
-3. Setup step 5 + wizard (same engine, pictures, "Your turn", helper chat).
-4. Tests: a fake "agent" browser context that opens the link, uses the panel, and the buyer's
-   device sees the change through sync.
-5. Gate: Oran's real agent changes his list and his PC + iPhone show it.
+1. Answers to the four calls. 2. Live browser tests per company (scratch page, real keys from
+Oran where needed; report CORS, free tier, tool calling, model list). 3. Adapters (openai,
+anthropic) behind the same neutral tools/history; per-company error mapping to the seven
+friendly types. 4. Step 2 picker + per-company wizards (Oran's screenshots for each sign-up).
+5. Backup company + fallback in `ai.chat`. 6. Noticeboard: `providers` (on/off, default, free,
+models), `latest` per program; validation stays strict. 7. Tests with fakes per dialect.
+8. Gate: Oran's PC + iPhone with Google and one other company.
 
 ## Rules learned the hard way (keep these)
 
@@ -145,9 +155,11 @@ format guess. 3. Oran's screenshots beat docs. 4. Diagnostics show in-flight req
 5. Drills leave no trace. 6. Never report done without Oran's run on the buyer's device class.
 7. Check a host's security headers and overlays. 8. Accept buyers' own names for things.
 9. Toasts never block clicks; sheets never close on a stray click; focus without scrolling.
-10. Example data never travels; always say what does. 11. **Never hand Firebase an offline write
-to send blindly; merge first.** 12. **An SDK's "local" view includes our unconfirmed writes:
-don't treat it as the database's answer.**
+10. Example data never travels; always say what does. 11. Never hand Firebase an offline write
+to send blindly; merge first. 12. An SDK's "local" view includes our unconfirmed writes: don't
+treat it as the database's answer. 13. **After finishing one queued item, look at the queue
+again: a listener may not fire twice for the same picture.** 14. **Anything that checks a key
+inside the HTML can be read: don't build security on it.**
 
 ## Working with Oran
 
@@ -155,6 +167,3 @@ Architect and reviewer; the builder builds. Plain language, short numbered test 
 dictates: verify names. He tests by uploading `dist/*.html` and sends the support report and
 screenshots; send him the built file every time. Brand: **DigiDoughnut** (D-O-U-G-H, no S).
 Commit messages end with the Co-Authored-By / Claude-Session lines; push to `platform-phase-1`.
-
-Sources for the agent table: businesstoday.in and yourstory.com (Dots, 2026-09-29/30),
-therundown.ai and pbs.org (Muse, 2026-09-08), mindstudio.ai and aiweekly.co (Grok Bot).
