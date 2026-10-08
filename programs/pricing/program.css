@@ -108,3 +108,50 @@
 @media (max-width:720px){ .pp-phone{grid-template-columns:1fr} .pp-phone-qr{width:100%;max-width:300px;margin:0 auto} }
 .pp-warnline{background:var(--dd-warnbg);border:1px solid var(--dd-warnline);color:#7c2d12;border-radius:10px;padding:10px 12px;margin:0 0 10px;font-size:.95rem}
 @media (max-width:520px){ #ppProdCard h2{flex-wrap:wrap} #ppProdCard h2 .pp-for{display:none} #ppProdCard h2 .dd-btn{margin-left:auto} }
+
+/* Units say what a number means (Oran, 2026-10-08: "Shipping label 9" was unclear) */
+.pp-unit{font-style:normal;font-weight:500;color:var(--dd-muted);font-size:.8rem}
+.pp-h3 .pp-h3btn{text-transform:none;letter-spacing:0;font-size:.82rem;font-weight:600;padding:0 0 0 8px}
+.pp-costgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.pp-costgrid .pp-timefield{grid-column:1 / -1}
+.pp-rateinline{display:flex;align-items:center;gap:6px}
+.pp-rateinline .dd-input{flex:1;min-width:0}
+.pp-note{color:var(--dd-muted);font-size:.85rem}
+.pp-monthly{margin:2px 0 8px}
+.pp-more{margin:0 0 10px}
+.pp-more summary{cursor:pointer;color:var(--dd-brand);font-size:.86rem;font-weight:600;padding:2px 0 8px}
+.pp-guarantee{background:var(--dd-warnbg);border:1px solid var(--dd-warnline);color:#7c2d12;border-radius:10px;padding:10px 12px;margin:0 0 10px;font-size:.88rem}
+.pp-guarantee .dd-btn{margin-top:8px}
+@media (max-width:520px){ .pp-costgrid{grid-template-columns:1fr} }
+
+/* My costs sheet */
+.pp-costlist{display:flex;flex-direction:column;gap:6px}
+.pp-costrow{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border:1px solid var(--dd-line);border-radius:12px;padding:8px 12px;background:#fff}
+.pp-costrow.on{border-color:var(--dd-brand-soft-d);background:var(--dd-brand-soft)}
+.pp-coston{margin:0;flex:1 1 260px}
+.pp-coston span{display:flex;flex-direction:column}
+.pp-costdef{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pp-costrow:not(.on) .pp-costdef{opacity:.55}
+.pp-costnew{display:flex;gap:8px;flex-wrap:wrap}
+.pp-costnew .dd-input{flex:1 1 180px;width:auto}
+
+/* Expenses & profit */
+.pp-year{width:auto;padding:4px 8px;font-size:.88rem}
+.pp-money{border-collapse:collapse;width:100%;font-size:.9rem;font-variant-numeric:tabular-nums}
+.pp-money th,.pp-money td{padding:7px 8px;border-bottom:1px solid var(--dd-line);text-align:right;white-space:nowrap}
+.pp-money th[scope=row],.pp-money thead th:first-child{text-align:left}
+.pp-money thead th{font-size:.78rem;color:var(--dd-muted);font-weight:700}
+.pp-money .pp-total th,.pp-money .pp-total td{border-top:2px solid var(--dd-ink);font-weight:700}
+.pp-money sup{font-size:.65rem;color:var(--dd-warn);margin-left:2px}
+.pp-dim{color:var(--dd-line)}
+.pp-exp-add{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto auto;gap:8px;align-items:center}
+.pp-exp-amt{display:flex;align-items:center;gap:4px}
+.pp-exp-add .pp-check{margin:0;white-space:nowrap}
+@media (max-width:760px){ .pp-exp-add{grid-template-columns:1fr 1fr} .pp-exp-add #ppExpName{grid-column:1 / -1} }
+.pp-explist td:first-child small{display:block}
+/* Phones: the month table scrolls sideways, but "You kept" stays in view on the right */
+@media (max-width:640px){
+  .pp-money{font-size:.82rem}
+  .pp-money th,.pp-money td{padding:6px 6px}
+  .pp-money tr > :last-child{position:sticky;right:0;background:var(--dd-card);box-shadow:-6px 0 8px -6px rgba(0,0,0,.18)}
+}

@@ -24,7 +24,8 @@ var PP_COUNTRIES = {
   EU: { label: "Other EU country", cur: "EUR", sym: "€", fx: 0.86, proc: 4, procAbroad: 4, fixed: 0.30, reg: 0, tax: 20, taxName: "VAT" }
 };
 var PP_TXN = 6.5, PP_LISTING_USD = 0.20, PP_ADS = 15, PP_ADS_BIG = 12, PP_ADS_CAP_USD = 100;
-var PP_RATE_KEYS = ["listing", "txn", "proc", "fixed", "reg", "tax"];
+var PP_CONVERT = 2.5;
+var PP_RATE_KEYS = ["listing", "txn", "proc", "fixed", "reg", "convert", "tax"];
 
 function ppGuessCountry() {
   var l = String((navigator.languages && navigator.languages[0]) || navigator.language || "").toUpperCase();
@@ -49,52 +50,128 @@ function ppRates(s) {
     tax: s.feeTax ? pick("tax", c.tax) : 0,
     ads: s.bigShop ? PP_ADS_BIG : PP_ADS,
     adsCap: Math.round(PP_ADS_CAP_USD * c.fx),
+    // 2.5% when the shop's listing currency isn't the payment account's (help.etsy.com, Currency Conversion Fees)
+    convert: s.convert ? pick("convert", PP_CONVERT) : 0,
     fixedByHand: Object.keys(fix).filter(function (k) { return PP_RATE_KEYS.indexOf(k) >= 0; })
   };
 }
 
 function ppNum(v) { var n = Number(v); return isFinite(n) ? n : 0; }
 function ppR2(n) { return Math.round(n * 100) / 100; }
-function ppUnitCost(p, s) {
-  var rate = p.hourly == null ? ppNum(s.hourly) : ppNum(p.hourly);
-  var labour = ppNum(p.minutes) / 60 * rate;
-  return { materials: ppNum(p.materials), labour: labour, rate: rate, packaging: ppNum(p.packaging), shipping: ppNum(p.shipCost),
-           total: ppNum(p.materials) + labour + ppNum(p.packaging) + ppNum(p.shipCost) };
+
+/* ---------- the seller's own cost types (Oran, 2026-10-08) ----------
+   The seller picks which costs they track (tick the popular ones, add their own) under My costs.
+   Every cost type says plainly how it counts toward one sale:
+     each     money for every item made                  "Materials ($ each)"
+     time     minutes per item, at an hourly rate         "Time to make (mins)"
+     percent  a share of what the buyer pays for the item "Refunds allowance (% of price)"
+     order    money per order, shared by the items in it  "Shipping label ($ per order)"
+     month    money per month, spread over the items sold a month   "Etsy Plus ($ a month)"
+   A product keeps its own value for each (p.costs[id]); a missing one uses the type's default. */
+var PP_KINDS = {
+  each:    { label: "Money per item",        unit: "$ each",       short: "each" },
+  time:    { label: "Time (minutes)",        unit: "mins",         short: "minutes" },
+  percent: { label: "Percent of the price",  unit: "% of price",   short: "% of price" },
+  order:   { label: "Money per order",       unit: "$ per order",  short: "per order" },
+  month:   { label: "Money per month",       unit: "$ a month",    short: "a month" }
+};
+var PP_COST_PRESETS = [
+  { id: "materials", name: "Materials",                 kind: "each",    value: 0, on: true,  hint: "Everything that goes into one" },
+  { id: "time",      name: "Time to make",              kind: "time",    value: 0, rate: 20, on: true, hint: "Your own time, at an hourly rate" },
+  { id: "packaging", name: "Packaging",                 kind: "each",    value: 0, on: true,  hint: "Box, tissue, tape, thank-you card" },
+  { id: "label",     name: "Shipping label",            kind: "order",   value: 0, on: true,  hint: "Postage you pay, once per order" },
+  { id: "helper",    name: "Helper's time",             kind: "time",    value: 0, rate: 17, on: false, hint: "Someone you pay by the hour" },
+  { id: "printing",  name: "Printing or production",    kind: "each",    value: 0, on: false, hint: "Print-on-demand or a maker you pay per item" },
+  { id: "insurance", name: "Shipping insurance",        kind: "order",   value: 0, on: false, hint: "Per order" },
+  { id: "refunds",   name: "Refunds & returns allowance", kind: "percent", value: 2, on: false, hint: "Set aside a share for the odd refund" },
+  { id: "royalty",   name: "Royalty or licence share",  kind: "percent", value: 0, on: false, hint: "A share of the price you pay someone" },
+  { id: "plus",      name: "Etsy Plus",                 kind: "month",   value: 10, on: false, hint: "Etsy's optional subscription" },
+  { id: "monthly",   name: "Other monthly costs",       kind: "month",   value: 0, on: false, hint: "Software, studio, ad budget" }
+];
+function ppPresetCosts(country) {
+  var fx = (PP_COUNTRIES[country] || PP_COUNTRIES.US).fx;
+  return PP_COST_PRESETS.map(function (c) {
+    var o = { id: c.id, name: c.name, kind: c.kind, value: c.kind === "month" ? Math.round(c.value * fx) : c.value, on: c.on };
+    if (c.kind === "time") o.rate = c.rate;
+    return o;
+  });
+}
+function ppCostTypes(s, all) { return (s.costs || []).filter(function (c) { return all || c.on; }); }
+function ppCostVal(p, c) { return p.costs && typeof p.costs[c.id] === "number" ? p.costs[c.id] : c.value; }
+function ppCostLabel(c, s) {
+  var sym = (PP_COUNTRIES[s.country] || PP_COUNTRIES.US).sym;
+  return c.name + " (" + PP_KINDS[c.kind].unit.replace("$", sym) + ")";
 }
 
-/* Everything about one sale of product p. o overrides: {price, shipCharged, discount (%), ad (bool)}.
-   Fees are on what the buyer pays for the item and its shipping (not sales tax). */
+/* What one item costs the seller, cost type by cost type.
+   item = what the buyer pays for the item (after any sale discount); n = items per order;
+   abroad: the international label cost replaces the label cost when the product has one. */
+function ppUnitCost(p, s, item, n, abroad) {
+  var lines = [], total = 0, pct = 0, fixed = 0, perMonth = Math.max(1, ppNum(s.monthlySales) || 1);
+  ppCostTypes(s).forEach(function (c) {
+    var v = ppCostVal(p, c), amt = 0, detail = "";
+    if (c.kind === "each") amt = v;
+    else if (c.kind === "time") {
+      var rate = c.id === "time" && p.hourly != null ? ppNum(p.hourly) : ppNum(c.rate);
+      amt = v / 60 * rate; detail = v + " mins at " + ppMoney(rate, s) + "/hour";
+    }
+    else if (c.kind === "percent") { amt = item * v / 100; detail = ppPct(v) + " of the price"; pct += v / 100; }
+    else if (c.kind === "order") {
+      if (c.id === "label" && abroad && p.labelIntl != null) v = p.labelIntl;
+      amt = v / n; detail = n > 1 ? ppMoney(v, s) + " per order ÷ " + n + " items" : "per order";
+    }
+    else if (c.kind === "month") { amt = v / perMonth; detail = ppMoney(v, s) + " a month ÷ " + perMonth + " sales"; }
+    if (c.kind !== "percent") fixed += amt;
+    total += amt;
+    lines.push({ id: c.id, name: c.name, kind: c.kind, value: v, amount: amt, detail: detail });
+  });
+  return { lines: lines, total: total, pct: pct, fixed: fixed };
+}
+
+/* Everything about one sale of product p (one item). o overrides:
+   {price, shipCharged, discount (%), ad (bool), abroad (bool)}.
+   Fees are on what the buyer pays for the item and its share of the shipping (not sales tax).
+   With several items per order, the order's fixed processing fee, per-order costs and the
+   shipping ("first item" + "each additional item") are shared by the items. */
 function ppCalc(p, s, o) {
   o = o || {};
-  var R = ppRates(s);
+  var abroad = o.abroad != null ? !!o.abroad : false;
+  var R = ppRates(abroad ? Object.assign({}, s, { abroad: true }) : s);
+  var n = Math.max(1, Math.round(ppNum(s.perOrder) || 1));
   var price = o.price != null ? ppNum(o.price) : ppNum(p.price);
-  var ship = o.shipCharged != null ? ppNum(o.shipCharged) : ppNum(p.shipCharged);
+  var ship1 = o.shipCharged != null ? ppNum(o.shipCharged) : (abroad && p.shipIntl != null ? ppNum(p.shipIntl) : ppNum(p.shipCharged));
+  var shipAdd = p.shipAdd == null ? ship1 : ppNum(p.shipAdd);
+  var ship = (ship1 + (n - 1) * shipAdd) / n;           // the buyer's shipping, per item
   var disc = Math.min(100, Math.max(0, ppNum(o.discount)));
   var ad = !!o.ad;
   var item = price * (1 - disc / 100), rev = item + ship;
   var f = {
     listing: R.listing,
     txn: rev * R.txn / 100,
-    proc: rev * R.proc / 100 + R.fixed,
-    ads: ad ? Math.min(rev * R.ads / 100, R.adsCap) : 0,
-    reg: rev * R.reg / 100
+    proc: rev * R.proc / 100 + R.fixed / n,
+    ads: ad ? Math.min(rev * R.ads / 100, R.adsCap / n) : 0,
+    reg: rev * R.reg / 100,
+    convert: rev * R.convert / 100
   };
-  f.etsy = f.listing + f.txn + f.proc + f.ads + f.reg;
+  f.etsy = f.listing + f.txn + f.proc + f.ads + f.reg + f.convert;
   f.tax = f.etsy * R.tax / 100;
   f.total = f.etsy + f.tax;
-  var cost = ppUnitCost(p, s);
+  var cost = ppUnitCost(p, s, item, n, abroad);
   var profit = rev - f.total - cost.total;
-  // Price that makes a given profit: profit is a straight line in the price (ignoring the ads cap).
-  var share = (R.txn + R.proc + R.reg + (ad ? R.ads : 0)) / 100 * (1 + R.tax / 100);
-  var flat = (R.listing + R.fixed) * (1 + R.tax / 100);
+  // Profit is a straight line in the price (ignoring the ads cap): solve it for a target.
+  var share = (R.txn + R.proc + R.reg + R.convert + (ad ? R.ads : 0)) / 100 * (1 + R.tax / 100);
+  var flat = (R.listing + R.fixed / n) * (1 + R.tax / 100);
   var priceFor = function (want, asMargin) {
-    var d = 1 - share - (asMargin ? want / 100 : 0);
+    var d = 1 - share - cost.pct - (asMargin ? want / 100 : 0);
     if (d <= 0.01) return null;
-    var r = (flat + cost.total + (asMargin ? 0 : want)) / d;
+    var r = (flat + cost.fixed - cost.pct * ship + (asMargin ? 0 : want)) / d;
     var it = r - ship, pr = it / (1 - disc / 100);
     return pr > 0 && isFinite(pr) ? Math.ceil(pr * 100) / 100 : 0;
   };
-  return { price: price, ship: ship, discount: disc, ad: ad, item: item, revenue: rev, fees: f, cost: cost, rates: R,
+  // Etsy's US free shipping guarantee: US orders of $35 or more ship free if the shop uses it.
+  var guarantee = s.country === "US" && !abroad && item >= 35 && ship1 > 0;
+  return { price: price, ship: ship, ship1: ship1, perOrder: n, discount: disc, ad: ad, abroad: abroad, item: item, revenue: rev,
+           fees: f, cost: cost, rates: R, guarantee: guarantee,
            profit: profit, margin: rev > 0 ? profit / rev * 100 : 0, breakEven: priceFor(0, false), priceFor: priceFor };
 }
 
@@ -112,21 +189,24 @@ const DD_PROGRAM = {
   id: "pricing",
   name: "Price Pilot",
   tagline: "Etsy pricing & profit, with an AI helper",
-  version: "0.2.0",
-  schemaVersion: 1,
+  version: "0.3.0",
+  schemaVersion: 2,
   accent: "#c2410c",
   dataLabel: "shop numbers",
   exampleNotice: "You're looking at three example products so you can try things out. Change anything and it becomes yours.",
 
   menu: [
     { id: "newprod", icon: "➕", label: "New product", run: function () { ppNewProduct(dd.ctx()); } },
+    { id: "costs", icon: "🧾", label: "My costs", note: function () { return "Choose what goes into the cost of an item"; }, run: function () { ppOpenCosts(); } },
     { id: "shop", icon: "🏪", label: "My shop & Etsy's fees", note: function () { return "Country, fee rates, goal"; }, run: function () { ppOpenShop(); } },
     { id: "print", icon: "🖨️", label: "Print this page", run: function () { window.print(); } }
   ],
 
   emptyData: function () {
-    return { settings: { country: ppGuessCountry(), abroad: false, bigShop: false, feeTax: true, hourly: 20, goal: 2000, rates: {} },
-             products: [], scenarios: [], sales: [], orders: [], statement: [] };
+    var cc = ppGuessCountry();
+    return { settings: { country: cc, abroad: false, bigShop: false, feeTax: true, convert: false, goal: 2000, rates: {},
+                         costs: ppPresetCosts(cc), perOrder: 1, monthlySales: 30 },
+             products: [], scenarios: [], sales: [], orders: [], statement: [], expenses: [] };
   },
 
   exampleData: function () {
@@ -134,12 +214,9 @@ const DD_PROGRAM = {
     return {
       settings: s,
       products: [
-        { id: "ex-mug", name: "Ceramic mug", price: 34, shipCharged: 8, materials: 6.5, minutes: 45, hourly: null, packaging: 1.75, shipCost: 9,
-          photo: "", notes: "Speckled stoneware, 12 oz", etsy: [], listing: "" },
-        { id: "ex-candle", name: "Beeswax candle", price: 24, shipCharged: 6, materials: 4, minutes: 15, hourly: null, packaging: 1, shipCost: 7,
-          photo: "", notes: "Set of 2 tapers", etsy: [], listing: "" },
-        { id: "ex-planner", name: "Digital planner", price: 12, shipCharged: 0, materials: 0, minutes: 0, hourly: null, packaging: 0, shipCost: 0,
-          photo: "", notes: "Instant download, made once", etsy: [], listing: "" }
+        ppProduct("ex-mug", "Ceramic mug", 34, 8, { materials: 6.5, time: 45, packaging: 1.75, label: 9 }, "Speckled stoneware, 12 oz"),
+        ppProduct("ex-candle", "Beeswax candle", 24, 6, { materials: 4, time: 15, packaging: 1, label: 7 }, "Set of 2 tapers"),
+        ppProduct("ex-planner", "Digital planner", 12, 0, {}, "Instant download, made once")
       ],
       scenarios: [
         { id: "ex-sc1", product: "ex-mug", name: "Holiday sale 20% off", price: 34, shipCharged: 8, discount: 20, ad: false },
@@ -169,6 +246,11 @@ const DD_PROGRAM = {
         { id: "ex-f5", month: "2026-09", kind: "Etsy Ads", amount: 15 },
         { id: "ex-f6", month: "2026-09", kind: "Shipping labels", amount: 38.4 },
         { id: "ex-f7", month: "2026-09", kind: "Tax on fees", amount: 2.55 }
+      ],
+      expenses: [
+        { id: "ex-e1", date: "2026-07-03", name: "Clay and glaze", category: "Supplies", amount: 64, monthly: false },
+        { id: "ex-e2", date: "2026-08-12", name: "Mailer boxes (50)", category: "Packaging", amount: 38.5, monthly: false },
+        { id: "ex-e3", date: "2026-07-01", name: "Design software", category: "Subscriptions", amount: 12, monthly: true }
       ]
     };
   },
@@ -181,10 +263,15 @@ const DD_PROGRAM = {
     if (!d || typeof d !== "object") return false;
     var s = d.settings;
     if (!s || !PP_COUNTRIES[s.country] || typeof s.abroad !== "boolean" || typeof s.bigShop !== "boolean" || typeof s.feeTax !== "boolean" ||
-        !num(s.hourly) || !num(s.goal) || !s.rates || typeof s.rates !== "object") return false;
+        typeof s.convert !== "boolean" || !num(s.goal) || !s.rates || typeof s.rates !== "object" || !num(s.perOrder) || s.perOrder < 1 ||
+        !num(s.monthlySales) || s.monthlySales < 1) return false;
+    if (!listOf(s.costs, function (c) { return str(c.name) && !!PP_KINDS[c.kind] && num(c.value) && typeof c.on === "boolean" && (c.kind !== "time" || num(c.rate)); })) return false;
+    var numMap = function (o) { return o && typeof o === "object" && !Array.isArray(o) && Object.keys(o).every(function (k) { return num(o[k]); }); };
     return listOf(d.products, function (p) {
-      return str(p.name) && num(p.price) && num(p.shipCharged) && num(p.materials) && num(p.minutes) && numOrNull(p.hourly) &&
-             num(p.packaging) && num(p.shipCost) && str(p.photo) && str(p.notes) && Array.isArray(p.etsy) && p.etsy.every(str) && str(p.listing);
+      return str(p.name) && num(p.price) && num(p.shipCharged) && numOrNull(p.shipAdd) && numOrNull(p.shipIntl) && numOrNull(p.labelIntl) &&
+             numMap(p.costs) && numOrNull(p.hourly) && str(p.photo) && str(p.notes) && Array.isArray(p.etsy) && p.etsy.every(str) && str(p.listing);
+    }) && listOf(d.expenses, function (e) {
+      return /^\d{4}-\d{2}-\d{2}$/.test(e.date) && str(e.name) && str(e.category) && num(e.amount) && typeof e.monthly === "boolean";
     }) && listOf(d.scenarios, function (c) {
       return str(c.product) && str(c.name) && num(c.price) && num(c.shipCharged) && num(c.discount) && typeof c.ad === "boolean";
     }) && listOf(d.sales, function (x) {
@@ -194,14 +281,34 @@ const DD_PROGRAM = {
     }) && listOf(d.statement, function (f) { return str(f.month) && str(f.kind) && num(f.amount); });
   },
 
+  /* 0 (before envelopes) and 1: fill in from the empty shape.
+     1 → 2: fixed cost fields become the seller's own cost types (materials, minutes, packaging and
+     shipCost move into p.costs; the shop's hourly rate moves onto "Time to make"). */
   migrate: function (d, fromVersion) {
     var base = DD_PROGRAM.emptyData();
     if (!d || typeof d !== "object") return base;
-    // Version 1 is the first shape; anything older (0) is filled in from the empty shape.
     var out = {};
     Object.keys(base).forEach(function (k) { out[k] = d[k] != null ? d[k] : base[k]; });
     out.settings = Object.assign({}, base.settings, d.settings || {});
     if (!out.settings.rates || typeof out.settings.rates !== "object") out.settings.rates = {};
+    if (fromVersion < 2) {
+      var st = out.settings;
+      if (!Array.isArray(d.settings && d.settings.costs)) st.costs = ppPresetCosts(st.country);
+      if (typeof st.hourly === "number") st.costs.forEach(function (c) { if (c.id === "time") c.rate = st.hourly; });
+      delete st.hourly;
+      out.products = (out.products || []).map(function (p) {
+        if (!p || typeof p !== "object") return p;
+        var q = Object.assign({}, p), c = Object.assign({}, p.costs || {});
+        [["materials", "materials"], ["minutes", "time"], ["packaging", "packaging"], ["shipCost", "label"]].forEach(function (m) {
+          if (typeof p[m[0]] === "number") c[m[1]] = p[m[0]];
+          delete q[m[0]];
+        });
+        q.costs = c;
+        ["shipAdd", "shipIntl", "labelIntl"].forEach(function (k) { if (typeof q[k] !== "number") q[k] = null; });
+        if (q.hourly === undefined) q.hourly = null;
+        return q;
+      });
+    }
     return out;
   },
 
@@ -213,7 +320,9 @@ const DD_PROGRAM = {
     // One line: the suggestion chips under it teach by example (audit 2026-10-08, #9).
     greeting: "Hi, I'm Margo. Tell me what to price, add or compare, and I'll do it. You can undo anything I change.",
     // A corner button on every screen; on phones it opens as a sheet from the bottom (#8).
-    place: "bubble"
+    place: "bubble",
+    // The corner button takes turns with these (10 seconds each): what she can DO, kept short.
+    lines: ["Have Margo price it", "Margo: add a product", "Margo reads Etsy files", "Ask Margo: what sells best?", "Margo can run a sale what-if"]
   },
 
   files: {
@@ -228,14 +337,17 @@ const DD_PROGRAM = {
   },
 
   knowledge: "Price Pilot helps an Etsy seller price products so they actually make money. " +
-    "The page has: (1) 'Price a product': pick a product, type its price, the shipping the buyer pays, and what it costs to make (materials, minutes of work at an hourly rate, packaging, the shipping label the seller pays); it shows every Etsy fee, profit per sale, margin, break-even price, a price that hits a target profit, and how many sales a month reach their income goal. " +
-    "(2) 'My products': the saved products. (3) 'What-ifs': saved pricing scenarios per product (a sale discount, a new price, a sale that came through an offsite ad), shown side by side. " +
+    "The page has: (1) 'My products' at the top; (2) 'Price a product': type its price, the shipping the buyer pays, and what it costs (the cost types the seller chose); it shows every Etsy fee, profit per sale, margin, break-even price, a price that hits a target profit, and how many sales a month reach their income goal. " +
+    "(3) 'What-ifs': saved pricing scenarios per product (a sale discount, a new price, a sale that came through an offsite ad), shown side by side. " +
     "(4) 'My Etsy sales': the seller adds Etsy's own CSV downloads (Order Items, Orders, or a monthly statement) with the 📎 button in this chat, Menu → Add an Etsy download, or by dropping the file on the page. It shows what sold, real fees from statements, and estimated profit per product. Sales are matched to products by name; unmatched items can be linked to a product. " +
-    "(5) 'My shop & Etsy's fees': the country their Etsy payment account is in (sets currency and fees), whether most buyers are in another country, whether the shop sold over US$10,000 in the last year (offsite ads 12% instead of 15%), whether Etsy charges them GST/VAT on its fees, default hourly rate, monthly income goal, and each fee rate (all fixable by hand). " +
+    "(5) 'Expenses & profit': their own expenses and a month-by-month and yearly picture of what they kept. (6) 'My costs' (menu): which costs make up an item. (7) 'My shop & Etsy's fees': the country their Etsy payment account is in (sets currency and fees), whether most buyers are in another country, whether the shop sold over US$10,000 in the last year (offsite ads 12% instead of 15%), whether Etsy charges them GST/VAT on its fees, listings in a different currency (2.5% conversion fee), monthly income goal, and each fee rate (all fixable by hand). " +
     "Etsy fees used: listing fee US$0.20 per sale (it renews when it sells), transaction fee 6.5% of item price plus shipping, payment processing (percent plus a fixed amount, by country), offsite ads 15% or 12% capped at US$100 per order when a sale comes from an Etsy ad on another site, a regulatory operating fee in some countries, and GST/VAT on the fees. Rates were checked on " + PP_CHECKED + "; Etsy can change them. " +
     "To get an Etsy download: Shop Manager → Settings → Options → Download Data (Order Items or Orders), or Shop Manager → Finances → Monthly statements → Download CSV. " +
     "Never show the person an id (like 'ex-mug' or 'p1a2b…'): call things by their names. " +
-    "RULES FOR NUMBERS: never work out prices, fees or profit yourself. Use price_for_goal to set a price for a target, explain_price for a breakdown or a what-if, compare_scenarios to compare, sales_report for sales questions, and quote their numbers exactly. " +
+    "COSTS: the seller chooses which costs go into an item (My costs): materials, time to make at an hourly rate, packaging, a shipping label per order, and others they switch on or add (money per item, minutes, % of the price, money per order, or money per month spread over their sales). Use manage_cost to track, add or change them, and update_product (cost_name + cost_value for ones without a shortcut) to set a product's values. " +
+    "SHIPPING: a product can have shipping for the first item, each additional item, and abroad (with the label cost abroad). Items per order shares the per-order fee and costs. US shops: Etsy's free shipping guarantee covers US orders of $35+. " +
+    "MONEY: add_expense records spending; money_report gives month and year totals (sales, Etsy fees, labels, expenses, kept). " +
+    "RULES FOR NUMBERS: never work out prices, fees or profit yourself. Use price_for_goal to set a price for a target, explain_price for a breakdown or a what-if, compare_scenarios to compare, sales_report for sales questions, money_report for month/year totals, and quote their numbers exactly. " +
     "If the person names a product loosely ('my mug'), use the matching product. If they want a new product, add it with whatever numbers they gave; missing costs can stay 0 and you can ask about them after. " +
     "Sending the program to a phone, live sync, backups and the free access code are in the menu under Settings.",
 
@@ -245,6 +357,12 @@ const DD_PROGRAM = {
 
   tools: null   // filled in below
 };
+
+/* A product in the current shape. costs: {costTypeId: value}. */
+function ppProduct(id, name, price, ship, costs, notes) {
+  return { id: id, name: name, price: price, shipCharged: ship, shipAdd: null, shipIntl: null, labelIntl: null,
+           costs: costs || {}, hourly: null, photo: "", notes: notes || "", etsy: [], listing: "" };
+}
 
 /* ---------- finding things by id or by words (never guess between two) ---------- */
 function ppPick(list, idOrWords, label, nameOf) {
@@ -267,22 +385,55 @@ function ppPick(list, idOrWords, label, nameOf) {
 }
 
 /* ---------- product fields the helper and the form share ---------- */
-var PP_FIELDS = {
-  price: "price", shipping_charged: "shipCharged", materials: "materials", minutes: "minutes", hourly_rate: "hourly",
-  packaging: "packaging", shipping_cost: "shipCost"
-};
-function ppApplyFields(p, args) {
-  var changed = [];
+/* Product fields Margo and the agent can set. Cost shortcuts map onto the built-in cost types;
+   any other cost type is set with cost_name + cost_value. Setting a cost type that's switched off
+   switches it on (the seller said it's a cost). */
+var PP_FIELDS = { price: "price", shipping_charged: "shipCharged", hourly_rate: "hourly",
+                  ship_additional: "shipAdd", ship_abroad: "shipIntl", label_abroad: "labelIntl" };
+var PP_COST_ARGS = { materials: "materials", minutes: "time", packaging: "packaging", shipping_cost: "label" };
+function ppApplyFields(p, args, d) {
+  var changed = [], s = d.settings;
+  var setCost = function (c, v) {
+    p.costs = Object.assign({}, p.costs); p.costs[c.id] = ppR2(v);
+    if (!c.on) { c.on = true; changed.push(c.name + " (now tracked)"); } else changed.push(c.name.toLowerCase());
+  };
   Object.keys(PP_FIELDS).forEach(function (k) {
     if (args[k] == null || args[k] === "") return;
     var v = Number(args[k]); if (!isFinite(v) || v < 0) return;
-    p[PP_FIELDS[k]] = Math.round(v * 100) / 100; changed.push(k.replace(/_/g, " "));
+    p[PP_FIELDS[k]] = ppR2(v); changed.push(k.replace(/_/g, " "));
   });
+  Object.keys(PP_COST_ARGS).forEach(function (k) {
+    if (args[k] == null || args[k] === "") return;
+    var v = Number(args[k]), c = s.costs.filter(function (x) { return x.id === PP_COST_ARGS[k]; })[0];
+    if (c && isFinite(v) && v >= 0) setCost(c, v);
+  });
+  if (args.cost_name != null && args.cost_value != null) {
+    var r = ppPick(s.costs, args.cost_name, "cost type"), v = Number(args.cost_value);
+    if (!r.item) return { problem: r.problem };
+    if (r.item.kind === "month") return { problem: "'" + r.item.name + "' is a monthly cost for the whole shop: change it with manage_cost, not per product." };
+    if (isFinite(v) && v >= 0) setCost(r.item, v);
+  }
   if (args.name != null && String(args.name).trim()) { p.name = String(args.name).trim().slice(0, 80); changed.push("name"); }
   if (args.notes != null) { p.notes = String(args.notes).slice(0, 300); changed.push("notes"); }
   if (args.photo_link != null) { var u = ppPhoto(args.photo_link); if (u !== null) { p.photo = u; changed.push("photo"); } }
   return changed;
 }
+var PP_PRODUCT_PARAMS = {
+  price: { type: "number", description: "Listing price", optional: true },
+  shipping_charged: { type: "number", description: "Shipping the buyer pays for the first item (0 for free shipping)", optional: true },
+  ship_additional: { type: "number", description: "Shipping the buyer pays for each additional item in the same order", optional: true },
+  ship_abroad: { type: "number", description: "Shipping a buyer in another country pays", optional: true },
+  label_abroad: { type: "number", description: "What the seller pays for a shipping label to another country", optional: true },
+  materials: { type: "number", description: "Materials cost for one", optional: true },
+  minutes: { type: "number", description: "Minutes of the seller's time to make one", optional: true },
+  hourly_rate: { type: "number", description: "Hourly rate for this product, if different from the shop's", optional: true },
+  packaging: { type: "number", description: "Packaging cost for one", optional: true },
+  shipping_cost: { type: "number", description: "What the seller pays for the shipping label, per order", optional: true },
+  cost_name: { type: "string", description: "Name of any other cost type the seller tracks (see 'Cost types' in the data)", optional: true },
+  cost_value: { type: "number", description: "The value for cost_name, in that cost type's unit", optional: true },
+  photo_link: { type: "string", description: "https link to a photo (from 'Copy image address' on Etsy), or empty to remove it", optional: true },
+  notes: { type: "string", description: "Short note", optional: true }
+};
 function ppPhoto(v) {
   var s = String(v || "").trim(); if (!s) return "";
   return /^https:\/\/[^\s"'<>]+$/i.test(s) ? s.slice(0, 500) : null;
@@ -291,44 +442,28 @@ function ppNewId(ctx, prefix) { return ctx.ui.uid(prefix); }
 
 /* ---------- the helper's tools ---------- */
 DD_PROGRAM.tools = [
-  { name: "add_product", description: "Add a new product. Give whatever numbers the person said; the rest start at 0. Money is in the shop's currency; minutes is time to make one.",
-    params: { name: { type: "string", description: "Short product name" },
-              price: { type: "number", description: "Listing price", optional: true },
-              shipping_charged: { type: "number", description: "Shipping the buyer pays (0 for free shipping)", optional: true },
-              materials: { type: "number", description: "Materials cost for one", optional: true },
-              minutes: { type: "number", description: "Minutes of work to make one", optional: true },
-              hourly_rate: { type: "number", description: "Hourly rate for this product, if different from the shop's", optional: true },
-              packaging: { type: "number", description: "Packaging cost for one", optional: true },
-              shipping_cost: { type: "number", description: "What the seller pays for the shipping label", optional: true },
-              photo_link: { type: "string", description: "https link to a photo (from 'Copy image address' on Etsy)", optional: true },
-              notes: { type: "string", description: "Short note", optional: true } },
+  { name: "add_product", description: "Add a new product. Give whatever numbers the person said; the rest start at the cost type's default. Money is in the shop's currency.",
+    params: Object.assign({ name: { type: "string", description: "Short product name" } }, PP_PRODUCT_PARAMS),
     run: function (args, ctx) {
       var name = String(args.name || "").trim();
       if (!name) return { ok: false, message: "A product needs a name." };
-      var p = ppBlank(ctx, name); ppApplyFields(p, args);
       if (args.photo_link && ppPhoto(args.photo_link) === null) return { ok: false, message: "That photo link doesn't look right. It should start with https://. Nothing was added." };
-      ctx.update(function (d) { d.products.push(p); });
+      var p = ppProduct(ppNewId(ctx, "p"), name, 0, 0, {}), out;
+      ctx.update(function (d) { out = ppApplyFields(p, args, d); if (!out.problem) d.products.push(p); });
+      if (out.problem) return { ok: false, message: out.problem + " Nothing was added." };
       ppSel = p.id;
-      var c = ppCalc(p, dd.getData().settings);
-      return { ok: true, message: "Added '" + p.name + "'. At " + ppMoney(p.price, dd.getData().settings) + " it makes " + ppMoney(c.profit, dd.getData().settings) + " profit per sale." };
+      var s = dd.getData().settings, c = ppCalc(p, s);
+      return { ok: true, message: "Added '" + p.name + "'. At " + ppMoney(p.price, s) + " it makes " + ppMoney(c.profit, s) + " profit per sale." };
     } },
-  { name: "update_product", description: "Change a product's name, price, costs, photo link or notes. Only the fields given change.",
-    params: { product: { type: "string", description: "The product's id (best) or its name" },
-              name: { type: "string", description: "New name", optional: true },
-              price: { type: "number", description: "Listing price", optional: true },
-              shipping_charged: { type: "number", description: "Shipping the buyer pays", optional: true },
-              materials: { type: "number", description: "Materials cost for one", optional: true },
-              minutes: { type: "number", description: "Minutes of work for one", optional: true },
-              hourly_rate: { type: "number", description: "Hourly rate for this product", optional: true },
-              packaging: { type: "number", description: "Packaging cost", optional: true },
-              shipping_cost: { type: "number", description: "Shipping label cost the seller pays", optional: true },
-              photo_link: { type: "string", description: "https link to a photo, or empty to remove it", optional: true },
-              notes: { type: "string", description: "Notes", optional: true } },
+  { name: "update_product", description: "Change a product's name, price, shipping, costs, photo link or notes. Only the fields given change.",
+    params: Object.assign({ product: { type: "string", description: "The product's id (best) or its name" },
+                            name: { type: "string", description: "New name", optional: true } }, PP_PRODUCT_PARAMS),
     run: function (args, ctx) {
       var r = ppPick(ctx.data.products, args.product, "product"); if (!r.item) return { ok: false, message: r.problem };
       if (args.photo_link && ppPhoto(args.photo_link) === null) return { ok: false, message: "That photo link doesn't look right. It should start with https://." };
       var changed = [];
-      ctx.update(function (d) { changed = ppApplyFields(d.products.filter(function (p) { return p.id === r.item.id; })[0], args); });
+      ctx.update(function (d) { changed = ppApplyFields(d.products.filter(function (p) { return p.id === r.item.id; })[0], args, d); });
+      if (changed.problem) return { ok: false, message: changed.problem };
       ppSel = r.item.id;
       var p = ppById(r.item.id), s = dd.getData().settings, c = ppCalc(p, s);
       return { ok: true, message: changed.length ? "Updated " + changed.join(", ") + " on '" + p.name + "'. Profit per sale is now " + ppMoney(c.profit, s) + " (" + ppPct(c.margin) + ")." : "Nothing to change on '" + p.name + "'." };
@@ -374,11 +509,12 @@ DD_PROGRAM.tools = [
               price: { type: "number", description: "What-if price", optional: true },
               shipping_charged: { type: "number", description: "What-if shipping the buyer pays", optional: true },
               discount: { type: "number", description: "What-if sale discount in percent", optional: true },
-              offsite_ad: { type: "boolean", description: "true = the sale came through an Etsy offsite ad", optional: true } },
+              offsite_ad: { type: "boolean", description: "true = the sale came through an Etsy offsite ad", optional: true },
+              abroad: { type: "boolean", description: "true = the buyer is in another country (international shipping and fees)", optional: true } },
     run: function (args, ctx) {
       var r = ppPick(ctx.data.products, args.product, "product"); if (!r.item) return { ok: false, message: r.problem };
       var s = ctx.data.settings;
-      var c = ppCalc(r.item, s, { price: args.price, shipCharged: args.shipping_charged, discount: args.discount, ad: !!args.offsite_ad });
+      var c = ppCalc(r.item, s, { price: args.price, shipCharged: args.shipping_charged, discount: args.discount, ad: !!args.offsite_ad, abroad: args.abroad === true ? true : undefined });
       return { ok: true, message: "'" + r.item.name + "': " + ppBreakdownText(c, s) };
     } },
   { name: "save_scenario", description: "Save a what-if for a product (shown side by side in What-ifs). Anything not given uses the product's current numbers.",
@@ -404,7 +540,7 @@ DD_PROGRAM.tools = [
     run: function (args, ctx) {
       var r = ppPick(ctx.data.scenarios, args.scenario, "what-if"); if (!r.item) return { ok: false, message: r.problem };
       var sc = r.item, p = ppById(sc.product); if (!p) return { ok: false, message: "That what-if's product is gone." };
-      ctx.update(function (d) { var q = d.products.filter(function (x) { return x.id === p.id; })[0]; q.price = sc.price; q.shipCharged = sc.shipCharged; });
+      ctx.update(function (d) { var q = d.products.filter(function (x) { return x.id === p.id; })[0]; q.price = sc.price; if (!sc.abroad) q.shipCharged = sc.shipCharged; });
       ppSel = p.id;
       return { ok: true, message: "'" + p.name + "' now uses the price and shipping from '" + sc.name + "'" + (sc.discount ? " (the " + ppPct(sc.discount) + " discount is something you set on Etsy itself)" : "") + "." };
     } },
@@ -424,14 +560,17 @@ DD_PROGRAM.tools = [
       var line = function (name, c) { return name + ": price " + ppMoney(c.price, s) + (c.discount ? " less " + ppPct(c.discount) : "") + (c.ad ? ", offsite ad" : "") + ", Etsy fees " + ppMoney(c.fees.total, s) + ", profit " + ppMoney(c.profit, s) + " (" + ppPct(c.margin) + ")"; };
       return { ok: true, message: [line("Now", ppCalc(r.item, s))].concat(list.map(function (c) { return line("'" + c.name + "'", ppCalc(r.item, s, c)); })).join(". ") + (list.length ? "" : ". No what-ifs saved for it yet.") };
     } },
-  { name: "change_settings", description: "Change shop settings: country of the Etsy payment account, buyers mostly abroad, big shop (over US$10,000 sales last year), GST/VAT charged on Etsy's fees, default hourly rate, monthly income goal, or fix one of Etsy's fee rates by hand.",
+  { name: "change_settings", description: "Change shop settings: country of the Etsy payment account, buyers mostly abroad, big shop (over US$10,000 sales last year), GST/VAT charged on Etsy's fees, listings in a different currency from the bank account (2.5% conversion fee), the usual number of items per order, items sold a month (spreads monthly costs), default hourly rate, monthly income goal, or fix one of Etsy's fee rates by hand.",
     params: { country: { type: "string", description: "One of: US, CA, UK, AU, NZ, DE, FR, IT, ES, EU (other EU)", optional: true },
               buyers_abroad: { type: "boolean", description: "Most buyers are in another country", optional: true },
               big_shop: { type: "boolean", description: "Shop sold over US$10,000 in the last 12 months", optional: true },
               tax_on_fees: { type: "boolean", description: "Etsy adds GST/VAT to its fees and the seller can't claim it back", optional: true },
               hourly_rate: { type: "number", description: "Default hourly rate for time spent making", optional: true },
+              different_currency: { type: "boolean", description: "Listings are priced in a different currency than the Etsy payment account", optional: true },
+              items_per_order: { type: "number", description: "How many items a typical order has (1 or more)", optional: true },
+              sales_per_month: { type: "number", description: "Items the shop sells in a typical month, all products together", optional: true },
               monthly_goal: { type: "number", description: "Monthly profit goal", optional: true },
-              fix_rate: { type: "string", description: "Fee rate to fix by hand: listing, txn, proc, fixed, reg, tax", optional: true },
+              fix_rate: { type: "string", description: "Fee rate to fix by hand: listing, txn, proc, fixed, reg, convert, tax", optional: true },
               rate_value: { type: "number", description: "The new value for fix_rate (percent, or money for listing/fixed)", optional: true } },
     run: function (args, ctx) {
       var said = [];
@@ -444,7 +583,13 @@ DD_PROGRAM.tools = [
         if (typeof args.buyers_abroad === "boolean") { s.abroad = args.buyers_abroad; said.push(s.abroad ? "most buyers abroad" : "most buyers at home"); }
         if (typeof args.big_shop === "boolean") { s.bigShop = args.big_shop; said.push("offsite ads " + (s.bigShop ? PP_ADS_BIG : PP_ADS) + "%"); }
         if (typeof args.tax_on_fees === "boolean") { s.feeTax = args.tax_on_fees; said.push((s.feeTax ? "" : "no ") + "tax on Etsy's fees"); }
-        if (args.hourly_rate != null && ppNum(args.hourly_rate) >= 0) { s.hourly = ppR2(ppNum(args.hourly_rate)); said.push("hourly rate " + ppMoney(s.hourly, s)); }
+        if (args.hourly_rate != null && ppNum(args.hourly_rate) >= 0) {
+          s.costs.forEach(function (c) { if (c.id === "time") c.rate = ppR2(ppNum(args.hourly_rate)); });
+          said.push("hourly rate " + ppMoney(ppNum(args.hourly_rate), s));
+        }
+        if (typeof args.different_currency === "boolean") { s.convert = args.different_currency; said.push((s.convert ? "" : "no ") + "2.5% currency conversion fee"); }
+        if (args.items_per_order != null && ppNum(args.items_per_order) >= 1) { s.perOrder = Math.round(ppNum(args.items_per_order)); said.push(s.perOrder + " items per order"); }
+        if (args.sales_per_month != null && ppNum(args.sales_per_month) >= 1) { s.monthlySales = Math.round(ppNum(args.sales_per_month)); said.push(s.monthlySales + " sales a month"); }
         if (args.monthly_goal != null && ppNum(args.monthly_goal) >= 0) { s.goal = ppR2(ppNum(args.monthly_goal)); said.push("monthly goal " + ppMoney(s.goal, s)); }
         if (args.fix_rate != null && args.rate_value != null && ppNum(args.rate_value) >= 0) {
           s.rates = Object.assign({}, s.rates.country === s.country ? s.rates : {}, { country: s.country });
@@ -453,6 +598,62 @@ DD_PROGRAM.tools = [
       });
       return { ok: true, message: said.length ? "Changed: " + said.join(", ") + "." : "Nothing to change." };
     } },
+  { name: "manage_cost", description: "Change which costs the seller tracks (My costs). action: 'on' or 'off' to track a cost type, 'add' a new one, 'remove' one the seller added, or 'set' its default value / hourly rate. Monthly costs (like Etsy Plus) are set here.",
+    params: { action: { type: "string", enum: ["on", "off", "add", "remove", "set"], description: "What to do" },
+              name: { type: "string", description: "The cost type's name, e.g. 'Packaging' or a new one like 'Glitter'" },
+              kind: { type: "string", enum: ["each", "time", "percent", "order", "month"], description: "For add: each = money per item, time = minutes at an hourly rate, percent = % of the price, order = money per order, month = money per month spread over sales", optional: true },
+              value: { type: "number", description: "Default value (money, minutes or percent, by kind)", optional: true },
+              rate: { type: "number", description: "Hourly rate, for a time cost", optional: true } },
+    run: function (args, ctx) {
+      var act = String(args.action || ""), name = String(args.name || "").trim();
+      if (!name) return { ok: false, message: "Say which cost." };
+      if (act === "add") {
+        var kind = PP_KINDS[args.kind] ? args.kind : "each";
+        if (ctx.data.settings.costs.some(function (c) { return c.name.toLowerCase() === name.toLowerCase(); })) return { ok: false, message: "There's already a cost called '" + name + "'." };
+        var c = { id: ppNewId(ctx, "c"), name: name.slice(0, 40), kind: kind, value: Math.max(0, ppNum(args.value)), on: true, custom: true };
+        if (kind === "time") c.rate = args.rate != null ? Math.max(0, ppNum(args.rate)) : 20;
+        ctx.update(function (d) { d.settings.costs.push(c); });
+        return { ok: true, message: "Now tracking '" + c.name + "' (" + PP_KINDS[kind].label.toLowerCase() + "). Every product starts at " + c.value + "." };
+      }
+      var r = ppPick(ctx.data.settings.costs, name, "cost type"); if (!r.item) return { ok: false, message: r.problem };
+      var id = r.item.id, msg = "";
+      if (act === "remove" && !r.item.custom) return { ok: false, message: "'" + r.item.name + "' is a built-in cost: turn it off instead." };
+      ctx.update(function (d) {
+        var c = d.settings.costs.filter(function (x) { return x.id === id; })[0];
+        if (act === "on" || act === "off") { c.on = act === "on"; msg = (c.on ? "Now tracking '" : "Stopped tracking '") + c.name + "'."; }
+        else if (act === "remove") { d.settings.costs = d.settings.costs.filter(function (x) { return x.id !== id; }); d.products.forEach(function (p) { if (p.costs) delete p.costs[id]; }); msg = "Removed '" + c.name + "'."; }
+        else if (act === "set") {
+          if (args.value != null) c.value = Math.max(0, ppNum(args.value));
+          if (args.rate != null && c.kind === "time") c.rate = Math.max(0, ppNum(args.rate));
+          c.on = true; msg = "'" + c.name + "' is now " + c.value + (c.kind === "time" ? " mins at " + c.rate + "/hour" : "") + " by default.";
+        }
+      });
+      return { ok: true, message: msg || "Nothing changed." };
+    } },
+  { name: "add_expense", description: "Record a business expense (supplies, packaging, a subscription, equipment…). monthly = true for one that repeats every month from its date.",
+    params: { name: { type: "string", description: "What it was" }, amount: { type: "number", description: "How much" },
+              date: { type: "string", description: "YYYY-MM-DD; today if not given", optional: true },
+              category: { type: "string", description: "One of: " + "Supplies, Packaging, Shipping, Subscriptions, Advertising, Equipment, Other", optional: true },
+              monthly: { type: "boolean", description: "Repeats every month", optional: true } },
+    run: function (args, ctx) {
+      var name = String(args.name || "").trim(), amt = ppNum(args.amount);
+      if (!name || !(amt > 0)) return { ok: false, message: "An expense needs what it was and an amount." };
+      var date = /^\d{4}-\d{2}-\d{2}$/.test(String(args.date || "")) ? args.date : ctx.ui.isoDate();
+      var cat = PP_EXPENSE_CATS.indexOf(args.category) >= 0 ? args.category : "Other";
+      var e = { id: ppNewId(ctx, "e"), date: date, name: name.slice(0, 80), category: cat, amount: ppR2(amt), monthly: !!args.monthly };
+      ctx.update(function (d) { d.expenses.push(e); });
+      return { ok: true, message: "Added " + ppMoney(e.amount, dd.getData().settings) + " for '" + e.name + "' (" + cat + ", " + date + (e.monthly ? ", every month" : "") + ")." };
+    } },
+  { name: "remove_expense", description: "Delete one recorded expense.",
+    params: { expense: { type: "string", description: "The expense's id or name" } },
+    run: function (args, ctx) {
+      var r = ppPick(ctx.data.expenses, args.expense, "expense"); if (!r.item) return { ok: false, message: r.problem };
+      ctx.update(function (d) { d.expenses = d.expenses.filter(function (e) { return e.id !== r.item.id; }); });
+      return { ok: true, message: "Deleted the expense '" + r.item.name + "'." };
+    } },
+  { name: "money_report", description: "Month-by-month and year money picture: sales, Etsy's fees, shipping labels, the seller's expenses and what they kept. Use for 'how much did I make', 'what did I spend', taxes-time totals.",
+    params: { year: { type: "string", description: "A year like 2026; the latest year with data if not given", optional: true } },
+    run: function (args, ctx) { return { ok: true, message: ppMoneyText(ctx.data, String(args.year || "")) }; } },
   { name: "sales_report", description: "Facts from the seller's added Etsy downloads: what sold, per product units, sales and estimated profit, unmatched items, monthly totals and Etsy's actual charges from statements. Optionally one month.",
     params: { month: { type: "string", description: "A month as YYYY-MM, or empty for everything", optional: true } },
     run: function (args, ctx) {
@@ -480,20 +681,20 @@ DD_PROGRAM.tools = [
 ];
 
 function ppById(id) { return dd.getData().products.filter(function (p) { return p.id === id; })[0] || null; }
-function ppBlank(ctx, name) {
-  return { id: ppNewId(ctx, "p"), name: name || "New product", price: 0, shipCharged: 0, materials: 0, minutes: 0, hourly: null,
-           packaging: 0, shipCost: 0, photo: "", notes: "", etsy: [], listing: "" };
-}
+function ppBlank(ctx, name) { return ppProduct(ppNewId(ctx, "p"), name || "New product", 0, 0, {}); }
 function ppBreakdownText(c, s) {
   var f = c.fees, R = c.rates, m = function (n) { return ppMoney(n, s); };
-  var parts = ["Buyer pays " + m(c.revenue) + (c.discount ? " (" + ppPct(c.discount) + " off " + m(c.price) + ")" : "") + (c.ship ? " incl. " + m(c.ship) + " shipping" : ""),
-    "listing fee " + m(f.listing), "transaction fee " + m(f.txn) + " (" + ppPct(R.txn) + ")", "payment processing " + m(f.proc) + " (" + ppPct(R.proc) + " + " + m(R.fixed) + ")"];
+  var parts = ["Buyer pays " + m(c.revenue) + (c.discount ? " (" + ppPct(c.discount) + " off " + m(c.price) + ")" : "") + (c.ship ? " incl. " + m(c.ship) + " shipping" : "") +
+    (c.perOrder > 1 ? " (per item, with " + c.perOrder + " items per order)" : "") + (c.abroad ? " to a buyer abroad" : ""),
+    "listing fee " + m(f.listing), "transaction fee " + m(f.txn) + " (" + ppPct(R.txn) + ")", "payment processing " + m(f.proc) + " (" + ppPct(R.proc) + " + " + m(R.fixed) + " per order)"];
   if (f.ads) parts.push("offsite ads " + m(f.ads) + " (" + ppPct(R.ads) + ")");
   if (f.reg) parts.push("regulatory fee " + m(f.reg) + " (" + ppPct(R.reg) + ")");
+  if (f.convert) parts.push("currency conversion " + m(f.convert) + " (" + ppPct(R.convert) + ")");
   if (f.tax) parts.push(R.c.taxName + " on fees " + m(f.tax));
-  return parts.join(", ") + ". Etsy takes " + m(f.total) + " in all. Costs " + m(c.cost.total) + " (materials " + m(c.cost.materials) + ", labour " + m(c.cost.labour) +
-    ", packaging " + m(c.cost.packaging) + ", shipping label " + m(c.cost.shipping) + "). Profit " + m(c.profit) + " per sale, margin " + ppPct(c.margin) +
-    ". Break-even price " + (c.breakEven == null ? "n/a" : m(c.breakEven)) + ".";
+  var costs = c.cost.lines.map(function (l) { return l.name.toLowerCase() + " " + m(l.amount) + (l.detail ? " (" + l.detail + ")" : ""); });
+  return parts.join(", ") + ". Etsy takes " + m(f.total) + " in all. Costs " + m(c.cost.total) + (costs.length ? " (" + costs.join(", ") + ")" : "") +
+    ". Profit " + m(c.profit) + " per sale, margin " + ppPct(c.margin) + ". Break-even price " + (c.breakEven == null ? "n/a" : m(c.breakEven)) + "." +
+    (c.guarantee ? " Note: Etsy's free shipping guarantee makes US orders of $35+ ship free if the shop uses it, so this " + m(c.ship1) + " shipping charge may not be paid." : "");
 }
 
 /* ---------- sales: matching and reports ---------- */
@@ -578,6 +779,67 @@ function ppReportText(d, month) {
   }
   if (r.fees[PP_POSTAGE]) out.push("Shipping labels bought through Etsy (postage, not an Etsy fee): " + m(r.fees[PP_POSTAGE]) + ".");
   return out.join(" ") || "Nothing added for that month.";
+}
+
+/* ---------- expenses and the month-by-month money picture ----------
+   Per month: Sales (Etsy statement when there is one, else the Orders file, else Order Items),
+   Etsy's fees (statement, else an estimate from the fee rates, marked est.), shipping labels
+   (statement only), the seller's own expenses (monthly ones repeat from their date up to this
+   month), and what they kept. Product costs aren't taken off again: supplies bought are expenses. */
+var PP_EXPENSE_CATS = ["Supplies", "Packaging", "Shipping", "Subscriptions", "Advertising", "Equipment", "Other"];
+function ppThisMonth() { var d = new Date(); return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2); }
+function ppMonthsBetween(a, b) {
+  var out = [], y = +a.slice(0, 4), m = +a.slice(5, 7), Y = +b.slice(0, 4), M = +b.slice(5, 7);
+  while ((y < Y || (y === Y && m <= M)) && out.length < 240) { out.push(y + "-" + ("0" + m).slice(-2)); m++; if (m > 12) { m = 1; y++; } }
+  return out;
+}
+function ppMoneyMonths(d) {
+  var s = d.settings, R = ppRates(s), now = ppThisMonth(), M = {};
+  var row = function (mo) { return M[mo] = M[mo] || { month: mo, sales: 0, fees: 0, labels: 0, expenses: 0, salesFrom: "", feesEst: false, qty: 0, hasStatement: false, hasOrders: false }; };
+  d.statement.forEach(function (f) {
+    var r = row(f.month); r.hasStatement = true;
+    if (f.kind === "Sales") r.sales += f.amount;
+    else if (f.kind === PP_POSTAGE) r.labels += f.amount;
+    else if (f.kind !== "Refunds") r.fees += f.amount;
+  });
+  d.orders.forEach(function (o) { var r = row(o.date.slice(0, 7)); r.hasOrders = true; r.ordSales = (r.ordSales || 0) + o.value + o.shipping - o.discount; });
+  d.sales.forEach(function (x) { var r = row(x.date.slice(0, 7)); r.qty += x.qty; r.itemSales = (r.itemSales || 0) + x.revenue; });
+  d.expenses.forEach(function (e) {
+    var start = e.date.slice(0, 7);
+    (e.monthly ? ppMonthsBetween(start, start > now ? start : now) : [start]).forEach(function (mo) { row(mo).expenses += e.amount; });
+  });
+  Object.keys(M).forEach(function (k) {
+    var r = M[k];
+    if (r.hasStatement && r.sales) r.salesFrom = "statement";
+    else if (r.hasOrders) { r.sales = r.ordSales; r.salesFrom = "orders"; }
+    else if (r.itemSales) { r.sales = r.itemSales; r.salesFrom = "items"; }
+    if (!r.hasStatement && r.sales) {
+      // No statement for this month: estimate Etsy's fees from the rates.
+      var orders = Math.max(1, Math.round((r.qty || 1) / Math.max(1, s.perOrder || 1)));
+      var etsy = r.sales * (R.txn + R.proc + R.reg + R.convert) / 100 + R.fixed * orders + R.listing * (r.qty || orders);
+      r.fees = etsy * (1 + R.tax / 100); r.feesEst = true;
+    }
+    r.kept = r.sales - r.fees - r.labels - r.expenses;
+  });
+  return Object.keys(M).sort().map(function (k) { return M[k]; });
+}
+function ppYears(rows) { var y = {}; rows.forEach(function (r) { y[r.month.slice(0, 4)] = 1; }); return Object.keys(y).sort(); }
+function ppYearTotal(rows) {
+  var t = { sales: 0, fees: 0, labels: 0, expenses: 0, kept: 0, feesEst: false };
+  rows.forEach(function (r) { ["sales", "fees", "labels", "expenses", "kept"].forEach(function (k) { t[k] += r[k]; }); if (r.feesEst) t.feesEst = true; });
+  return t;
+}
+function ppMoneyText(d, year) {
+  var s = d.settings, m = function (n) { return ppMoney(n, s); }, all = ppMoneyMonths(d), years = ppYears(all);
+  if (!all.length) return "Nothing to report yet: no Etsy downloads or expenses added.";
+  var y = years.indexOf(year) >= 0 ? year : years[years.length - 1], rows = all.filter(function (r) { return r.month.slice(0, 4) === y; }), t = ppYearTotal(rows);
+  var cats = {};
+  d.expenses.forEach(function (e) { rows.forEach(function (r) { if ((e.monthly ? e.date.slice(0, 7) <= r.month : e.date.slice(0, 7) === r.month)) cats[e.category] = (cats[e.category] || 0) + e.amount; }); });
+  return y + " so far: sales " + m(t.sales) + ", Etsy's fees " + m(t.fees) + (t.feesEst ? " (partly estimated: no statement for some months)" : "") +
+    ", shipping labels " + m(t.labels) + ", expenses " + m(t.expenses) + ", kept " + m(t.kept) + ". By month: " +
+    rows.map(function (r) { return r.month + " sales " + m(r.sales) + ", fees " + m(r.fees) + (r.feesEst ? " est." : "") + ", labels " + m(r.labels) + ", expenses " + m(r.expenses) + ", kept " + m(r.kept); }).join("; ") +
+    "." + (Object.keys(cats).length ? " Expenses by kind: " + Object.keys(cats).map(function (c) { return c + " " + m(cats[c]); }).join(", ") + "." : "") +
+    (years.length > 1 ? " Years with data: " + years.join(", ") + "." : "");
 }
 
 /* ---------- reading Etsy's downloads ---------- */
@@ -685,12 +947,19 @@ function ppSummary(d) {
   out.push("Shop: Etsy payment account in " + R.c.label + " (" + R.c.cur + "). Buyers mostly " + (s.abroad ? "abroad" : "in the same country") + ". " +
     "Fees: listing " + m(R.listing) + ", transaction " + ppPct(R.txn) + ", processing " + ppPct(R.proc) + " + " + m(R.fixed) + ", offsite ads " + ppPct(R.ads) + " (only on ad sales)" +
     (R.reg ? ", regulatory " + ppPct(R.reg) : "") + (R.tax ? ", " + R.c.taxName + " on fees " + ppPct(R.tax) : ", no tax on fees") +
-    (R.fixedByHand.length ? " (fixed by hand: " + R.fixedByHand.join(", ") + ")" : "") + ". Default hourly rate " + m(s.hourly) + ". Monthly goal " + m(s.goal) + ".");
+    (R.convert ? ", currency conversion " + ppPct(R.convert) : "") +
+    (R.fixedByHand.length ? " (fixed by hand: " + R.fixedByHand.join(", ") + ")" : "") + ". Items per order: " + s.perOrder + ". Items sold a month: " + s.monthlySales + ". Monthly goal " + m(s.goal) + ".");
+  out.push("Cost types tracked: " + (ppCostTypes(s).map(function (c) {
+    return c.name + " (" + PP_KINDS[c.kind].label.toLowerCase() + (c.kind === "time" ? ", " + m(c.rate) + "/hour" : "") + ", default " + c.value + ")";
+  }).join("; ") || "none") + ". Not tracked (can be switched on): " + (s.costs.filter(function (c) { return !c.on; }).map(function (c) { return c.name; }).join(", ") || "none") + ".");
   out.push("Products (" + d.products.length + "):" + (d.products.length ? "" : " none yet."));
   d.products.forEach(function (p) {
     var c = ppCalc(p, s);
-    out.push("- " + p.name + " (id " + p.id + "): price " + m(p.price) + ", buyer shipping " + m(p.shipCharged) + ", materials " + m(p.materials) + ", " + p.minutes + " min at " + m(c.cost.rate) +
-      "/h, packaging " + m(p.packaging) + ", label " + m(p.shipCost) + " → Etsy fees " + m(c.fees.total) + ", profit " + m(c.profit) + " (" + ppPct(c.margin) + "), break-even " + (c.breakEven == null ? "n/a" : m(c.breakEven)) +
+    out.push("- " + p.name + " (id " + p.id + "): price " + m(p.price) + ", buyer shipping " + m(p.shipCharged) +
+      (p.shipAdd != null ? " (+" + m(p.shipAdd) + " each extra item)" : "") + (p.shipIntl != null ? ", abroad " + m(p.shipIntl) : "") +
+      (p.labelIntl != null ? ", label abroad " + m(p.labelIntl) : "") + ", costs: " +
+      (c.cost.lines.map(function (l) { return l.name.toLowerCase() + " " + (l.kind === "time" ? l.value + " min" : l.kind === "percent" ? ppPct(l.value) : m(l.value)); }).join(", ") || "none") +
+      " → total costs " + m(c.cost.total) + ", Etsy fees " + m(c.fees.total) + ", profit " + m(c.profit) + " (" + ppPct(c.margin) + "), break-even " + (c.breakEven == null ? "n/a" : m(c.breakEven)) +
       (c.profit > 0 ? ", " + Math.ceil(s.goal / c.profit) + " sales/month for the goal" : "") + (p.photo ? ", has photo" : "") + (p.notes ? ". Notes: " + p.notes : ""));
   });
   if (d.scenarios.length) {
@@ -701,6 +970,7 @@ function ppSummary(d) {
       out.push("- '" + sc.name + "' (id " + sc.id + ") for " + p.name + ": price " + m(sc.price) + (sc.discount ? " less " + ppPct(sc.discount) : "") + (sc.ad ? ", offsite ad sale" : "") + " → profit " + m(c.profit) + " (" + ppPct(c.margin) + ")");
     });
   }
+  if (d.expenses.length) out.push("Expenses recorded: " + d.expenses.length + " (" + d.expenses.slice(-8).map(function (e) { return "'" + e.name + "' " + m(e.amount) + " " + e.date + (e.monthly ? " monthly" : ""); }).join("; ") + ").");
   if (d.sales.length || d.statement.length || d.orders.length) out.push("Etsy downloads added: " + ppReportText(d, ""));
   else out.push("No Etsy downloads added yet.");
   return out.join("\n");
@@ -709,11 +979,14 @@ function ppSummary(d) {
 /* ======================================================================
    Screen
    ====================================================================== */
+/* Fixed inputs: [element id, product field, "text" | "blank" (empty = not set) | number]. The cost
+   inputs are drawn from the seller's cost types (ppCostInputs). */
 var PP_INPUTS = [
-  ["ppName", "name", "text"], ["ppPrice", "price"], ["ppShipCharged", "shipCharged"], ["ppMaterials", "materials"],
-  ["ppMinutes", "minutes"], ["ppHourly", "hourly"], ["ppPackaging", "packaging"], ["ppShipCost", "shipCost"],
+  ["ppName", "name", "text"], ["ppPrice", "price"], ["ppShipCharged", "shipCharged"],
+  ["ppShipAdd", "shipAdd", "blank"], ["ppShipIntl", "shipIntl", "blank"], ["ppLabelIntl", "labelIntl", "blank"],
   ["ppPhoto", "photo", "text"], ["ppNotes", "notes", "text"]
 ];
+function ppParse(v) { var n = parseFloat(String(v).replace(/[^\d.]/g, "")); return isFinite(n) ? Math.round(n * 100) / 100 : 0; }
 /* Only scroll when the calculator's top isn't already comfortably on screen: on a computer it sits
    right under the products, and jumping the page on every click is disorienting. */
 function ppScrollIfHidden(id) {
@@ -745,10 +1018,8 @@ function ppMount(ctx) {
       if (f[2] === "text") {
         if (f[1] === "photo") { var u = ppPhoto(v); el.classList.toggle("pp-bad", u === null); if (u === null) return; v = u; }
         else v = v.slice(0, f[1] === "notes" ? 300 : 80);
-      } else {
-        if (f[1] === "hourly" && v.trim() === "") v = null;
-        else { var n = parseFloat(String(v).replace(/[^\d.]/g, "")); if (!isFinite(n)) n = 0; v = Math.round(n * 100) / 100; }
-      }
+      } else if (f[2] === "blank" && String(v).trim() === "") v = null;
+      else v = ppParse(v);
       dd.update(function (d) { var q = d.products.filter(function (x) { return x.id === id; })[0]; if (q) q[f[1]] = v; });
     });
   });
@@ -760,6 +1031,19 @@ function ppMount(ctx) {
       if (yes) dd.update(function (d) { d.products = d.products.filter(function (x) { return x.id !== p.id; }); d.scenarios = d.scenarios.filter(function (c) { return c.product !== p.id; }); });
     });
   });
+  // Cost inputs: drawn from the cost types, so listen on their box.
+  $("ppCosts").addEventListener("input", function (e) {
+    var el = e.target, p = ppSelected(dd.getData()); if (!p || !el.matches("input")) return;
+    var id = p.id, cost = el.getAttribute("data-cost"), blank = String(el.value).trim() === "";
+    dd.update(function (d) {
+      var q = d.products.filter(function (x) { return x.id === id; })[0]; if (!q) return;
+      if (cost) { q.costs = Object.assign({}, q.costs); if (blank) delete q.costs[cost]; else q.costs[cost] = ppParse(el.value); }
+      else if (el.hasAttribute("data-hourly")) q.hourly = blank ? null : ppParse(el.value);
+    });
+  });
+  $("ppCostsBtn").addEventListener("click", ppOpenCosts);
+  $("ppAbroadWi").addEventListener("change", function (e) { ppWhatIf.abroad = e.target.checked; ppRender(dd.ctx()); });
+  ppMountMoney(ctx);
   $("ppDiscount").addEventListener("input", function (e) { ppWhatIf.discount = Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)); ppRender(dd.ctx()); });
   $("ppAd").addEventListener("change", function (e) { ppWhatIf.ad = e.target.checked; ppRender(dd.ctx()); });
   $("ppTarget").addEventListener("input", function () { ppRender(dd.ctx()); });
@@ -773,7 +1057,8 @@ function ppMount(ctx) {
   $("ppSaveSc").addEventListener("click", function () {
     var p = ppSelected(dd.getData()); if (!p) return;
     var name = $("ppScName").value.trim() || (ppWhatIf.discount ? ppPct(ppWhatIf.discount) + " off" : "Price " + ppMoney(p.price, dd.getData().settings)) + (ppWhatIf.ad ? ", ad sale" : "");
-    dd.update(function (d) { d.scenarios.push({ id: ctx.ui.uid("sc"), product: p.id, name: name.slice(0, 60), price: p.price, shipCharged: p.shipCharged, discount: ppWhatIf.discount, ad: ppWhatIf.ad }); });
+    dd.update(function (d) { d.scenarios.push({ id: ctx.ui.uid("sc"), product: p.id, name: name.slice(0, 60), price: p.price, discount: ppWhatIf.discount, ad: ppWhatIf.ad,
+      abroad: !!ppWhatIf.abroad, shipCharged: ppWhatIf.abroad && p.shipIntl != null ? p.shipIntl : p.shipCharged }); });
     $("ppScName").value = "";
     ctx.ui.toast("Saved the what-if '" + name + "'.");
   });
@@ -791,37 +1076,52 @@ function ppRender(ctx) {
   // No products yet: the products card says how to start, and the calculator and what-ifs wait.
   $("ppEmpty").hidden = !!p; $("ppCalcCard").hidden = !p; $("ppScCard").hidden = !p;
   $("ppShopLine").textContent = "Selling from " + R.c.label + " · " + R.c.cur + " · fees checked " + PP_CHECKED;
-  $("ppCurr").textContent = "(" + R.c.cur + ")";
   document.querySelectorAll(".pp-sym").forEach(function (el) { el.textContent = R.c.sym; });
+  document.querySelectorAll("[data-sym]").forEach(function (el) {
+    if (!el.dataset.t) el.dataset.t = el.textContent;
+    el.textContent = el.dataset.t.replace("$", R.c.sym);
+  });
   if (p) {
     var active = document.activeElement;
     PP_INPUTS.forEach(function (f) {
       var el = $(f[0]); if (!el || el === active) return;
       var v = p[f[1]]; el.value = v == null ? "" : String(v); el.classList.remove("pp-bad");
     });
-    $("ppHourly").placeholder = String(s.hourly) + " (shop rate)";
+    ppCostInputs(ctx, p);
     var img = $("ppImg");
     if (p.photo) { if (img.getAttribute("src") !== p.photo) img.src = p.photo; img.hidden = false; } else { img.hidden = true; img.removeAttribute("src"); }
     if ($("ppDiscount") !== active) $("ppDiscount").value = ppWhatIf.discount ? String(ppWhatIf.discount) : "";
     $("ppAd").checked = ppWhatIf.ad;
+    $("ppAbroadWi").checked = !!ppWhatIf.abroad;
     $("ppAdLabel").textContent = "This sale came from an offsite ad (" + R.ads + "%)";
     var c = ppCalc(p, s, ppWhatIf), f = c.fees;
     var row = function (label, val, cls) { return '<tr' + (cls ? ' class="' + cls + '"' : "") + '><td>' + label + '</td><td>' + val + '</td></tr>'; };
     var neg = function (n) { return n ? "−" + m(n) : m(0); };
     $("ppBreakdown").innerHTML = '<table class="pp-table">' +
-      row("Buyer pays" + (c.discount ? " (" + ppPct(c.discount) + " off)" : ""), m(c.revenue), "pp-strong") +
+      row("Buyer pays" + (c.discount ? " (" + ppPct(c.discount) + " off)" : "") + (c.abroad ? " <small>buyer abroad</small>" : "") +
+          (c.ship ? " <small>incl. " + m(c.ship) + " shipping" + (c.perOrder > 1 ? " (per item)" : "") + "</small>" : ""), m(c.revenue), "pp-strong") +
       row("Listing fee <small>renews when it sells</small>", neg(f.listing)) +
       row("Transaction fee <small>" + ppPct(R.txn) + "</small>", neg(f.txn)) +
-      row("Payment processing <small>" + ppPct(R.proc) + " + " + m(R.fixed) + "</small>", neg(f.proc)) +
+      row("Payment processing <small>" + ppPct(R.proc) + " + " + m(R.fixed) + (c.perOrder > 1 ? " per order ÷ " + c.perOrder + " items" : "") + "</small>", neg(f.proc)) +
       (c.ad ? row("Offsite ads <small>" + ppPct(R.ads) + "</small>", neg(f.ads)) : "") +
       (f.reg ? row("Regulatory operating fee <small>" + ppPct(R.reg) + "</small>", neg(f.reg)) : "") +
+      (f.convert ? row("Currency conversion <small>" + ppPct(R.convert) + "</small>", neg(f.convert)) : "") +
       (f.tax ? row(esc(R.c.taxName) + " on Etsy's fees <small>" + ppPct(R.tax) + "</small>", neg(f.tax)) : "") +
       row("Etsy takes", neg(f.total), "pp-sub") +
-      row("Materials", neg(c.cost.materials)) +
-      (c.cost.labour ? row("Your time <small>" + p.minutes + " min at " + m(c.cost.rate) + "/h</small>", neg(c.cost.labour)) : "") +
-      (c.cost.packaging ? row("Packaging", neg(c.cost.packaging)) : "") +
-      (c.cost.shipping ? row("Shipping label", neg(c.cost.shipping)) : "") +
+      c.cost.lines.map(function (l) { return row(esc(l.name) + (l.detail ? " <small>" + esc(l.detail) + "</small>" : ""), neg(l.amount)); }).join("") +
+      (c.cost.lines.length ? row("Your costs", neg(c.cost.total), "pp-sub") : "") +
       '</table>';
+    var g = $("ppGuarantee");
+    g.hidden = !c.guarantee;
+    if (c.guarantee) {
+      g.innerHTML = "<b>Etsy's free shipping guarantee:</b> US orders of $35 or more ship free if your shop uses it, so buyers may never pay this " + m(c.ship1) + " shipping. " +
+        '<button class="dd-btn small" id="ppBuildShip">Build ' + m(c.ship1) + ' into the price</button>';
+      $("ppBuildShip").addEventListener("click", function () {
+        var id = p.id, add = c.ship1;
+        dd.update(function (d) { var q = d.products.filter(function (x) { return x.id === id; })[0]; q.price = ppR2(q.price + add); q.shipCharged = 0; });
+        ctx.ui.toast("Price is now " + m(p.price + add) + " with free shipping.");
+      });
+    }
     var good = c.profit > 0;
     $("ppProfit").textContent = m(c.profit);
     $("ppProfit").className = "pp-big " + (good ? "pp-good" : "pp-bad-text");
@@ -840,6 +1140,146 @@ function ppRender(ctx) {
   }
   ppRenderProducts(ctx);
   ppRenderSales(ctx);
+  ppRenderMoney(ctx);
+}
+
+/* The cost inputs, one per cost type the seller tracks, each saying its unit plainly.
+   Redrawn only when the set of cost types (or the product) changes, so typing keeps its place. */
+var ppCostSig = "";
+function ppCostInputs(ctx, p) {
+  var s = ctx.data.settings, esc = ctx.ui.esc, box = ctx.ui.$("ppCosts"), sym = ppRates(s).c.sym;
+  var types = ppCostTypes(s).filter(function (c) { return c.kind !== "month"; });
+  var sig = p.id + "|" + s.country + "|" + types.map(function (c) { return c.id + c.kind + c.value + (c.rate || "") + c.name; }).join(",");
+  if (sig !== ppCostSig) {
+    ppCostSig = sig;
+    box.innerHTML = types.length ? '<div class="pp-costgrid">' + types.map(function (c) {
+      var unit = PP_KINDS[c.kind].unit.replace("$", sym), ph = String(c.value);
+      if (c.kind === "time") return '<div class="pp-field pp-timefield"><span>' + esc(c.name) + ' <i class="pp-unit">(' + unit + ')</i></span>' +
+        '<div class="pp-two"><input class="dd-input" data-cost="' + esc(c.id) + '" inputmode="decimal" autocomplete="off" placeholder="' + esc(ph) + '" aria-label="' + esc(c.name) + ' in minutes">' +
+        (c.id === "time" ? '<label class="pp-rateinline"><input class="dd-input" data-hourly inputmode="decimal" autocomplete="off" placeholder="' + c.rate + '" aria-label="Hourly rate"><i class="pp-unit">' + esc(sym) + '/hour</i></label>'
+                         : '<span class="pp-rateinline pp-note">at ' + esc(ppMoney(c.rate, s)) + '/hour</span>') + '</div></div>';
+      return '<label class="pp-field"><span>' + esc(c.name) + ' <i class="pp-unit">(' + esc(unit) + ')</i></span>' +
+        '<input class="dd-input" data-cost="' + esc(c.id) + '" inputmode="decimal" autocomplete="off" placeholder="' + esc(ph) + '"></label>';
+    }).join("") + '</div>' : '<p class="dd-note">No costs tracked. <button class="dd-linkbtn" data-open-costs>Choose costs</button></p>';
+    var oc = box.querySelector("[data-open-costs]"); if (oc) oc.addEventListener("click", ppOpenCosts);
+  }
+  var active = document.activeElement;
+  box.querySelectorAll("[data-cost]").forEach(function (el) {
+    if (el === active) return;
+    var v = p.costs && p.costs[el.getAttribute("data-cost")]; el.value = typeof v === "number" ? String(v) : "";
+  });
+  var h = box.querySelector("[data-hourly]"); if (h && h !== active) h.value = p.hourly == null ? "" : String(p.hourly);
+  var months = ppCostTypes(s).filter(function (c) { return c.kind === "month"; }), mo = ctx.ui.$("ppMonthly");
+  mo.hidden = !months.length;
+  if (months.length) mo.textContent = "Monthly costs (" + months.map(function (c) { return c.name + " " + ppMoney(c.value, s); }).join(", ") +
+    ") are spread over " + s.monthlySales + " sales a month. Change them in ⚙️ Choose costs.";
+}
+
+/* My costs: tick the popular ones, add your own, set defaults. Everything here is the shop's;
+   each product can then have its own values in the calculator. */
+function ppOpenCosts() {
+  var d = dd.getData(), s = d.settings, esc = dd.ui.esc, sym = ppRates(s).c.sym;
+  var kindOpts = function (sel) { return Object.keys(PP_KINDS).map(function (k) { return '<option value="' + k + '"' + (k === sel ? " selected" : "") + '>' + esc(PP_KINDS[k].label) + '</option>'; }).join(""); };
+  var row = function (c) {
+    var pre = PP_COST_PRESETS.filter(function (x) { return x.id === c.id; })[0];
+    return '<div class="pp-costrow' + (c.on ? " on" : "") + '" data-id="' + esc(c.id) + '">' +
+      '<label class="pp-check pp-coston"><input type="checkbox" data-on' + (c.on ? " checked" : "") + '><span><b>' + esc(c.name) + '</b>' +
+        '<small>' + esc(PP_KINDS[c.kind].label) + (pre && pre.hint ? " · " + esc(pre.hint) : "") + '</small></span></label>' +
+      '<span class="pp-costdef"><span class="pp-note">' + (c.kind === "month" ? "Amount" : "Starts at") + '</span>' +
+        '<input class="dd-input pp-mini" data-value inputmode="decimal" value="' + c.value + '" aria-label="' + esc(c.name) + ' default">' +
+        '<i class="pp-unit">' + esc(PP_KINDS[c.kind].unit.replace("$", sym)) + '</i>' +
+        (c.kind === "time" ? '<input class="dd-input pp-mini" data-rate inputmode="decimal" value="' + c.rate + '" aria-label="' + esc(c.name) + ' hourly rate"><i class="pp-unit">' + esc(sym) + '/hour</i>' : "") +
+        (c.custom ? '<button class="dd-linkbtn pp-quiet" data-del aria-label="Remove ' + esc(c.name) + '">Remove</button>' : "") + '</span></div>';
+  };
+  var sh = dd.ui.sheet('<h2>🧾 My costs</h2>' +
+    '<p class="dd-note" style="margin-top:0">Tick what goes into the cost of one item. Each one counts in its own way: money per item, minutes of time, a percent of the price, money per order, or a monthly cost spread over your sales. "Starts at" is what a new product begins with.</p>' +
+    '<div class="pp-costlist">' + s.costs.map(row).join("") + '</div>' +
+    '<h3 class="pp-h3">Add your own</h3>' +
+    '<div class="pp-costnew"><input class="dd-input" id="ppNewCostName" placeholder="e.g. Glitter, Stickers, Laser time" autocomplete="off" aria-label="Name of the cost">' +
+      '<select class="dd-input" id="ppNewCostKind" aria-label="How it counts">' + kindOpts("each") + '</select>' +
+      '<button class="dd-btn" id="ppNewCostAdd">Add</button></div>' +
+    '<h3 class="pp-h3">Orders and monthly costs</h3>' +
+    '<div class="pp-two"><label class="pp-field"><span>Items in a typical order</span><input class="dd-input" id="ppPerOrder" inputmode="numeric" value="' + s.perOrder + '"><small>Shares the per-order fee, label and shipping between the items</small></label>' +
+    '<label class="pp-field"><span>Items you sell in a month</span><input class="dd-input" id="ppMonthlySales" inputmode="numeric" value="' + s.monthlySales + '"><small>Monthly costs are spread over this many sales</small></label></div>' +
+    '<div class="dd-btnrow"><button class="dd-btn" data-close>Done</button></div>', { sticky: true });
+  sh.classList.add("dd-sheet-wide");
+  var change = function (fn) { dd.update(fn); };
+  var idOf = function (el) { return el.closest("[data-id]").getAttribute("data-id"); };
+  var withCost = function (id, fn) { change(function (x) { var c = x.settings.costs.filter(function (k) { return k.id === id; })[0]; if (c) fn(c, x); }); };
+  sh.querySelectorAll("[data-on]").forEach(function (b) { b.addEventListener("change", function () { var id = idOf(b), on = b.checked; withCost(id, function (c) { c.on = on; }); b.closest(".pp-costrow").classList.toggle("on", on); }); });
+  sh.querySelectorAll("[data-value]").forEach(function (b) { b.addEventListener("input", function () { var id = idOf(b), v = ppParse(b.value); withCost(id, function (c) { c.value = v; }); }); });
+  sh.querySelectorAll("[data-rate]").forEach(function (b) { b.addEventListener("input", function () { var id = idOf(b), v = ppParse(b.value); withCost(id, function (c) { c.rate = v; }); }); });
+  sh.querySelectorAll("[data-del]").forEach(function (b) { b.addEventListener("click", function () {
+    var id = idOf(b); change(function (x) { x.settings.costs = x.settings.costs.filter(function (k) { return k.id !== id; }); x.products.forEach(function (p) { if (p.costs) delete p.costs[id]; }); });
+    ppOpenCosts();
+  }); });
+  sh.querySelector("#ppNewCostAdd").addEventListener("click", function () {
+    var name = sh.querySelector("#ppNewCostName").value.trim(), kind = sh.querySelector("#ppNewCostKind").value;
+    if (!name) { sh.querySelector("#ppNewCostName").focus(); return; }
+    if (dd.getData().settings.costs.some(function (c) { return c.name.toLowerCase() === name.toLowerCase(); })) { dd.ui.toast("You already have a cost called '" + name + "'."); return; }
+    var c = { id: dd.ui.uid("c"), name: name.slice(0, 40), kind: kind, value: 0, on: true, custom: true };
+    if (kind === "time") c.rate = 20;
+    change(function (x) { x.settings.costs.push(c); });
+    ppOpenCosts();
+    dd.ui.toast("Added '" + c.name + "'. Set what it starts at, or fill it in for each product.");
+  });
+  sh.querySelector("#ppPerOrder").addEventListener("input", function (e) { var n = Math.round(ppParse(e.target.value)); if (n >= 1) change(function (x) { x.settings.perOrder = n; }); });
+  sh.querySelector("#ppMonthlySales").addEventListener("input", function (e) { var n = Math.round(ppParse(e.target.value)); if (n >= 1) change(function (x) { x.settings.monthlySales = n; }); });
+  sh.querySelector("[data-close]").addEventListener("click", dd.ui.closeSheet);
+}
+
+/* ---------- Expenses & profit card ---------- */
+var ppYearSel = "";
+function ppMountMoney(ctx) {
+  var $ = ctx.ui.$;
+  $("ppExpCat").innerHTML = PP_EXPENSE_CATS.map(function (c) { return '<option>' + c + '</option>'; }).join("");
+  $("ppExpDate").value = ctx.ui.isoDate();
+  $("ppYear").addEventListener("change", function (e) { ppYearSel = e.target.value; ppRenderMoney(dd.ctx()); });
+  var add = function () {
+    var name = $("ppExpName").value.trim(), amt = ppParse($("ppExpAmt").value);
+    if (!name) { $("ppExpName").focus(); return; }
+    if (!(amt > 0)) { $("ppExpAmt").focus(); return; }
+    var date = /^\d{4}-\d{2}-\d{2}$/.test($("ppExpDate").value) ? $("ppExpDate").value : ctx.ui.isoDate();
+    var e = { id: ctx.ui.uid("e"), date: date, name: name.slice(0, 80), category: $("ppExpCat").value, amount: amt, monthly: $("ppExpMonthly").checked };
+    dd.update(function (d) { d.expenses.push(e); });
+    $("ppExpName").value = ""; $("ppExpAmt").value = ""; $("ppExpMonthly").checked = false;
+    ppYearSel = date.slice(0, 4);
+    ctx.ui.toast("Added " + ppMoney(amt, dd.getData().settings) + " for '" + e.name + "'.");
+  };
+  $("ppExpAdd").addEventListener("click", add);
+  $("ppExpAmt").addEventListener("keydown", function (e) { if (e.key === "Enter") add(); });
+}
+function ppRenderMoney(ctx) {
+  var d = ctx.data, s = d.settings, esc = ctx.ui.esc, $ = ctx.ui.$, m = function (n) { return ppMoney(n, s); };
+  var all = ppMoneyMonths(d), years = ppYears(all);
+  if (years.indexOf(ppYearSel) < 0) ppYearSel = years[years.length - 1] || "";
+  $("ppYear").innerHTML = years.map(function (y) { return '<option' + (y === ppYearSel ? " selected" : "") + '>' + y + '</option>'; }).join("");
+  $("ppYear").hidden = years.length < 2;
+  var rows = all.filter(function (r) { return r.month.slice(0, 4) === ppYearSel; });
+  if (!rows.length) {
+    $("ppMoneyTable").innerHTML = '<p class="dd-note">Add an Etsy download (above) and your expenses (below) to see what you kept each month.</p>';
+  } else {
+    var t = ppYearTotal(rows), name = function (mo) { return new Date(+mo.slice(0, 4), +mo.slice(5, 7) - 1, 1).toLocaleString(undefined, { month: "short" }); };
+    var cell = function (n, est) { return n ? m(n) + (est ? '<sup title="Estimated: no Etsy statement for this month">est.</sup>' : "") : '<span class="pp-dim">–</span>'; };
+    $("ppMoneyTable").innerHTML = '<div class="pp-scroll"><table class="pp-money"><thead><tr><th>' + esc(ppYearSel) + '</th><th>Sales</th><th>Etsy\'s fees</th><th>Shipping labels</th><th>Expenses</th><th>You kept</th></tr></thead><tbody>' +
+      rows.map(function (r) {
+        return '<tr><th scope="row">' + esc(name(r.month)) + '</th><td>' + cell(r.sales) + '</td><td>' + cell(r.fees, r.feesEst) + '</td><td>' + cell(r.labels) + '</td><td>' + cell(r.expenses) +
+          '</td><td class="' + (r.kept >= 0 ? "pp-good" : "pp-bad-text") + '"><b>' + m(r.kept) + '</b></td></tr>';
+      }).join("") +
+      '<tr class="pp-total"><th scope="row">Year</th><td>' + m(t.sales) + '</td><td>' + m(t.fees) + '</td><td>' + m(t.labels) + '</td><td>' + m(t.expenses) +
+      '</td><td class="' + (t.kept >= 0 ? "pp-good" : "pp-bad-text") + '"><b>' + m(t.kept) + '</b></td></tr></tbody></table></div>' +
+      (t.feesEst ? '<p class="dd-note"><sup>est.</sup> No Etsy statement for that month, so its fees are worked out from Etsy\'s rates. Add the statement for exact numbers.</p>' : "");
+  }
+  var list = d.expenses.slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+  $("ppExpListWrap").hidden = !list.length;
+  $("ppExpListSum").textContent = "My expenses (" + list.length + ")";
+  $("ppExpList").innerHTML = '<table class="pp-table pp-explist">' + list.map(function (e) {
+    return '<tr><td>' + esc(e.name) + ' <small>' + esc(e.date) + ' · ' + esc(e.category) + (e.monthly ? " · every month" : "") + '</small></td><td>' + m(e.amount) +
+      ' <button class="dd-linkbtn pp-quiet" data-delexp="' + esc(e.id) + '" aria-label="Delete ' + esc(e.name) + '">×</button></td></tr>';
+  }).join("") + '</table>';
+  $("ppExpList").querySelectorAll("[data-delexp]").forEach(function (b) { b.addEventListener("click", function () {
+    var id = b.getAttribute("data-delexp"); dd.update(function (x) { x.expenses = x.expenses.filter(function (e) { return e.id !== id; }); });
+  }); });
 }
 
 function ppRenderProducts(ctx) {
@@ -874,6 +1314,7 @@ function ppRenderScenarios(ctx, p) {
     tr("Sale discount", function (x) { return x.c.discount ? ppPct(x.c.discount) : "–"; }) +
     tr("Buyer pays", function (x) { return m(x.c.revenue); }) +
     tr("Offsite ad", function (x) { return x.c.ad ? "Yes" : "No"; }) +
+    (cols.some(function (x) { return x.c.abroad; }) ? tr("Buyer abroad", function (x) { return x.c.abroad ? "Yes" : "No"; }) : "") +
     tr("Etsy takes", function (x) { return m(x.c.fees.total); }) +
     tr("Profit", function (x) { return '<b class="' + (x.c.profit > 0 ? "pp-good" : "pp-bad-text") + '">' + m(x.c.profit) + '</b>'; }) +
     tr("Margin", function (x) { return ppPct(x.c.margin); }) +
@@ -881,7 +1322,7 @@ function ppRenderScenarios(ctx, p) {
     '</tbody></table></div>';
   box.querySelectorAll("[data-use]").forEach(function (b) { b.addEventListener("click", function () {
     var sc = d.scenarios.filter(function (x) { return x.id === b.getAttribute("data-use"); })[0]; if (!sc) return;
-    dd.update(function (dd2) { var q = dd2.products.filter(function (x) { return x.id === sc.product; })[0]; if (q) { q.price = sc.price; q.shipCharged = sc.shipCharged; } });
+    dd.update(function (dd2) { var q = dd2.products.filter(function (x) { return x.id === sc.product; })[0]; if (q) { q.price = sc.price; if (!sc.abroad) q.shipCharged = sc.shipCharged; } });
     ctx.ui.toast("Using the price from '" + sc.name + "'." + (sc.discount ? " Set the discount on Etsy itself." : ""));
   }); });
   box.querySelectorAll("[data-del]").forEach(function (b) { b.addEventListener("click", function () {
@@ -994,12 +1435,13 @@ function ppOpenShop() {
     (dual ? '<label class="pp-check"><input type="checkbox" id="ppAbroad"' + (s.abroad ? " checked" : "") + '> Most of my buyers are in other countries <small>(processing is ' + c.procAbroad + '% instead of ' + c.proc + '%' + (s.country === "CA" ? "; US buyers count as home" : "") + ')</small></label>' : "") +
     '<label class="pp-check"><input type="checkbox" id="ppBig"' + (s.bigShop ? " checked" : "") + '> My shop sold over US$10,000 in the last 12 months <small>(offsite ads cost 12% instead of 15%)</small></label>' +
     (c.tax ? '<label class="pp-check"><input type="checkbox" id="ppFeeTax"' + (s.feeTax ? " checked" : "") + '> Etsy adds ' + esc(c.taxName) + ' to its fees and I can\'t claim it back <small>(untick if you\'re registered and claim it)</small></label>' : "") +
-    '<label class="pp-field"><span>My hourly rate for making things</span><input class="dd-input" id="ppRate" inputmode="decimal" value="' + s.hourly + '"></label>' +
+    '<label class="pp-check"><input type="checkbox" id="ppConvert"' + (s.convert ? " checked" : "") + '> My listings are priced in a different currency than my Etsy payment account <small>(Etsy takes a 2.5% currency conversion fee, for example listing in US dollars with a Canadian bank account)</small></label>' +
+    '<p class="dd-note">Your hourly rate and other costs are under <button class="dd-linkbtn" id="ppToCosts" style="padding:0">🧾 My costs</button>.</p>' +
     '<details class="pp-details"><summary>Etsy\'s fee rates for ' + esc(c.label) + '</summary>' +
       '<p class="dd-note">Checked against Etsy\'s fee pages on ' + PP_CHECKED + '. Etsy changes fees now and then: if one looks different on your Etsy bill, fix it here.</p>' +
       rate("listing", "Listing fee (about US$0.20)", R.listing, "$") + rate("txn", "Transaction fee", R.txn, "%") +
       rate("proc", "Payment processing", R.proc, "%") + rate("fixed", "…plus per order", R.fixed, "$") +
-      rate("reg", "Regulatory operating fee", R.reg, "%") + (c.tax ? rate("tax", esc(c.taxName) + " on fees", s.feeTax ? R.tax : c.tax, "%") : "") +
+      rate("reg", "Regulatory operating fee", R.reg, "%") + (s.convert ? rate("convert", "Currency conversion", R.convert, "%") : "") + (c.tax ? rate("tax", esc(c.taxName) + " on fees", s.feeTax ? R.tax : c.tax, "%") : "") +
       (R.fixedByHand.length ? '<button class="dd-linkbtn" id="ppResetRates">Put back Etsy\'s rates</button>' : "") +
     '</details>' +
     '<div class="dd-btnrow"><button class="dd-btn" data-close>Done</button></div>', { sticky: true });
@@ -1009,7 +1451,8 @@ function ppOpenShop() {
   if ($("ppAbroad")) $("ppAbroad").addEventListener("change", function (e) { change(function (x) { x.settings.abroad = e.target.checked; }); ppOpenShop(); });
   $("ppBig").addEventListener("change", function (e) { change(function (x) { x.settings.bigShop = e.target.checked; }); });
   if ($("ppFeeTax")) $("ppFeeTax").addEventListener("change", function (e) { change(function (x) { x.settings.feeTax = e.target.checked; }); ppOpenShop(); });
-  $("ppRate").addEventListener("input", function (e) { var n = parseFloat(e.target.value); if (isFinite(n) && n >= 0) change(function (x) { x.settings.hourly = Math.round(n * 100) / 100; }); });
+  $("ppConvert").addEventListener("change", function (e) { change(function (x) { x.settings.convert = e.target.checked; }); ppOpenShop(); });
+  $("ppToCosts").addEventListener("click", ppOpenCosts);
   sh.querySelectorAll("[data-rate]").forEach(function (inp) {
     inp.addEventListener("input", function () {
       var n = parseFloat(inp.value); if (!isFinite(n) || n < 0) return;
@@ -1022,4 +1465,5 @@ function ppOpenShop() {
 }
 
 // For tests and the support report: the maths, on its own.
-window.PP = { calc: ppCalc, rates: ppRates, countries: PP_COUNTRIES, report: ppReport, summary: ppSummary, take: ppTakeFile };
+window.PP = { calc: ppCalc, rates: ppRates, countries: PP_COUNTRIES, report: ppReport, summary: ppSummary, take: ppTakeFile, moneyMonths: ppMoneyMonths, money: ppMoneyText };
+window.PPsel = function () { return ppSel; };

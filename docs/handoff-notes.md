@@ -465,3 +465,28 @@ yes. 4 AI companies at launch: Google, Groq, OpenRouter, OpenAI, Anthropic. (5 a
   - "Profit I want per sale": "e.g. 20" placeholder, a hint until something's typed, button "Set this price".
   - Duplicate "saved in this browser" line removed (footer keeps it).
   - Suites: platform 134 · ai 61 · setup 190 · helper 81 · sync 109 · agent 91 · move 108 · pair 22 · **pricing 105**.
+- Oran (11:32, 10-08): **Price Pilot 0.3.0, data schema 2.** Costs are the seller's own, plus the fee/shipping gaps,
+  Expenses & profit, and Margo's button taking turns.
+  - **Cost types** (`settings.costs`): each has a kind that says how it counts toward one item: `each` ($ per item),
+    `time` (minutes × hourly rate), `percent` (% of the item price), `order` ($ per order ÷ items per order), `month`
+    ($ a month ÷ items sold a month). Presets to tick: Materials, Time to make, Packaging, Shipping label (on) and Helper's
+    time, Printing or production, Shipping insurance, Refunds & returns allowance, Royalty or licence share, Etsy Plus,
+    Other monthly costs (off). Sellers add their own (`custom: true`). Products keep `p.costs[id]`; missing = the type's
+    "Starts at" value. Every label carries its unit: "Time to make (mins)", "Shipping label ($ per order)".
+    Menu → 🧾 My costs, or "⚙️ Choose costs" next to "What one costs you".
+  - **Migrate 1 → 2**: materials/minutes/packaging/shipCost → p.costs (materials/time/packaging/label); the shop's
+    hourly rate → the Time to make rate; profit is unchanged (tested).
+  - **Fee/shipping gaps**: 2.5% currency conversion (My shop checkbox, `settings.convert`); items per order
+    (`settings.perOrder`: shares the $0.25-style fixed fee, per-order costs and shipping); shipping per product: first
+    item, each additional item, buyer abroad pays, label abroad; "buyer abroad" what-if (abroad processing rate); US free
+    shipping guarantee notice ($35+ item charging US shipping) with "Build $X into the price".
+  - **Expenses & profit** card: add expenses (category, date, every month); month table for a year: Sales (statement →
+    Orders → Order Items), Etsy's fees (statement, else estimated and marked est.), Shipping labels, Expenses, You kept,
+    plus a Year row. "You kept" stays visible on phones.
+  - Margo: new tools manage_cost, add_expense, remove_expense, money_report; add/update_product take cost_name +
+    cost_value, ship_additional, ship_abroad, label_abroad; change_settings takes items_per_order, sales_per_month,
+    different_currency. Her corner button takes turns every 10 s ("Have Margo price it", "Margo: add a product", …;
+    `helper.lines`, platform `dd.helper`), still while open/hovered/hidden tab/reduced motion.
+  - build.mjs reads id/name/version from the DD_PROGRAM object (a preset table's `name:` was being picked up).
+  - pricing.html is 527 KB, past the 500 KB soft target (warning only; the 3 MB hard limit is far off).
+  - Suites: platform 134 · ai 61 · setup 190 · helper 81 · sync 109 · agent 91 · move 108 · pair 22 · **pricing 138**.

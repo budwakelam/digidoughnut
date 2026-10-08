@@ -93,6 +93,11 @@ class FakeGoogle:
         if "link the soap" in t: return calls(("link_etsy_item", {"item": "soap", "product": "soap bar"}))
         if "what did i sell" in t or "what stands out" in t: return calls(("sales_report", {"month": "2026-09"}))
         if "clear my sales" in t: return calls(("clear_sales", {}))
+        if "track glitter" in t: return calls(("manage_cost", {"action": "add", "name": "Glitter", "kind": "percent", "value": 3}))
+        if "turn on etsy plus" in t: return calls(("manage_cost", {"action": "on", "name": "Etsy Plus"}))
+        if "spent $40 on beads" in t: return calls(("add_expense", {"name": "Beads", "amount": 40, "date": "2026-09-14", "category": "Supplies"}))
+        if "how much did i make" in t: return calls(("money_report", {"year": "2026"}))
+        if "two per order" in t: return calls(("change_settings", {"items_per_order": 2, "different_currency": True}))
         return say("LIVE: happy pricing.")
 G = FakeGoogle()
 
@@ -114,14 +119,18 @@ with sync_playwright() as p:
         page.reload(); page.wait_for_function("() => window.dd && dd.getData && dd.getData()")
         return ctx, page, errs
     data = lambda page: page.evaluate("() => dd.getData()")
+    ppsel = lambda page: page.evaluate("() => PPsel()")
     BOTS = "dd.helper.messages().filter(m => /^bot/.test(m.who)).length"
     def wait_reply(page, n):
         page.wait_for_function(f"() => {BOTS} > {n} && !document.querySelector('.dd-helper-msg.pending')", timeout=20000)
         return page.locator(".dd-helper-msg.bot:not(.pending)").last.inner_text()
+    LAST = "(dd.helper.messages().filter(m => /^bot/.test(m.who)).slice(-1)[0] || {}).id"
     def send(page, text):
-        n = page.evaluate("() => " + BOTS)
+        # The chat keeps the last 40 messages, so wait for a NEW reply, not a higher count.
+        last = page.evaluate("() => " + LAST)
         page.fill(".dd-helper-in", text); page.click("[data-send]")
-        return wait_reply(page, n)
+        page.wait_for_function(f"(l) => {LAST} !== l && !document.querySelector('.dd-helper-msg.pending')", arg=last, timeout=20000)
+        return page.locator(".dd-helper-msg.bot:not(.pending)").last.inner_text()
     def money(page, js): return round(page.evaluate(js), 2)
 
     # ---------------------------------------------------------------- the maths
@@ -141,13 +150,13 @@ with sync_playwright() as p:
     check("break-even makes zero profit", abs(page.evaluate("(be) => PP.calc(Object.assign({}, dd.getData().products[0], {price: be}), dd.getData().settings).profit", ca["be"])) < 0.02)
     check("target margin 30% really gives 30%", abs(page.evaluate("(pr) => PP.calc(Object.assign({}, dd.getData().products[0], {price: pr}), dd.getData().settings).margin", ca["m"]) - 30) < 0.05)
     us = page.evaluate("""() => { const s = Object.assign({}, dd.getData().settings, {country: 'US', rates: {}});
-        const c = PP.calc({price: 20, shipCharged: 0, materials: 5, minutes: 0, hourly: null, packaging: 0, shipCost: 0}, s); return {t: c.fees.total, p: c.profit} }""")
+        const c = PP.calc({price: 20, shipCharged: 0, costs: {materials: 5}, hourly: null}, s); return {t: c.fees.total, p: c.profit} }""")
     # US $20: listing .20 + txn 1.30 + processing .60+.25 = 2.35, no tax on fees, no regulatory fee.
     check("US: $20 item pays $2.35 in fees", round(us["t"], 2) == 2.35, us)
     ad = page.evaluate("""() => { const s = Object.assign({}, dd.getData().settings, {country: 'US', rates: {}});
-        return [PP.calc({price: 20, shipCharged: 0, materials: 0, minutes: 0, hourly: null, packaging: 0, shipCost: 0}, s, {ad: true}).fees.ads,
-                PP.calc({price: 2000, shipCharged: 0, materials: 0, minutes: 0, hourly: null, packaging: 0, shipCost: 0}, s, {ad: true}).fees.ads,
-                PP.calc({price: 20, shipCharged: 0, materials: 0, minutes: 0, hourly: null, packaging: 0, shipCost: 0}, Object.assign({}, s, {bigShop: true}), {ad: true}).fees.ads] }""")
+        return [PP.calc({price: 20, shipCharged: 0, costs: {}}, s, {ad: true}).fees.ads,
+                PP.calc({price: 2000, shipCharged: 0, costs: {}}, s, {ad: true}).fees.ads,
+                PP.calc({price: 20, shipCharged: 0, costs: {}}, Object.assign({}, s, {bigShop: true}), {ad: true}).fees.ads] }""")
     check("offsite ads 15%, capped at US$100, 12% for big shops", [round(x, 2) for x in ad] == [3.0, 100.0, 2.4], ad)
     abroad = page.evaluate("() => PP.rates(Object.assign({}, dd.getData().settings, {abroad: true})).proc")
     check("Canada, buyers abroad: processing 4%", abroad == 4)
@@ -159,6 +168,41 @@ with sync_playwright() as p:
     for cc in ["US", "CA", "UK", "AU", "NZ", "DE", "FR", "IT", "ES", "EU"]:
         pass
     check("all ten seller countries have rates", page.evaluate("() => Object.keys(PP.countries).length") == 10)
+
+    print("\n== the seller's own costs, shipping, orders ==")
+    r = page.evaluate("""() => {
+      const base = Object.assign({}, DD_PROGRAM.emptyData().settings, {country: 'US', rates: {}, perOrder: 1, monthlySales: 30, convert: false, abroad: false});
+      const S = (o) => Object.assign({}, base, o), P = (o) => Object.assign({price: 20, shipCharged: 0, shipAdd: null, shipIntl: null, labelIntl: null, costs: {}, hourly: null}, o);
+      const label = {id: 'label', name: 'Shipping label', kind: 'order', value: 0, on: true};
+      const out = {};
+      out.convert = PP.calc(P({}), S({convert: true, costs: []})).fees;
+      const two = PP.calc(P({shipCharged: 6, shipAdd: 2, costs: {label: 8}}), S({perOrder: 2, costs: [label]}));
+      out.two = {ship: two.ship, proc: two.fees.proc, cost: two.cost.total};
+      const pct = {id: 'r', name: 'Refunds', kind: 'percent', value: 10, on: true};
+      const pc = PP.calc(P({}), S({costs: [pct]}));
+      out.pct = pc.cost.total; out.pctTarget = PP.calc(P({price: pc.priceFor(5, false)}), S({costs: [pct]})).profit;
+      out.month = PP.calc(P({}), S({costs: [{id: 'plus', name: 'Etsy Plus', kind: 'month', value: 30, on: true}]})).cost.total;
+      const off = PP.calc(P({costs: {materials: 99}}), S({costs: [{id: 'materials', name: 'Materials', kind: 'each', value: 0, on: false}]}));
+      out.off = off.cost.total;
+      const mixed = S({perOrder: 2, costs: [label, pct, {id: 'time', name: 'Time', kind: 'time', value: 30, rate: 20, on: true}]});
+      const mp = P({shipCharged: 6, costs: {label: 8}});
+      out.mixed = PP.calc(Object.assign({}, mp, {price: PP.calc(mp, mixed).priceFor(10, false)}), mixed).profit;
+      const ca = S({country: 'CA', costs: [label]}), ip = P({shipCharged: 5, shipIntl: 15, costs: {label: 6}, labelIntl: 20});
+      const home = PP.calc(ip, ca), away = PP.calc(ip, ca, {abroad: true});
+      out.abroad = {homeProc: home.rates.proc, awayProc: away.rates.proc, awayShip: away.ship, awayLabel: away.cost.total, homeLabel: home.cost.total};
+      out.guarantee = [PP.calc(P({price: 40, shipCharged: 6}), S({costs: []})).guarantee, PP.calc(P({price: 30, shipCharged: 6}), S({costs: []})).guarantee,
+                       PP.calc(P({price: 40, shipCharged: 6}), S({country: 'CA', costs: []})).guarantee, PP.calc(P({price: 40, shipCharged: 0}), S({costs: []})).guarantee];
+      return out; }""")
+    check("currency conversion: 2.5% of what the buyer pays ($20 → $0.50)", round(r["convert"]["convert"], 2) == 0.5 and round(r["convert"]["total"], 2) == 2.85, r["convert"])
+    check("2 items per order: shipping $6 + $2 extra = $4 each, the $0.25 order fee is shared, an $8 label is $4 each",
+          r["two"]["ship"] == 4 and round(r["two"]["proc"], 3) == 0.845 and r["two"]["cost"] == 4, r["two"])
+    check("a percent-of-price cost: 10% of $20 = $2, and the target price still hits its target", round(r["pct"], 2) == 2 and abs(r["pctTarget"] - 5) < 0.02, r)
+    check("a monthly cost: $30 a month over 30 sales = $1 an item", round(r["month"], 2) == 1)
+    check("a cost type that's switched off doesn't count", r["off"] == 0)
+    check("target price with time, % and per-order costs and 2 items per order", abs(r["mixed"] - 10) < 0.02, r["mixed"])
+    check("buyer abroad (Canada): processing 4%, abroad shipping and the abroad label are used",
+          r["abroad"] == {"homeProc": 3, "awayProc": 4, "awayShip": 15, "awayLabel": 20, "homeLabel": 6}, r["abroad"])
+    check("US free shipping guarantee: flagged for a $35+ item that charges US shipping, only then", r["guarantee"] == [True, False, False, False], r["guarantee"])
 
     # ---------------------------------------------------------------- first run, saving
     print("\n== first run, saving, example mode ==")
@@ -177,6 +221,11 @@ with sync_playwright() as p:
     check("the profit shows in big type", page.inner_text("#ppProfit") == "$4.50")
     check("the fee table lists the regulatory fee and GST", "Regulatory operating fee" in page.inner_text("#ppBreakdown") and "GST/HST" in page.inner_text("#ppBreakdown"))
     check("sales needed for the goal: 445", "445" in page.inner_text("#ppNeed"))
+    sep = [r for r in page.evaluate("() => PP.moneyMonths(dd.getData())") if r["month"] == "2026-09"][0]
+    check("example money for September: statement sales and fees, labels apart, expenses, kept",
+          sep["sales"] == 268 and round(sep["fees"], 2) == 53.59 and sep["labels"] == 38.4 and sep["expenses"] == 12 and round(sep["kept"], 2) == 164.01 and not sep["feesEst"], sep)
+    jul = [r for r in page.evaluate("() => PP.moneyMonths(dd.getData())") if r["month"] == "2026-07"][0]
+    check("a month with no statement: fees estimated and marked", jul["feesEst"] and jul["fees"] > 0)
     page.fill("#ppTarget", "20")
     check("price for a target profit, with a Set button", "51.46" in page.inner_text("#ppTargetOut") and page.locator("#ppUseTarget").is_visible())
     page.fill("#ppPrice", "40")
@@ -189,12 +238,12 @@ with sync_playwright() as p:
     page.reload(); page.wait_for_function("() => dd.getData()")
     check("still there after reopening", data(page)["products"][0]["price"] == 51.46)
     env = page.evaluate(f"() => JSON.parse(localStorage.getItem('{KEY}'))")
-    check("saved in an envelope, schema 1", env["program"] == "pricing" and env["schemaVersion"] == 1 and not env["example"])
+    check("saved in an envelope, schema 2", env["program"] == "pricing" and env["schemaVersion"] == 2 and not env["example"])
     page.click("#ppNew")
     check("New product opens a blank product, named and focused", data(page)["products"][-1]["name"] == "New product" and page.evaluate("() => document.activeElement.id") == "ppName")
-    page.fill("#ppName", "Tote bag"); page.fill("#ppMaterials", "14"); page.fill("#ppMinutes", "40"); page.fill("#ppPrice", "45")
+    page.fill("#ppName", "Tote bag"); page.fill("[data-cost=materials]", "14"); page.fill("[data-cost=time]", "40"); page.fill("#ppPrice", "45")
     t = data(page)["products"][-1]
-    check("the form edits the new product", t["name"] == "Tote bag" and t["materials"] == 14 and t["minutes"] == 40 and t["price"] == 45)
+    check("the form edits the new product", t["name"] == "Tote bag" and t["costs"]["materials"] == 14 and t["costs"]["time"] == 40 and t["price"] == 45)
     page.click("text=Photo link and notes"); page.fill("#ppPhoto", "not a link")
     check("a bad photo link is marked, not saved", data(page)["products"][-1]["photo"] == "" and "pp-bad" in page.get_attribute("#ppPhoto", "class"))
     page.fill("#ppPhoto", "https://i.etsystatic.com/123/il_794xN.jpg")
@@ -215,6 +264,42 @@ with sync_playwright() as p:
     page.fill("[data-rate=reg]", "0.5")
     check("a fee rate can be fixed by hand", data(page)["settings"]["rates"] == {"country": "UK", "reg": 0.5})
     page.click("[data-close]")
+
+    print("\n== My costs, shipping, expenses (screen) ==")
+    page.click("#ppCostsBtn")
+    check("My costs lists the popular costs with how each counts", "Refunds & returns allowance" in page.inner_text(".dd-sheet") and "Percent of the price" in page.inner_text(".dd-sheet"))
+    page.locator(".pp-costrow[data-id=refunds] [data-on]").check()
+    page.fill("#ppNewCostName", "Glitter"); page.select_option("#ppNewCostKind", "each"); page.click("#ppNewCostAdd")
+    page.click(".dd-sheet [data-close]")
+    labels = page.inner_text("#ppCosts")
+    check("the calculator shows each cost with its unit: (mins), ($ per order), (% of price)", "Time to make (mins)" in labels and "Shipping label (£ per order)" in labels and "Refunds & returns allowance (% of price)" in labels, labels)
+    check("a cost the seller added shows up as a box in the calculator", "Glitter (£ each)" in labels)
+    page.fill(".pp-field:has-text('Glitter') input", "1.5")
+    p0 = [x for x in data(page)["products"] if x["id"] == ppsel(page)][0]
+    check("typing in it saves it on the product", p0["costs"].get(next(c["id"] for c in data(page)["settings"]["costs"] if c["name"] == "Glitter")) == 1.5)
+    check("the breakdown lists it", "Glitter" in page.inner_text("#ppBreakdown") and "% of the price" in page.inner_text("#ppBreakdown"))
+    page.fill("#ppDiscount", ""); page.uncheck("#ppAd")
+    page.evaluate("() => dd.update(d => { d.settings.country = 'US'; d.settings.rates = {}; const p = d.products.find(x => x.id === PPsel()); p.price = 40; p.shipCharged = 6; })")
+    check("US shop, $40 item with $6 shipping: the free shipping guarantee notice shows", page.locator("#ppGuarantee").is_visible())
+    page.click("#ppBuildShip")
+    p0 = [x for x in data(page)["products"] if x["id"] == ppsel(page)][0]
+    check("Build it into the price: $46, free shipping", p0["price"] == 46 and p0["shipCharged"] == 0 and not page.locator("#ppGuarantee").is_visible())
+    page.click("#ppShipMore summary"); page.fill("#ppShipIntl", "18"); page.fill("#ppLabelIntl", "22"); page.check("#ppAbroadWi")
+    check("buyer-abroad what-if uses the abroad shipping", "buyer abroad" in page.inner_text("#ppBreakdown") and "$22.00" in page.inner_text("#ppBreakdown"))
+    page.fill("#ppShipIntl", "")
+    check("clearing an optional box sets it back to 'not set'", [x for x in data(page)["products"] if x["id"] == ppsel(page)][0]["shipIntl"] is None)
+    page.uncheck("#ppAbroadWi")
+    page.fill("#ppExpName", "Kiln repair"); page.fill("#ppExpAmt", "120"); page.fill("#ppExpDate", "2026-05-10"); page.select_option("#ppExpCat", "Equipment"); page.click("#ppExpAdd")
+    page.fill("#ppExpName", "Shop software"); page.fill("#ppExpAmt", "15"); page.fill("#ppExpDate", "2026-05-01"); page.check("#ppExpMonthly"); page.click("#ppExpAdd")
+    ex = data(page)["expenses"]
+    check("expenses are added from the card", len(ex) == 2 and ex[0]["category"] == "Equipment" and ex[1]["monthly"] is True, ex)
+    rows = page.evaluate("() => PP.moneyMonths(dd.getData())")
+    may = [r for r in rows if r["month"] == "2026-05"][0]; jun = [r for r in rows if r["month"] == "2026-06"][0]
+    check("money by month: a monthly expense repeats, a one-off doesn't", may["expenses"] == 135 and jun["expenses"] == 15, (may, jun))
+    check("the Expenses & profit table shows the months and a year total", "May" in page.inner_text("#ppMoneyTable") and "Year" in page.inner_text("#ppMoneyTable"))
+    page.click("#ppExpListSum"); page.locator("[data-delexp]").first.click()
+    check("an expense can be deleted", len(data(page)["expenses"]) == 1)
+    check("no errors", not errs, errs)
     ctx.close()
 
     print("\n== migrate and validate ==")
@@ -222,7 +307,17 @@ with sync_playwright() as p:
     page.evaluate(f"""() => localStorage.setItem('{KEY}', JSON.stringify({{ products: [{{id:'old1', name:'Old mug', price: 10, shipCharged: 0, materials: 1, minutes: 0, hourly: null, packaging: 0, shipCost: 0, photo: '', notes: '', etsy: [], listing: ''}}] }}))""")
     page.reload(); page.wait_for_function("() => dd.getData()")
     d = data(page)
-    check("data from before envelopes (schema 0) is brought up to date", d["products"][0]["name"] == "Old mug" and d["settings"]["goal"] == 2000 and d["sales"] == [])
+    check("data from before envelopes (schema 0) is brought up to date", d["products"][0]["name"] == "Old mug" and d["settings"]["goal"] == 2000 and d["sales"] == [] and d["expenses"] == [])
+    check("old cost fields become cost types (materials, minutes → Time to make)", d["products"][0]["costs"] == {"materials": 1, "time": 0, "packaging": 0, "label": 0} and "materials" not in d["products"][0])
+    page.evaluate(f"""() => localStorage.setItem('{KEY}', JSON.stringify({{dd: 1, program: 'pricing', schemaVersion: 1, example: false, data: {{
+        settings: {{country: 'CA', abroad: false, bigShop: false, feeTax: true, hourly: 25, goal: 1500, rates: {{}}}},
+        products: [{{id: 'v1', name: 'Soap', price: 9, shipCharged: 4, materials: 2, minutes: 12, hourly: null, packaging: 0.5, shipCost: 5, photo: '', notes: '', etsy: [], listing: ''}}],
+        scenarios: [], sales: [], orders: [], statement: [] }} }}))""")
+    page.reload(); page.wait_for_function("() => dd.getData()")
+    d = data(page)
+    check("version 1 data: the shop's hourly rate moves onto Time to make, and profit is unchanged",
+          [c["rate"] for c in d["settings"]["costs"] if c["id"] == "time"] == [25] and "hourly" not in d["settings"] and d["products"][0]["costs"]["time"] == 12 and
+          round(page.evaluate("() => PP.calc(dd.getData().products[0], dd.getData().settings).cost.total"), 2) == 12.5, d["settings"])
     bad = page.evaluate("""() => [
       DD_PROGRAM.validateData({}),
       DD_PROGRAM.validateData(Object.assign(DD_PROGRAM.emptyData(), {products: [{id: 1, name: 'x'}]})),
@@ -299,10 +394,10 @@ with sync_playwright() as p:
     page.click("#dd-notice-example >> text=Keep these")   # the examples become the buyer's own
     txt = send(page, "Add a product: soap bar, $3 materials, 10 minutes, $9 price")
     soap = [x for x in data(page)["products"] if x["name"] == "soap bar"]
-    check("add_product adds it with the numbers given", len(soap) == 1 and soap[0]["materials"] == 3 and soap[0]["minutes"] == 10 and soap[0]["price"] == 9, txt)
+    check("add_product adds it with the numbers given", len(soap) == 1 and soap[0]["costs"]["materials"] == 3 and soap[0]["costs"]["time"] == 10 and soap[0]["price"] == 9, txt)
     txt = send(page, "Set the mug's materials to 8 and add its photo")
     mug = [x for x in data(page)["products"] if x["id"] == "ex-mug"]
-    check("update_product changes costs and the photo link", mug and mug[0]["materials"] == 8 and mug[0]["photo"].endswith("mug.jpg"), txt)
+    check("update_product changes costs and the photo link", mug and mug[0]["costs"]["materials"] == 8 and mug[0]["photo"].endswith("mug.jpg"), txt)
     txt = send(page, "What if 25% off?")
     check("explain_price does a what-if without changing anything", "25% off" in txt and [x for x in data(page)["products"] if x["id"] == "ex-mug"][0]["price"] == 34, txt[:160])
     txt = send(page, "Save a holiday what-if")
@@ -336,6 +431,19 @@ with sync_playwright() as p:
     check("link_etsy_item links the Etsy item to the product", any("Lavender Soap Bar" in x["etsy"] for x in data(page)["products"] if x["name"] == "soap bar"), txt)
     txt = send(page, "What did I sell in September?")
     check("sales_report counts the linked soap under the product", "soap bar 4 sold" in txt, txt[:300])
+    txt = send(page, "Track glitter as 3% of the price")
+    g = [c for c in data(page)["settings"]["costs"] if c["name"] == "Glitter"]
+    check("manage_cost adds a cost type of the seller's own (percent of price)", g and g[0]["kind"] == "percent" and g[0]["value"] == 3 and g[0]["on"], txt)
+    txt = send(page, "Turn on Etsy Plus")
+    check("manage_cost switches on a popular one", [c["on"] for c in data(page)["settings"]["costs"] if c["id"] == "plus"] == [True], txt)
+    txt = send(page, "I spent $40 on beads")
+    check("add_expense records it", any(e["name"] == "Beads" and e["amount"] == 40 and e["category"] == "Supplies" for e in data(page)["expenses"]), txt)
+    txt = send(page, "How much did I make this year?")
+    check("money_report gives the year's totals", "2026 so far" in txt and "expenses" in txt and "kept" in txt, txt[:200])
+    txt = send(page, "Usually two per order, and I list in US dollars")
+    s2 = data(page)["settings"]
+    check("change_settings: items per order and the currency conversion fee", s2["perOrder"] == 2 and s2["convert"] is True, txt)
+    check("Margo is told the cost types the seller tracks", "Cost types tracked:" in G.sent[-1]["systemInstruction"]["parts"][0]["text"] and "Glitter" in G.sent[-1]["systemInstruction"]["parts"][0]["text"])
     txt = send(page, "Clear my sales")
     page.locator(".dd-helper-msg.bot").last.locator("text=Yes, remove them").click(); page.wait_for_timeout(300)
     check("clear_sales asks, then clears; products stay", not data(page)["sales"] and any(x["name"] == "soap bar" for x in data(page)["products"]))
@@ -348,6 +456,8 @@ with sync_playwright() as p:
 
     print("\n== phone ==")
     ctx, page, errs = fresh(device=p.devices["iPhone 13"])
+    page.wait_for_timeout(10700)
+    check("the corner button takes turns with what Margo can do", page.inner_text(".dd-helper-fab-text").strip() == "Have Margo price it", page.inner_text(".dd-helper-fab-text"))
     check("products come first on a phone too", page.locator("#ppProdCard").bounding_box()["y"] < page.locator("#ppCalcCard").bounding_box()["y"])
     check("the calculator is one column and nothing runs off the side", page.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth + 1"))
     check("the version is in the footer", VERSION in page.inner_text("#dd-footer"))

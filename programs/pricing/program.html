@@ -19,19 +19,20 @@
 
     <div class="pp-cols">
       <div>
-        <h3 class="pp-h3">What the buyer pays <span class="pp-cur" id="ppCurr"></span></h3>
-        <label class="pp-field"><span>Listing price</span><input class="dd-input" id="ppPrice" inputmode="decimal" autocomplete="off"></label>
-        <label class="pp-field"><span>Shipping the buyer pays <small>0 = free shipping</small></span><input class="dd-input" id="ppShipCharged" inputmode="decimal" autocomplete="off"></label>
-        <h3 class="pp-h3">What one costs you</h3>
-        <label class="pp-field"><span>Materials</span><input class="dd-input" id="ppMaterials" inputmode="decimal" autocomplete="off"></label>
-        <div class="pp-two">
-          <label class="pp-field"><span>Minutes to make</span><input class="dd-input" id="ppMinutes" inputmode="decimal" autocomplete="off"></label>
-          <label class="pp-field"><span>Hourly rate</span><input class="dd-input" id="ppHourly" inputmode="decimal" autocomplete="off"></label>
-        </div>
-        <div class="pp-two">
-          <label class="pp-field"><span>Packaging</span><input class="dd-input" id="ppPackaging" inputmode="decimal" autocomplete="off"></label>
-          <label class="pp-field"><span>Shipping label</span><input class="dd-input" id="ppShipCost" inputmode="decimal" autocomplete="off"></label>
-        </div>
+        <h3 class="pp-h3">What the buyer pays</h3>
+        <label class="pp-field"><span>Listing price <i class="pp-unit" data-sym>($)</i></span><input class="dd-input" id="ppPrice" inputmode="decimal" autocomplete="off"></label>
+        <label class="pp-field"><span>Shipping the buyer pays <i class="pp-unit" data-sym>($)</i> <small>0 = free shipping</small></span><input class="dd-input" id="ppShipCharged" inputmode="decimal" autocomplete="off"></label>
+        <details class="pp-more" id="ppShipMore">
+          <summary>More shipping: extra items and buyers abroad</summary>
+          <label class="pp-field"><span>Each additional item in the same order <i class="pp-unit" data-sym>($)</i> <small>Blank = same as the first item</small></span><input class="dd-input" id="ppShipAdd" inputmode="decimal" autocomplete="off" placeholder="Same as the first"></label>
+          <div class="pp-two">
+            <label class="pp-field"><span>Buyer abroad pays <i class="pp-unit" data-sym>($)</i></span><input class="dd-input" id="ppShipIntl" inputmode="decimal" autocomplete="off" placeholder="Not set"></label>
+            <label class="pp-field"><span>Label abroad costs you <i class="pp-unit" data-sym>($ per order)</i></span><input class="dd-input" id="ppLabelIntl" inputmode="decimal" autocomplete="off" placeholder="Not set"></label>
+          </div>
+        </details>
+        <h3 class="pp-h3">What one costs you <button class="dd-linkbtn pp-h3btn" id="ppCostsBtn">⚙️ Choose costs</button></h3>
+        <div id="ppCosts"></div>
+        <p class="dd-note pp-monthly" id="ppMonthly" hidden></p>
       </div>
       <div class="pp-results">
         <div class="pp-hero">
@@ -40,6 +41,7 @@
           <span id="ppMargin" class="pp-margin"></span>
           <span id="ppKeep" class="pp-keep"></span>
         </div>
+        <div class="pp-guarantee" id="ppGuarantee" hidden></div>
         <div id="ppBreakdown"></div>
         <div class="pp-facts">
           <div><span>Break-even price</span><b id="ppBreakEven"></b></div>
@@ -55,6 +57,7 @@
       <div class="pp-whatif-row">
         <label class="pp-field pp-small"><span>Sale discount %</span><input class="dd-input" id="ppDiscount" inputmode="decimal" placeholder="0" autocomplete="off"></label>
         <label class="pp-check"><input type="checkbox" id="ppAd"> <span id="ppAdLabel">This sale came from an offsite ad</span></label>
+        <label class="pp-check"><input type="checkbox" id="ppAbroadWi"> <span>The buyer is in another country</span></label>
       </div>
       <div class="pp-whatif-row">
         <input class="dd-input" id="ppScName" placeholder="Name it, e.g. Holiday sale" autocomplete="off" aria-label="What-if name">
@@ -88,6 +91,21 @@
     <p class="dd-note">Your file never leaves this device. Names and addresses in it are skipped.</p>
   </div>
   <div id="ppSalesBody" hidden></div>
+</div>
+
+<div class="dd-card" id="ppMoneyCard">
+  <h2>🧾 Expenses &amp; profit <span class="pp-for"><select class="dd-input pp-year" id="ppYear" aria-label="Year"></select></span></h2>
+  <div id="ppMoneyTable"></div>
+  <h3 class="pp-h3">Add an expense</h3>
+  <div class="pp-exp-add">
+    <input class="dd-input" id="ppExpName" placeholder="What was it? e.g. Clay and glaze" autocomplete="off" aria-label="What the expense was">
+    <span class="pp-inline pp-exp-amt"><i class="pp-unit" data-sym>$</i><input class="dd-input" id="ppExpAmt" inputmode="decimal" placeholder="0.00" autocomplete="off" aria-label="Amount"></span>
+    <input class="dd-input" id="ppExpDate" type="date" aria-label="Date">
+    <select class="dd-input" id="ppExpCat" aria-label="Kind of expense"></select>
+    <label class="pp-check"><input type="checkbox" id="ppExpMonthly"> Every month</label>
+    <button class="dd-btn" id="ppExpAdd">Add</button>
+  </div>
+  <details class="pp-details" id="ppExpListWrap"><summary id="ppExpListSum">My expenses</summary><div id="ppExpList"></div></details>
 </div>
 
 <!-- Computers: a QR code to scan. Phones: what sync and the Home Screen mean here. -->

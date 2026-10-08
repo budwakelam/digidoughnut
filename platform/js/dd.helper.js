@@ -90,9 +90,11 @@
       if (mode === "bubble") {
         fab = document.createElement("button");
         fab.id = "dd-helper-fab"; fab.className = "dd-helper-fab";
-        fab.innerHTML = '<span class="dd-helper-fab-face" aria-hidden="true">' + esc(cfg.face) + '</span> Ask ' + esc(helper.name());
+        fab.innerHTML = '<span class="dd-helper-fab-face" aria-hidden="true">' + esc(cfg.face) + '</span><span class="dd-helper-fab-text">Ask ' + esc(helper.name()) + '</span>';
+        fab.setAttribute("aria-label", "Ask " + helper.name());
         fab.addEventListener("click", function () { helper.open(); });
         document.body.appendChild(fab);
+        rotateFab(fab);
       }
     }
     root = home;
@@ -100,6 +102,29 @@
     paint();
   }
   helper.mode = function () { return mode; };
+
+  /* The corner button takes turns with short lines about what the helper can DO (Oran, 2026-10-08:
+     she's there to ask AND to do). "Ask <name>" first, then each line for 10 seconds, with a fade.
+     It holds still while the panel is open, while the pointer or keyboard is on it, while the tab
+     is hidden, and for people who ask their device to reduce motion. */
+  var fabTimer = null;
+  helper.FAB_MS = 10000;
+  function rotateFab(fab) {
+    clearInterval(fabTimer);
+    var lines = ["Ask " + helper.name()].concat((cfg.lines || []).filter(function (l) { return typeof l === "string" && l.trim(); }));
+    if (lines.length < 2) return;
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    var i = 0, held = false, text = fab.querySelector(".dd-helper-fab-text");
+    ["mouseenter", "focus"].forEach(function (e) { fab.addEventListener(e, function () { held = true; }); });
+    ["mouseleave", "blur"].forEach(function (e) { fab.addEventListener(e, function () { held = false; }); });
+    fabTimer = setInterval(function () {
+      if (!document.body.contains(fab)) { clearInterval(fabTimer); return; }
+      if (held || fab.hidden || document.hidden) return;
+      i = (i + 1) % lines.length;
+      text.classList.add("dd-fade");
+      setTimeout(function () { text.textContent = lines[i]; text.classList.remove("dd-fade"); }, 260);
+    }, helper.FAB_MS);
+  }
   /* Bring the window into view (bubble: open it) and put the cursor in the box. */
   helper.open = function () {
     if (!root) return;
@@ -382,7 +407,7 @@
     cfg = {
       name: name, face: h.face || "🪙", role: h.role || "your helper",
       greeting: h.greeting || ("Hi, I'm " + name + "! I can make changes for you or answer questions about " + p.name + ". Just tell me what you need."),
-      place: h.place, slot: h.slot
+      place: h.place, slot: h.slot, lines: h.lines
     };
     load();
     if (window.matchMedia) { mq = window.matchMedia(WIDE); var onChange = function () { place(); }; if (mq.addEventListener) mq.addEventListener("change", onChange); else if (mq.addListener) mq.addListener(onChange); }

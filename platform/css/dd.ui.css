@@ -308,6 +308,8 @@ body.dd-has-side{padding-right:360px}
                min-height:48px;box-shadow:0 6px 18px rgba(0,0,0,.25)}
 .dd-helper-fab[hidden]{display:none}
 .dd-helper-fab .dd-helper-fab-face{font-size:1.2rem;line-height:1}
+.dd-helper-fab-text{transition:opacity .25s ease,transform .25s ease;white-space:nowrap}
+.dd-helper-fab-text.dd-fade{opacity:0;transform:translateY(4px)}
 .dd-helper-fab-alert::after{content:"";position:absolute;top:2px;right:2px;width:12px;height:12px;border-radius:50%;background:#ef4444;border:2px solid #fff}
 .dd-helper-bubble .dd-helper-head{padding-bottom:6px;border-bottom:1px solid var(--dd-line)}
 /* Phones: the bubble opens as a sheet from the bottom edge (audit 2026-10-08, #8). */

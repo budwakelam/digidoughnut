@@ -26,7 +26,9 @@ function build(name) {
   const programJs = read(`${dir}/program.js`);
 
   // The program's id, name and version live in program.js (single source of truth).
-  const pick = (field) => (programJs.match(new RegExp(`\\b${field}\\s*:\\s*"([^"]+)"`)) || [])[1];
+  // Read them from the DD_PROGRAM object itself: helper tables above it may have their own name: fields.
+  const at = programJs.search(/\bDD_PROGRAM\s*=/), head = at >= 0 ? programJs.slice(at) : programJs;
+  const pick = (field) => (head.match(new RegExp(`\\b${field}\\s*:\\s*"([^"]+)"`)) || [])[1];
   const meta = { id: pick("id"), name: pick("name"), version: pick("version"),
                  tagline: pick("tagline") || "", accent: pick("accent") || "#2563eb" };
   if (!meta.id || !meta.name || !meta.version) fail(name, 'program.js needs id, name and version as "quoted" strings');
