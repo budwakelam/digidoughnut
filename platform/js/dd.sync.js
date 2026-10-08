@@ -301,7 +301,14 @@
         return withTimeout(new Promise(function (resolve, reject) {
           unsubs.push(fb.D.onValue(ledgerRef, function (snap) {
             diag.remote++; diag.lastRemote = now(); events++;
-            var ok = onRemote(snap.val());
+            var v = snap.val();
+            if (v && v.meta && v.meta.moved) {
+              // This address was retired on another device (an AI agent was disconnected).
+              if (!gotFirst) { gotFirst = true; reject({ ddType: "sync_moved", raw: "this address was retired" }); }
+              else setTimeout(movedAway);
+              return;
+            }
+            var ok = onRemote(v);
             if (!gotFirst) { gotFirst = true; ok ? resolve() : reject({ ddType: state === "newer" ? "sync_newer" : "unexpected", raw: "first snapshot not usable" }); }
           }, function (e) {
             var t = fail("listening", e);
@@ -335,6 +342,7 @@
       .catch(function (err) {
         stopListening();
         var type = fail(err.stage || "start", err.e || err);
+        if (type === "sync_moved") { movedAway(); return friendly(type); }
         setProblem(type);
         return friendly(type);
       })
@@ -377,6 +385,51 @@
   };
 
   /* Forget the setup code on this device (all programs on this web address). */
+  /* Another device retired this address (Disconnect my agent). Stop here, keep everything on this
+     device, and say how to get back in step. */
+  function movedAway() {
+    stopListening(); rememberOn(false); state = "off"; problem = null;
+    dd.store.remove(key("sync_id")); dd.store.remove(key("sync_base")); base = null; pend = {}; stamps = {};
+    paint(); dd.emit("sync:changed", { on: false, moved: true });
+    var thing = (program && program.dataLabel) || "numbers";
+    dd.ui.notice("sync", "Live sync stopped on this device: your " + thing + " moved to a new private address, because an AI agent was disconnected on your other device. " +
+      "Everything here is kept. To get back in step, open the program on that device and use Send to my phone again.", "warn");
+  }
+
+  /* For other platform modules (dd.agent): the live connection, or null when sync isn't on. */
+  sync.handle = function () {
+    if (state !== "on" || !ledgerRef || !fb || !db) return null;
+    return { fb: fb, db: db, ref: ledgerRef, path: "sync/" + program.id + "/" + ledger(), ledger: ledger(), config: sync.config() };
+  };
+  sync.ledger = function () { return ledger(); };
+  sync.strip = function (cfg) { return strip(cfg); };
+
+  /* Join a given ledger with a given setup code (phone QR, agent link). */
+  sync.join = function (ledgerId, cfg) {
+    if (!/^[0-9a-f]{32}$/.test(String(ledgerId)) || !cfg) return Promise.resolve(friendly("sync_config"));
+    if (ledger() !== ledgerId) { stopListening(); dd.store.set(key("sync_id"), ledgerId); dd.store.remove(key("sync_base")); base = null; pend = {}; stamps = {}; }
+    saveConfig(cfg);
+    return sync.start();
+  };
+
+  /* Move this program to a NEW secret address (Disconnect my agent). The old address is emptied
+     and marked as moved, so the agent can't read anything there and the buyer's other devices stop
+     and ask for one more scan. Everything on this device goes to the new address. */
+  sync.newAddress = function () {
+    var h = sync.handle();
+    if (!h) return Promise.resolve(friendly(state === "on" ? "sync_offline" : "sync_offline"));
+    var old = h.ref;
+    stopListening(); state = "connecting"; paint();
+    return withTimeout(fb.D.update(old, { "meta/moved": true, lists: null, fields: null, times: null, agent: null }), sync.limits.connect, "retiring the old address")
+      .then(function () {
+        dd.store.set(key("sync_id"), newLedger()); dd.store.remove(key("sync_base")); base = null; pend = {}; stamps = {};
+        return sync.start();
+      }, function (e) {
+        var t = fail("moving", e);
+        return sync.start().then(function () { return friendly(t); });
+      });
+  };
+
   sync.forget = function () { sync.stop(); dd.store.remove(CONFIG_KEY); dd.store.remove(key("sync_base")); };
 
   /* ---------- the two directions ---------- */
@@ -494,9 +547,7 @@
       return;
     }
     resumeAfterPair = false;
-    if (ledger() !== a.ledger) { dd.store.set(key("sync_id"), a.ledger); dd.store.remove(key("sync_base")); base = null; pend = {}; }
-    saveConfig(a.config);
-    sync.start().then(function (r) {
+    sync.join(a.ledger, a.config).then(function (r) {
       if (r.ok) dd.ui.toast("Live sync is on. This phone and your computer are in step.", 4000);
       else dd.ui.notice("sync", r.title + " " + r.help, "warn");
     });
@@ -567,6 +618,9 @@
     document.addEventListener("visibilitychange", back);
     window.addEventListener("pageshow", function (e) { if (e.persisted) back(); });
     window.addEventListener("online", function () { if (wasOn() && state === "problem" && problem === "sync_offline") sync.start(); });
+    // An AI agent's link joins its ledger straight away (dd.agent reads it, never expires).
+    var al = dd.agent && dd.agent.readLink ? dd.agent.readLink() : null;
+    if (al) { sync.join(al.s, al.f).then(function (r) { if (!r.ok) dd.ui.notice("sync", r.title + " " + r.help, "warn"); }); return; }
     // A pairing link in the address is read just after this; it may bring a different ledger.
     if (/[#&]dd=/.test(location.hash)) { resumeAfterPair = true; paint(); }
     else if (wasOn() && sync.config()) { diag.resumed = "yes"; sync.start(); }

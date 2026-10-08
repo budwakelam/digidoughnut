@@ -43,6 +43,8 @@
       (dd.helper && dd.helper.enabled() ? '<p><b>Your chats with ' + ui.esc(dd.helper.name()) + '</b> are kept in this browser, on this device, so you can pick up where you left off. "New chat" clears them. They are never sent to your phone or synced.</p>' : "") +
       '<p><b>Live sync</b> (only if you turn it on) keeps a copy in your own Firebase database, in your own Google account. DigiDoughnut never sees it. ' +
         'Each program\'s copy sits at a long secret address that only your devices know, and the program signs in to your database before it reads or writes.</p>' +
+      (dd.agent && dd.agent.available() ? '<p><b>Your AI agent</b> (only if you connect one, setup step 5) reads and changes your ' + ui.esc(p && p.dataLabel || "numbers") +
+        ' through your own Firebase database. Whatever it reads also goes to the company that runs it, for example Meta for Muse.</p>' : "") +
       '<p><b>Backups</b> are files you download and keep yourself. Nothing is sent anywhere.</p>' +
       '<p><b>The DigiDoughnut noticeboard.</b> Once a week, ' + ui.esc(name) + ' checks the DigiDoughnut noticeboard for updated help links and notices. ' +
         'It only downloads a small file. Your numbers, your code and anything you type are never sent.</p>' +

@@ -112,6 +112,7 @@
       if (program.mount) program.mount(ctx());
       render();
       // Sync listens for changes and for pairing links, so it starts before the link is read.
+      if (dd.agent) dd.agent.attach(program);   // before sync: an agent link picks the ledger
       if (dd.sync) dd.sync.attach(program);
       if (dd.pair) {
         // The program's numbers can ride along in the QR while they're small. Example numbers don't.

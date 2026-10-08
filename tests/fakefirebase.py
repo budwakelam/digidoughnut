@@ -11,7 +11,7 @@ Two parts:
 
 It proves our side only. The gate is Oran's PC + iPhone against his real Firebase project.
 """
-import json, queue, re, threading, http.server, uuid
+import json, queue, re, threading, http.server, uuid, time
 from urllib.parse import urlparse, parse_qs
 
 BAD_KEY = "AIzaBadKeyForTests000000"
@@ -52,6 +52,14 @@ def _set(tree, segs, val):
     return _prune(root)
 
 
+def _stamp(v):
+    """Firebase's {".sv": "timestamp"} placeholder becomes the server's clock."""
+    if isinstance(v, dict):
+        if v == {".sv": "timestamp"}: return int(time.time() * 1000)
+        return {k: _stamp(x) for k, x in v.items()}
+    return v
+
+
 def _segs(path):
     return [s for s in str(path or "").split("/") if s]
 
@@ -66,6 +74,7 @@ class FakeFirebase:
         self.anon_disabled = False
         self.rules_closed = False
         self.writes = 0
+        self.pushn = 0
         me = self
 
         class H(http.server.BaseHTTPRequestHandler):
@@ -89,6 +98,12 @@ class FakeFirebase:
                 u = urlparse(self.path); q = parse_qs(u.query)
                 n = int(self.headers.get("Content-Length") or 0)
                 body = self.rfile.read(n).decode() if n else ""
+                if u.path == "/v1/accounts:signUp":   # REST sign-in, as an AI agent does it
+                    if me.anon_disabled: return self.reply(400, {"error": {"message": "ADMIN_ONLY_OPERATION"}})
+                    t = uuid.uuid4().hex; me.tokens.add(t)
+                    return self.reply(200, {"idToken": t, "refreshToken": "r" + t, "expiresIn": "3600", "localId": t})
+                if u.path.endswith(".json"):
+                    return self.rest("POST", u, q, body)
                 if u.path == "/auth":
                     key = (q.get("key") or [""])[0]
                     if key == BAD_KEY:
@@ -99,6 +114,9 @@ class FakeFirebase:
                     return self.reply(200, {"uid": t})
                 if u.path == "/write":
                     w = json.loads(body)
+                    if w.get("op") == "cas":
+                        ok, seq = me.cas(w.get("path"), w.get("expect"), w.get("value"), w.get("token"))
+                        return self.reply(200 if ok is not None else 403, {"seq": seq, "committed": bool(ok)} if ok is not None else {"error": "PERMISSION_DENIED"})
                     ok, seq = me.write(w.get("op"), w.get("path"), w.get("value"), w.get("token"))
                     return self.reply(200 if ok else 403, {"seq": seq} if ok else {"error": "PERMISSION_DENIED"})
                 if u.path == "/_set":   # test backdoor: no rules
@@ -106,8 +124,30 @@ class FakeFirebase:
                     return self.reply(200, {})
                 self.reply(404, {})
 
+            def rest(self, method, u, q, body):
+                path = u.path[:-len(".json")]; token = (q.get("auth") or [""])[0]
+                if method == "GET":
+                    if not me.can_read(_segs(path), token): return self.reply(401, {"error": "Permission denied"})
+                    with me.lock: return self.reply(200, _get(me.tree, _segs(path)))
+                val = json.loads(body) if body else None
+                if method == "POST":
+                    me.pushn += 1; k = "-%013d%04d" % (int(time.time() * 1000), me.pushn)
+                    ok, _ = me.write("set", path + "/" + k, val, token)
+                    return self.reply(200, {"name": k}) if ok else self.reply(401, {"error": "Permission denied"})
+                ok, _ = me.write("set", path, None if method == "DELETE" else val, token)
+                return self.reply(200, val) if ok else self.reply(401, {"error": "Permission denied"})
+
+            def do_PUT(self):
+                u = urlparse(self.path); n = int(self.headers.get("Content-Length") or 0)
+                return self.rest("PUT", u, parse_qs(u.query), self.rfile.read(n).decode() if n else "")
+
+            def do_DELETE(self):
+                u = urlparse(self.path); return self.rest("DELETE", u, parse_qs(u.query), "")
+
             def do_GET(self):
                 u = urlparse(self.path); q = parse_qs(u.query)
+                if u.path.endswith(".json") and u.path != "/_dump":
+                    return self.rest("GET", u, q, "")
                 if u.path == "/_dump":
                     with me.lock: return self.reply(200, {"tree": me.tree})
                 if u.path == "/get":
@@ -181,12 +221,21 @@ class FakeFirebase:
                 if self.rules_closed or token not in self.tokens: return False, 0
                 for s, _ in changes:
                     if not self._ledger(s): return False, 0
-            for s, v in changes: self.tree = _set(self.tree, s, v)
+            for s, v in changes: self.tree = _set(self.tree, s, _stamp(v))
             self.seq += 1; self.writes += 1
             for sp, qu in self.subs:
                 if any(sp[:len(s)] == s or s[:len(sp)] == sp for s, _ in changes):
                     qu.put((self.seq, _get(self.tree, sp)))
             return True, self.seq
+
+    def cas(self, path, expect, value, token):
+        """Compare-and-set, for the SDK's runTransaction. None = refused by the rules."""
+        segs = _segs(path)
+        with self.lock:
+            if self.rules_closed or token not in self.tokens or not self._ledger(segs): return None, 0
+            if json.dumps(_get(self.tree, segs), sort_keys=True) != json.dumps(expect, sort_keys=True): return False, self.seq
+        ok, seq = self.write("set", path, value, token)
+        return (True if ok else None), seq
 
     def reset(self):
         with self.lock: self.tree = None
@@ -323,6 +372,18 @@ export async function get(r) {
 }
 export function update(r, values) { return r.db.write({ op: "update", path: r.path, value: clone(values) }); }
 export function set(r, value) { return r.db.write({ op: "set", path: r.path, value: clone(value) }); }
+export async function runTransaction(r, fn) {
+  for (let i = 0; i < 5; i++) {
+    if (window.__fakeOffline) throw new Error("Error: Client is offline.");
+    const cur = (await get(r)).val(), next = fn(clone(cur));
+    if (next === undefined) return { committed: false, snapshot: { val: () => clone(cur) } };
+    const res = await fetch(__SERVER + "/write", { method: "POST", headers: { "content-type": "text/plain" }, body: JSON.stringify({ op: "cas", path: r.path, expect: cur, value: next, token: r.db.app._token }) });
+    if (res.status === 403) { const e = new Error("permission_denied"); e.code = "PERMISSION_DENIED"; throw e; }
+    const j = await res.json();
+    if (j.committed) return { committed: true, snapshot: { val: () => clone(next) } };
+  }
+  return { committed: false, snapshot: { val: () => null } };
+}
 export function goOffline() { window.__fakeNet(false); }
 export function goOnline() { window.__fakeNet(true); }
 """,

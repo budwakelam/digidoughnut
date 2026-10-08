@@ -226,3 +226,41 @@ Collected as decisions come up; folded into handoff.md later.
   "held" changes may be dropped when they match the database (else a refused write lost the
   item). sync_test: 90 checks.
 - Oran asked for the next phase: **connect an AI agent (Muse, Dots, Grok Bot)** — see HANDOFF.md.
+
+### Phase 6: connect your AI agent, first build (2026-10-07, evening) — demo14
+
+- Oran's calls: build the API on the buyer's OWN Firebase (no DigiDoughnut server); step 5
+  "Connect your AI agent", needs step 4; an agent's instruction WAITS in the database until the
+  program is open somewhere (agent is told so; it may open its link to run it now); big changes
+  wait for the buyer's Yes on their own device; say plainly that anyone with the instructions can
+  read and change the data. Oran has Muse (not Dots; Grok Bot unsure).
+- New `platform/js/dd.agent.js`. Under the ledger, `agent/`:
+  `view` {v, program, name, example, summary, data (JSON text), tools (JSON text), updatedAt} —
+  written by the buyer's devices on change (only when different, at most every 3 s);
+  `inbox/<push id>` {tool, args, at} from the agent; `done/<id>` {ok, message, tool, at} or
+  {waiting:true}. Instructions run with the program's own tools (same contract as Penny), one at
+  a time, oldest first, across all open devices (claimed with runTransaction; a claim goes stale
+  after 60 s). Args are checked against the tool's params ("true" -> true, numbers -> text).
+  Example data: the first agent change clears it first and says so. Results older than 7 days
+  are pruned. The buyer sees "Your AI agent made a change… [Undo]" on the device that ran it.
+- Big changes: parked as inbox state "waiting" + question; a notice with Yes/No on every buyer
+  device; never on a copy opened from the agent link (`dd_<id>_agent_device_v1`, with a "This is
+  my own device" button).
+- Agent link `#ddagent=<b64url {v,s,f}>`: never expires, reusable (agents start fresh browsers);
+  read by dd.agent.readLink() from dd.sync.attach, joins via the new `dd.sync.join()`.
+- "Copy instructions for my agent": `dd.agent.brief()` — REST sign-in (identitytoolkit
+  accounts:signUp + securetoken refresh), BASE, read view, POST inbox, read done, the actions
+  from DD_PROGRAM.tools, rules. No Google AI code in it.
+- Disconnect my agent: `dd.sync.newAddress()` empties the old ledger and leaves
+  `meta/moved = true`; devices seeing it stop sync, keep their data, and get a notice
+  (`sync_moved`); this device moves everything to a new ledger, then the QR sheet opens.
+- dd.sync also exposes `handle()`, `ledger()`, `strip()`. Rules unchanged (agent/ sits inside the
+  ledger). Setup card: steps can have `shown()`; five steps. Privacy sheet + support report
+  ("AI agent") updated.
+- Tests: fakefirebase gains runTransaction (compare-and-set), {".sv":"timestamp"}, and the REST
+  API (accounts:signUp, GET/POST/PUT/DELETE *.json?auth=). New `tests/agent_test.py` (73): a
+  Python agent using only the brief. setup_test counts five steps. All suites: 110 · 61 · 200 ·
+  79 · 90 · 22 · 73.
+- NOT YET: Oran's run with Muse (can Muse make REST calls? open the link?). Agent panel with
+  forms for browsing-only agents not built (wait for Muse's result). Undo on the buyer's device
+  only when that device ran the instruction. Each agent sign-in makes an anonymous user.

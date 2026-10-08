@@ -30,24 +30,32 @@
     { id: "phone", icon: "📱", title: "Put it on your phone", gives: "The same program on your phone, moved over by scanning a code.", time: "About 10 minutes",
       done: function () { return dd.env.isHosted; }, wizard: "host" },
     { id: "sync", icon: "🔄", title: "Keep devices in step", gives: "Changes on one device show up on the other.", time: "About 10 minutes",
-      done: function () { return !!(dd.sync && dd.sync.isOn && dd.sync.isOn()); }, wizard: "sync" }
+      done: function () { return !!(dd.sync && dd.sync.isOn && dd.sync.isOn()); }, wizard: "sync" },
+    { id: "agent", icon: "🦾", title: "Connect your AI agent", gives: "Your own AI agent, like Muse, can read and change this program for you.", time: "About 2 minutes",
+      done: function () { return !!(dd.agent && dd.agent.connected()); },
+      shown: function () { return !!(dd.agent && dd.agent.available()); } }
   ];
 
   function inProgress(st, id) { return !!(st.wizards[id] || (id === "host" && (st.wizards.host_neocities || st.wizards.host_tiiny))); }
-  setup.doneCount = function () { return setup.steps.filter(function (s) { return s.done(); }).length; };
+  function visibleSteps() { return setup.steps.filter(function (s) { return !s.shown || s.shown(); }); }
+  setup.visibleSteps = visibleSteps;
+  setup.doneCount = function () { return visibleSteps().filter(function (s) { return s.done(); }).length; };
 
   /* ---------- the card / chip ---------- */
   setup.paint = function () {
     var host = document.getElementById("dd-setup"); if (!host || !program) return;
-    var st = state(), n = setup.doneCount(), total = setup.steps.length;
+    var st = state(), n = setup.doneCount(), total = visibleSteps().length;
     if (st.folded || n === total) {
       host.innerHTML = '<button class="dd-setup-chip" id="dd-setup-chip">' + (n === total ? "✓ All set up" : "Setup: " + n + " of " + total + " done") + '</button>';
       document.getElementById("dd-setup-chip").addEventListener("click", function () { var s = state(); s.folded = false; saveState(s); setup.paint(); });
       return;
     }
-    var rows = setup.steps.map(function (s, i) {
+    var syncOn = !!(dd.sync && dd.sync.isOn && dd.sync.isOn());
+    var rows = visibleSteps().map(function (s, i) {
       var done = s.done(), wiz = s.wizard && setup.wizards[s.wizard];
-      var btn = done && s.id === "phone" && needsHomeScreen() ? '<button class="dd-btn small" data-home>Add to Home Screen</button>'
+      var btn = s.id === "agent" ? (syncOn ? '<button class="' + (done ? 'dd-linkbtn' : 'dd-btn small') + '" data-agent>' + (done ? "Settings" : "Start") + '</button>'
+                                           : '<span class="dd-note">Needs step 4 first</span>')
+        : done && s.id === "phone" && needsHomeScreen() ? '<button class="dd-btn small" data-home>Add to Home Screen</button>'
         : done && s.id === "phone" && dd.env.isPhone ? ""
         : done && s.id === "phone" && dd.pair ? '<button class="dd-btn small ghost" data-phone>📲 Send to my phone</button>'
         : done && s.id === "sync" && dd.sync ? '<button class="dd-linkbtn" data-syncsheet>Settings</button>' : done
@@ -61,6 +69,7 @@
       '<p class="dd-note" style="margin:0 0 8px">Each step is optional. Do them in any order, any time.</p><ol class="dd-steps">' + rows + '</ol>' +
       '<div class="dd-btnrow"><button class="dd-linkbtn" id="dd-setup-fold">Hide this for now</button></div></div>';
     var ph = host.querySelector("[data-phone]"); if (ph) ph.addEventListener("click", function () { dd.pair.open(); });
+    var ag = host.querySelector("[data-agent]"); if (ag) ag.addEventListener("click", function () { dd.agent.openSheet(); });
     var ss = host.querySelector("[data-syncsheet]"); if (ss) ss.addEventListener("click", function () { dd.sync.openSheet(); });
     var hs = host.querySelector("[data-home]"); if (hs) hs.addEventListener("click", function () { setup.showHomeScreen(); });
     host.querySelectorAll("[data-start]").forEach(function (b) { b.addEventListener("click", function () { setup.open(b.dataset.start); }); });
