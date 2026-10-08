@@ -30,11 +30,13 @@
     // Phase 7.2: "Where it lives". Done when opened from any web address; a file on this computer
     // gets the choice (the DigiDoughnut version, or the buyer's own copy).
     { id: "phone", icon: "🏠", title: "Where it lives", gives: "Put it online, so it works on your phone too.", time: "About 1 minute",
-      done: function () { return dd.env.isHosted; }, wizard: "host",
+      // Always ticked: it lives somewhere. A file gets a small "limited" warning (Oran, 2026-10-08).
+      done: function () { return true; }, wizard: "host",
       // Oran, 2026-10-07: the row just says where it lives now; "Change" opens the Where it lives screen.
       text: function () {
         var h = dd.move ? dd.move.here() : null;
-        return { gives: "Now: " + (h ? h.title.charAt(0).toLowerCase() + h.title.slice(1) : dd.env.isHosted ? "online at " + location.host : "a file on this computer") + ".", time: "" };
+        return { gives: "Now: " + (h ? h.title.charAt(0).toLowerCase() + h.title.slice(1) : dd.env.isHosted ? "online at " + location.host : "a file on this computer") + ".", time: "",
+                 warn: dd.env.isFile ? "Limited: this computer only, not on your phone" : "" };
       } },
     { id: "sync", icon: "🔄", title: "Keep devices in step", gives: "Changes on one device show up on the other.", time: "About 10 minutes",
       done: function () { return !!(dd.sync && dd.sync.isOn && dd.sync.isOn()); }, wizard: "sync" },
@@ -79,7 +81,8 @@
       var text = s.text ? s.text(done) : null;   // a step may word itself by state (step 3, Phase 7.2)
       return '<li class="dd-step' + (done ? " done" : "") + '" data-step="' + s.id + '"><span class="dd-tick" aria-hidden="true">' + (done ? "✓" : i + 1) + '</span>' +
         '<div class="dd-step-text"><b><span class="dd-step-icon" aria-hidden="true">' + (s.icon || "") + '</span> ' + esc(text && text.title || s.title) + '</b><span>' +
-        esc(text && text.gives || s.gives) + (done || (text && text.time === "") ? "" : " · " + esc(text && text.time || s.time)) + '</span></div>' + btn + '</li>';
+        esc(text && text.gives || s.gives) + (done || (text && text.time === "") ? "" : " · " + esc(text && text.time || s.time)) +
+        (text && text.warn ? ' <i class="dd-step-warn">⚠ ' + esc(text.warn) + '</i>' : "") + '</span></div>' + btn + '</li>';
     }).join("");
   }
   // Buttons inside the steps list work the same on the page card and in the menu's sheet.
@@ -938,7 +941,7 @@
         body: function () { return '<p>Live sync keeps your computer and phone in step: add something on one, and it appears on the other a moment later.</p>' +
           '<p>It uses a free Google <b>Firebase</b> database that belongs to you, in your own Google account. DigiDoughnut never sees it.</p>' +
           '<ul class="dd-facts"><li>✓ Free (Firebase\'s Spark plan). No credit card.</li><li>✓ About 10 minutes, once. Every DigiDoughnut program on this address shares it.</li><li>✓ Easiest on a computer.</li></ul>' +
-          (dd.env.isFile ? '<p class="dd-status show warn">Put the program online first (setup step 3), then do this from its web address.</p>' : ""); } },
+          (dd.env.isFile ? '<p class="dd-status show warn">Put the program online first (setup step 3, Where it lives), then do this from its web address.</p>' : ""); } },
       { title: "Make a Firebase project",
         pic: function () { return { kind: "page", site: "console.firebase.google.com", items: [{ type: "field", label: "Project name", value: "My DigiDoughnut" }], btn: L("fb_continue", "Continue") }; },
         todo: function () { return "Open Firebase, make a new project, and follow it to the end."; },

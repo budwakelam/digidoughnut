@@ -98,7 +98,7 @@ with sync_playwright() as p:
     ctx, page, errs = fresh(FILE)
     check("card shows on first visit", page.locator(".dd-setup-card").is_visible())
     check("five steps (step 5: connect your AI agent)", page.locator(".dd-step").count() == 5)
-    check("opened as a file: 1 of 5 done (Try it)", "1 of 5" in page.inner_text(".dd-setup-count"), page.inner_text(".dd-setup-count"))
+    check("opened as a file: 2 of 5 done (Try it + Where it lives, ticked with a Limited warning)", page.locator("[data-step=phone] .dd-step-warn").is_visible() and "2 of 5" in page.inner_text(".dd-setup-count"), page.inner_text(".dd-setup-count"))
     check("no step says Coming soon (sync is ready in Phase 5)", page.locator(".dd-step >> text=Coming soon").count() == 0)
     check("phone step: Change opens Where it lives from the file", page.locator("[data-start=host]").inner_text() == "Change")
     ctx.close()

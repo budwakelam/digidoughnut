@@ -12,7 +12,7 @@
     // the seven AI error types (plan, "AI connections")
     offline:       ["You're not connected to the internet.", "Check your Wi-Fi or data, then try again."],
     // The website hosting the page forbids talking to other websites (e.g. Neocities' free plan).
-    host_blocked:  ["The website hosting this page won't let the helper reach {company}.", "Open the program from a different web address (see Setup, step 3), or contact DigiDoughnut and we'll help."],
+    host_blocked:  ["The website hosting this page won't let the helper reach {company}.", "Open the program from a different web address (see setup step 3, Where it lives), or contact DigiDoughnut and we'll help."],
     bad_code:      ["That code didn't work.", "It may have a typo or a missing piece. Copy it fresh from {company} and paste it again."],
     not_allowed:   ["That code isn't allowed to do this.", "Make a new code on {company}'s site and paste it here."],
     out_of_share:  ["You've used today's free share.", "It refills on its own. Try again later or tomorrow."],
@@ -29,7 +29,7 @@
     sync_offline:  ["Can't reach your Firebase database right now.", "Check your internet. Your changes are kept on this device and go across when it's back."],
     sync_newer:    ["Your other device has a newer version of this program.", "Put the newer file on this device too, then open it from the same address."],
     sync_moved:    ["This device's live sync address was retired on your other device.", "Open the program on that device and use Send to my phone again to get back in step."],
-    sync_file:     ["Live sync needs the program to be online.", "Put it online first (setup step 3), then open it from its web address and turn on sync there."],
+    sync_file:     ["Live sync needs the program to be online.", "Put it online first (setup step 3, Where it lives), then open it from its web address and turn on sync there."],
     backup_bad:    ["That file didn't look like a backup from this program.", "Choose a file that ends in .json and was made with the Download a backup button."]
   };
 

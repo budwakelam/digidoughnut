@@ -97,7 +97,7 @@ def main():
                     open_item(page, "backup"); check("Backup & new versions opens", "Backup & new versions" in page.inner_text(".dd-sheet h2")); page.keyboard.press("Escape")
                     open_item(page, "privacy"); check("Privacy opens", "connects to" in page.inner_text(".dd-sheet h2")); page.keyboard.press("Escape")
                     open_item(page, "help"); check("Help opens the support details", "--- Program ---" in page.inner_text("#dd-diag-text")); page.keyboard.press("Escape")
-                    open_item(page, "about"); check("About shows name and version", "Version 0.1.4" in page.inner_text(".dd-sheet")); page.keyboard.press("Escape")
+                    open_item(page, "about"); check("About shows name and version", "Version 0.1.5" in page.inner_text(".dd-sheet")); page.keyboard.press("Escape")
                     page.click("#dd-footer p", click_count=3); page.wait_for_timeout(100)
                     check("footer triple-click still opens support details", page.locator("#dd-diag-text").is_visible()); page.keyboard.press("Escape")
                     if dev_name == "desktop":
@@ -113,7 +113,7 @@ def main():
         page = new_page(ctx, errors)
         fresh(page, FILE_NOHOME)
         s3 = page.locator('.dd-setup-card [data-step="phone"]')
-        check("file, no home: step 3 not done", "done" not in (s3.get_attribute("class") or ""))
+        check("file: step 3 ticked, with a small Limited warning", "done" in (s3.get_attribute("class") or "") and "Limited: this computer only" in s3.inner_text())
         check("file, no home: step 3 is called Where it lives", "Where it lives" in s3.inner_text())
         check("file: the row just says where it lives now", "Now: a file on this computer." in s3.inner_text(), s3.inner_text())
         check("file: one button, Change", s3.locator("button").all_inner_texts() == ["Change"], str(s3.locator("button").all_inner_texts()))

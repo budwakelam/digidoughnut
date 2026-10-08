@@ -104,7 +104,7 @@
   pair.open = function () {
     if (dd.env.isFile) {
       var s1 = dd.ui.sheet('<h2>Send to your phone</h2>' +
-        '<p>Your phone can\'t open a file that lives on this computer. Put the program online first (Setup step 3), then open it from its web address and tap this again.</p>' +
+        '<p>Your phone can\'t open a file that lives on this computer. Put the program online first (setup step 3, Where it lives), then open it from its web address and tap this again.</p>' +
         '<div class="dd-btnrow"><button class="dd-btn" data-close>OK</button></div>');
       s1.querySelector("[data-close]").addEventListener("click", dd.ui.closeSheet);
       return;

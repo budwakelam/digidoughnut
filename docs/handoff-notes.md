@@ -374,3 +374,10 @@ yes. 4 AI companies at launch: Google, Groq, OpenRouter, OpenAI, Anthropic. (5 a
   - The old Move sheet is gone (`move.open` → `move.where`). New-version advice is one line on the
     screen: same place, same file name. Host wizard finish screen says "Send to my phone" is in the
     menu. Suites: 110·61·201·79·101·22·91·90.
+- Oran (00:11, 10-08): step 3 is always ticked; on a file it shows a small amber
+  "⚠ Limited: this computer only, not on your phone" (`.dd-step-warn`). Demo 0.1.5.
+  Asked: cookies? clearing the browser? Answer given: no cookies (localStorage only, nothing
+  tracks). Clearing "cookies and site data" wipes the list, the AI code AND the live sync address
+  on that device. Safari also clears a website's storage after 7 days without a visit (not for
+  Home Screen apps). Proposed (Oran's call): put the sync address in the backup file so Restore
+  reconnects; a "your data is only here" reminder; ask the browser to keep storage (already done).
