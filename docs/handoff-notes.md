@@ -349,3 +349,10 @@ yes. 4 AI companies at launch: Google, Groq, OpenRouter, OpenAI, Anthropic. (5 a
   DigiDoughnut" / "Now: your own copy at <host>". Done rows get a "Change" link (Where it lives
   sheet) beside Send to my phone. The home address is still blank on purpose ("we will get to
   that"), so a blank build shows the own-copy wording. Demo 0.1.2.
+- Oran (23:18): "WHY IS IT NOT HERE AS AN OPTION". The DigiDoughnut version is now ALWAYS offered,
+  address or not. Step 3 (not done) has two buttons: **Use DigiDoughnut's** (`[data-usehome]`, opens
+  Move aimed at home) and **My own copy** (`[data-start=host][data-ownstart]`, opens the wizard with
+  the own-copy list already open; label "Continue my own copy" when in progress). Back / Start over
+  from GitHub/tiiny keeps the own list open. Move always lists "The DigiDoughnut version"; with no
+  address in the build it says "Almost ready… in the next update" and offers no broken link.
+  setup_test choice checks now scope to `[data-host]`. Demo 0.1.3. Suites: 110·61·200·79·101·22·91·85.

@@ -47,7 +47,7 @@ def suite(browser, device_name, device, mode):
     check("first run shows example data", items(page) == ["Buy flour", "Book the market table", "Print price tags"], str(items(page)))
     check("example notice is shown", page.locator("#dd-notice-example").is_visible())
     check("nothing saved until the buyer acts", page.evaluate(f"() => localStorage.getItem('{KEY}')") is None)
-    check("footer has brand line + version", "Made with care by DigiDoughnut · Demo List 0.1.2" in page.inner_text("#dd-footer"))
+    check("footer has brand line + version", "Made with care by DigiDoughnut · Demo List 0.1.3" in page.inner_text("#dd-footer"))
     check("page title is the bookmark name", page.title() == "Demo List · DigiDoughnut", page.title())
     page.screenshot(path=os.path.join(SHOTS, f"{device_name}-{mode}-first-run.png"), full_page=True)
 
@@ -98,7 +98,7 @@ def suite(browser, device_name, device, mode):
     page.evaluate("() => dd.errors.record('test', 'GET https://x/v1?key=AIzaSyA1234567890abcdefghijklmnopqrstu failed sk-or-v1-abcdefghijklmnop123456')")
     page.click("#dd-footer p", click_count=3)
     txt = page.inner_text("#dd-diag-text") if page.locator("#dd-diag-text").count() else ""
-    check("triple-click opens support details", "--- Program ---" in txt and "Demo List 0.1.2" in txt)
+    check("triple-click opens support details", "--- Program ---" in txt and "Demo List 0.1.3" in txt)
     check("codes are masked in the diagnostic", "AIzaSyA1234567890abc" not in txt and "abcdefghijklmnop123456" not in txt and "[hidden]" in txt)
     check("diagnostic knows file vs hosted", ("Opened from a file" in txt) == (mode == "file"))
     page.keyboard.press("Escape")

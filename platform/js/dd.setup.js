@@ -34,9 +34,9 @@
       // Always say where it lives NOW, then what's on offer (Oran, 2026-10-07).
       text: function (done) {
         if (dd.env.isHome) return { gives: "Now: hosted by DigiDoughnut. Works on your phone too." };
-        if (done) return { gives: "Now: your own copy at " + location.host + "." + (dd.env.home ? " The DigiDoughnut version is ready too." : "") };
-        if (dd.env.home) return { gives: "Now: a file on this computer. Ready to go: the DigiDoughnut version works on your phone straight away, nothing to upload.", time: "About 1 minute" };
-        return { gives: "Now: a file on this computer. Put it online so it works on your phone too.", time: "About 10 minutes" };
+        // The DigiDoughnut version is ALWAYS offered (Oran, 2026-10-07), even before its address is set.
+        if (done) return { gives: "Now: your own copy at " + location.host + ". The DigiDoughnut version is there too, if you'd rather use it." };
+        return { gives: "Now: a file on this computer. Use the DigiDoughnut version: works on your phone straight away, nothing to upload. Or put your own copy online.", time: "About 1 minute" };
       } },
     { id: "sync", icon: "🔄", title: "Keep devices in step", gives: "Changes on one device show up on the other.", time: "About 10 minutes",
       done: function () { return !!(dd.sync && dd.sync.isOn && dd.sync.isOn()); }, wizard: "sync" },
@@ -78,6 +78,8 @@
             (dd.move ? '<button class="dd-linkbtn" data-where>Change</button>' : "") + '</span>'
         : done && s.id === "sync" && dd.sync ? '<button class="dd-linkbtn" data-syncsheet>Settings</button>' : done
         ? (wiz && wiz.ready !== false && s.id !== "try" ? '<button class="dd-linkbtn" data-start="' + s.wizard + '">Change</button>' : "")
+        : s.id === "phone" && dd.move ? '<span class="dd-step-btns"><button class="dd-btn small" data-usehome>Use DigiDoughnut\'s</button>' +
+            '<button class="dd-btn small ghost" data-start="host" data-ownstart="1">' + (inProgress(st, "host") ? "Continue my own copy" : "My own copy") + '</button></span>'
         : (wiz && wiz.ready !== false ? '<button class="dd-btn small" data-start="' + s.wizard + '">' + (inProgress(st, s.wizard) ? "Continue" : "Start") + '</button>'
                                       : '<span class="dd-note">Coming soon</span>');
       var text = s.text ? s.text(done) : null;   // a step may word itself by state (step 3, Phase 7.2)
@@ -94,7 +96,8 @@
     on("[data-syncsheet]", function () { dd.sync.openSheet(); });
     on("[data-home]", function () { setup.showHomeScreen(); });
     on("[data-where]", function () { dd.move.where(); });
-    box.querySelectorAll("[data-start]").forEach(function (b) { b.addEventListener("click", function () { setup.open(b.dataset.start); }); });
+    on("[data-usehome]", function () { dd.move.open({ to: "home" }); });
+    box.querySelectorAll("[data-start]").forEach(function (b) { b.addEventListener("click", function () { setup.open(b.dataset.start, b.dataset.ownstart ? { own: true } : null); }); });
   }
 
   /* The Setup Center as a sheet, from the program menu. Works even after "Hide this for now". */
@@ -131,7 +134,7 @@
     var wiz = setup.wizards[id]; if (!wiz || wiz.ready === false || !wiz.screens.length) return;
     var st = state(), at = (st.wizards[id] && st.wizards[id].at) || 0;
     if (at >= wiz.screens.length) at = 0;
-    cur = { id: id, wiz: wiz, at: at, context: opts && opts.context };
+    cur = { id: id, wiz: wiz, at: at, context: opts && opts.context, own: !!(opts && opts.own) };
     draw();
   };
   // Screen 1 isn't progress: only remember a place once the buyer has moved past it.
@@ -200,7 +203,7 @@
   /* Leave a sub-wizard for its chooser (e.g. pick a different service). Its place is forgotten. */
   function toParent() {
     var s = state(), parent = cur.wiz.parent; delete s.wizards[cur.id]; s.hostWith = null; saveState(s);
-    setup.open(parent);
+    setup.open(parent, { own: true });   // back from GitHub / tiiny: keep the own-copy list open
   }
 
   /* The same icon as the setup card's row, so it's always clear which step you're in. */
@@ -565,7 +568,7 @@
           (o.ease ? '<span class="dd-bars-wrap">' + bars("Easy to set up", o.ease) + bars("Looks after itself", o.lasting) + '</span>' : "") + '</button>'; }).join("") +
       '</div>' + publicNote;
   }
-  function offerHome() { return !!dd.env.home && !dd.env.isHome && !!dd.move; }
+  function offerHome() { return !dd.env.isHome && !!dd.move; }   // always offered, address or not
   setup.wizards.host = {
     title: "Where it lives",
     screens: [
@@ -583,6 +586,7 @@
         mount: function (c) {
           var r = c.el.querySelector("[data-ready]"), o = c.el.querySelector("[data-own]");
           if (r) r.addEventListener("click", function () { dd.move.open({ to: "home" }); });
+          if (o && cur && cur.own) { o.classList.add("picked"); c.el.querySelector("[data-ownlist]").hidden = false; }
           if (o) o.addEventListener("click", function () { o.classList.add("picked"); var l = c.el.querySelector("[data-ownlist]"); l.hidden = false; try { l.scrollIntoView({ block: "nearest" }); } catch (e) {} });
           c.el.querySelectorAll("[data-host]").forEach(function (b) { b.addEventListener("click", function () {
             var s = state(); s.hostWith = b.dataset.host; saveState(s);

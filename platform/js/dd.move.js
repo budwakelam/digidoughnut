@@ -55,8 +55,10 @@
     var p = dd.getProgram(), t = thing(), here = move.here();
     var mine = own(), ownIsHere = mine && dd.env.isHosted && dd.env.sameAddress(mine, location.href);
     var choices = [];
-    if (dd.env.home && !dd.env.isHome)
-      choices.push({ id: "home", title: "The DigiDoughnut version", line: "Ready to go at " + hostOf(dd.env.home) + ". Works on your phone straight away." });
+    // Always offered (Oran, 2026-10-07). Before its address is set in the build, it says so.
+    if (!dd.env.isHome)
+      choices.push({ id: "home", title: "The DigiDoughnut version", line: dd.env.home ? "Ready to go at " + hostOf(dd.env.home) + ". Works on your phone straight away."
+                                                                                : "Ready to go. Works on your phone straight away, nothing to upload." });
     if (here.kind !== "own" || (mine && !ownIsHere))
       choices.push({ id: "own", title: "My own copy", line: mine && !ownIsHere ? "At " + hostOf(mine) : "Paste its web address" });
     choices.push({ id: "same", title: "A new version at this same " + (here.kind === "file" ? "place" : "address"), line: "Nothing to move" });
@@ -85,6 +87,12 @@
           ? "Save the new file in place of this one, keeping the same file name, and open it in this same browser. Your " + esc(t) + " should still be there. If it isn't, use <b>💾 Backup &amp; new versions</b> to carry it across."
           : "Upload the new file over the old one, keeping the same file name, so the address stays the same. Your " + esc(t) + " just stays.") + '</p>' +
           (syncOn() ? '<p class="dd-note">Live sync is on, so your ' + esc(t) + ' is also safe in your own Firebase database.</p>' : "") + '</div>';
+        return;
+      }
+      if (id === "home" && !dd.env.home) {
+        box.innerHTML = '<div class="dd-move-detail"><p><b>Almost ready.</b> The DigiDoughnut version isn\'t switched on in this file yet. ' +
+          'It will be in the next update, from the same link you got this file from. Your ' + esc(t) + ' stays right here meanwhile.</p>' +
+          '<p class="dd-note">Need it on your phone today? Pick <b>My own copy</b> instead.</p></div>';
         return;
       }
       var target = id === "home" ? dd.env.home : (mine && !ownIsHere ? mine : "");
