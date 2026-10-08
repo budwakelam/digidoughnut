@@ -304,3 +304,39 @@ Collected as decisions come up; folded into handoff.md later.
   30 days; the first visit only starts the clock; "Later" = another 30 days
   (`dd_<id>_backup_nudge_v1`).
 - sync_test: 101. All suites: 110 · 61 · 200 · 79 · 101 · 22 · 91.
+
+### Phase 7 started: menu, Where it lives, Move + receiving guard (2026-10-07, late) — demo17
+
+Oran's calls (2026-10-07): 1 menu on the name, top-left: yes. 2 receiving guard (Replace / Keep
+mine, Undo): yes. 3 the noticeboard can never add an AI address (new company = program update):
+yes. 4 AI companies at launch: Google, Groq, OpenRouter, OpenAI, Anthropic. (5 and 6 still open.)
+
+- **7.1 dd.menu** (new, after dd.ui): the header name is "☰ <name> ▾" (`#dd-menu-btn`). Items, in
+  order, each registered by its module with `dd.menu.add({id, icon, label, order, show, run, note,
+  badge})`: setup 10 (dd.setup, `setup.openSheet()`, works after "Hide this", offers to unfold),
+  where 20 (dd.move), phone 30 (dd.pair, hidden on phones), backup 40, privacy 50, help 60
+  (dd.diag), about 70 (dd.menu; `menu.aboutExtras` for 7.4). `badge()` lights a dot on the button.
+  The menu sheet is sticky (rule 9). Footer links and triple-click unchanged.
+- **7.2** `DD_BUILD.home`: build.mjs reads `build.config.json` (`{"home": "https://…/{name}.html"}` or
+  `{"homes": {"demo": "…"}}`), `DD_HOME` env overrides. Empty by default → nothing home-related
+  shows. `dd.env.home`, `dd.env.isHome` (wording only), `dd.env.sameAddress(a, b)`.
+  Step 3 is now "🏠 Where it lives" (id still `phone`, wizard `host`): home → "Hosted by
+  DigiDoughnut", other address → "Your own copy at <host>", file → Start. With a home address the
+  host wizard's first screen is the choice: Ready to go (recommended) → Move sheet aimed at home;
+  My own copy (advanced) → today's chooser, unchanged. Screen titles may be functions now.
+- **7.3 dd.move** (new, after dd.backup): `move.where()` sheet, `move.open({to})` Move sheet (home /
+  own copy, remembered `setup.ownAddress()` or pasted / a new version at this same address =
+  nothing to move). Uses `dd.pair.makeLink({base, includeCode:true, maxLink:60000})` (10 minutes,
+  once). Too big → says so, Download a backup + Open the other copy. Sync on → "joins your same
+  database" (sync.join merges, never replaces). Example data never travels.
+  **Receiving guard** (rule 15): the `d` pairing piece goes through `move.receiveData(body)`: when
+  this copy has the buyer's own data (not example, not empty) and it differs, a sticky question
+  Replace / Keep mine; Replace leaves an Undo notice (`#dd-notice-moved`). Covers move links and
+  phone pairing alike. Backup sheet links to Move.
+- New `tests/move_test.py` (83): menu top-left in file/home/own on desktop + iPhone, fixed order,
+  each item opens; step 3 three ways (two local servers on different ports, home filled into a
+  copy of the build); move both ways incl. paste + remember, guard Keep / Replace / Undo / same
+  data, too big, sync wording (stubbed), pairing guard. All suites: 110 · 61 · 200 · 79 · 101 ·
+  22 · 91 · 83.
+- Next: 7.4 `latest` on the noticeboard + newer-version notice; 7.5 thank-you template; 7.6 AI
+  companies (live tests first).

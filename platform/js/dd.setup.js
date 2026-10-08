@@ -27,8 +27,15 @@
       done: function () { return true; } },
     { id: "ai", icon: "🤖", title: "Turn on the helper", gives: "The AI helper and every smart feature.", time: "About 2 minutes",
       done: function () { return !!(dd.ai && dd.ai.hasCode()); }, wizard: "ai" },
-    { id: "phone", icon: "📱", title: "Put it on your phone", gives: "The same program on your phone, moved over by scanning a code.", time: "About 10 minutes",
-      done: function () { return dd.env.isHosted; }, wizard: "host" },
+    // Phase 7.2: "Where it lives". Done when opened from any web address; a file on this computer
+    // gets the choice (the DigiDoughnut version, or the buyer's own copy).
+    { id: "phone", icon: "🏠", title: "Where it lives", gives: "Put it online, so it works on your phone too.", time: "About 1 minute",
+      done: function () { return dd.env.isHosted; }, wizard: "host",
+      text: function (done) {
+        if (dd.env.isHome) return { gives: "Hosted by DigiDoughnut. Works on your phone too." };
+        if (done) return { gives: "Your own copy at " + location.host + "." };
+        return dd.env.home ? null : { gives: "Put it online, so it works on your phone too.", time: "About 10 minutes" };
+      } },
     { id: "sync", icon: "🔄", title: "Keep devices in step", gives: "Changes on one device show up on the other.", time: "About 10 minutes",
       done: function () { return !!(dd.sync && dd.sync.isOn && dd.sync.isOn()); }, wizard: "sync" },
     { id: "agent", icon: "🦾", title: "Connect your AI agent", gives: "Your own AI agent, like Muse, can read and change this program for you.", time: "About 2 minutes",
@@ -45,13 +52,22 @@
   setup.paint = function () {
     var host = document.getElementById("dd-setup"); if (!host || !program) return;
     var st = state(), n = setup.doneCount(), total = visibleSteps().length;
+    if (dd.menu) dd.menu.refreshDot();
     if (st.folded || n === total) {
       host.innerHTML = '<button class="dd-setup-chip" id="dd-setup-chip">' + (n === total ? "✓ All set up" : "Setup: " + n + " of " + total + " done") + '</button>';
       document.getElementById("dd-setup-chip").addEventListener("click", function () { var s = state(); s.folded = false; saveState(s); setup.paint(); });
       return;
     }
-    var syncOn = !!(dd.sync && dd.sync.isOn && dd.sync.isOn());
-    var rows = visibleSteps().map(function (s, i) {
+    host.innerHTML = '<div class="dd-card dd-setup-card"><h2>Set up ' + esc(program.name) + ' <span class="dd-setup-count">' + n + ' of ' + total + ' done</span></h2>' +
+      '<p class="dd-note" style="margin:0 0 8px">Each step is optional. Do them in any order, any time.</p><ol class="dd-steps">' + stepRows() + '</ol>' +
+      '<div class="dd-btnrow"><button class="dd-linkbtn" id="dd-setup-fold">Hide this for now</button></div></div>';
+    wireSteps(host);
+    document.getElementById("dd-setup-fold").addEventListener("click", function () { var s = state(); s.folded = true; saveState(s); setup.paint(); });
+  };
+
+  function stepRows() {
+    var st = state(), syncOn = !!(dd.sync && dd.sync.isOn && dd.sync.isOn());
+    return visibleSteps().map(function (s, i) {
       var done = s.done(), wiz = s.wizard && setup.wizards[s.wizard];
       var btn = s.id === "agent" ? (syncOn ? '<button class="' + (done ? 'dd-linkbtn' : 'dd-btn small') + '" data-agent>' + (done ? "Settings" : "Start") + '</button>'
                                            : '<span class="dd-note">Needs step 4 first</span>')
@@ -62,18 +78,36 @@
         ? (wiz && wiz.ready !== false && s.id !== "try" ? '<button class="dd-linkbtn" data-start="' + s.wizard + '">Change</button>' : "")
         : (wiz && wiz.ready !== false ? '<button class="dd-btn small" data-start="' + s.wizard + '">' + (inProgress(st, s.wizard) ? "Continue" : "Start") + '</button>'
                                       : '<span class="dd-note">Coming soon</span>');
-      return '<li class="dd-step' + (done ? " done" : "") + '"><span class="dd-tick" aria-hidden="true">' + (done ? "✓" : i + 1) + '</span>' +
-        '<div class="dd-step-text"><b><span class="dd-step-icon" aria-hidden="true">' + (s.icon || "") + '</span> ' + esc(s.title) + '</b><span>' + esc(s.gives) + (done ? "" : " · " + esc(s.time)) + '</span></div>' + btn + '</li>';
+      var text = s.text ? s.text(done) : null;   // a step may word itself by state (step 3, Phase 7.2)
+      return '<li class="dd-step' + (done ? " done" : "") + '" data-step="' + s.id + '"><span class="dd-tick" aria-hidden="true">' + (done ? "✓" : i + 1) + '</span>' +
+        '<div class="dd-step-text"><b><span class="dd-step-icon" aria-hidden="true">' + (s.icon || "") + '</span> ' + esc(text && text.title || s.title) + '</b><span>' +
+        esc(text && text.gives || s.gives) + (done ? "" : " · " + esc(text && text.time || s.time)) + '</span></div>' + btn + '</li>';
     }).join("");
-    host.innerHTML = '<div class="dd-card dd-setup-card"><h2>Set up ' + esc(program.name) + ' <span class="dd-setup-count">' + n + ' of ' + total + ' done</span></h2>' +
-      '<p class="dd-note" style="margin:0 0 8px">Each step is optional. Do them in any order, any time.</p><ol class="dd-steps">' + rows + '</ol>' +
-      '<div class="dd-btnrow"><button class="dd-linkbtn" id="dd-setup-fold">Hide this for now</button></div></div>';
-    var ph = host.querySelector("[data-phone]"); if (ph) ph.addEventListener("click", function () { dd.pair.open(); });
-    var ag = host.querySelector("[data-agent]"); if (ag) ag.addEventListener("click", function () { dd.agent.openSheet(); });
-    var ss = host.querySelector("[data-syncsheet]"); if (ss) ss.addEventListener("click", function () { dd.sync.openSheet(); });
-    var hs = host.querySelector("[data-home]"); if (hs) hs.addEventListener("click", function () { setup.showHomeScreen(); });
-    host.querySelectorAll("[data-start]").forEach(function (b) { b.addEventListener("click", function () { setup.open(b.dataset.start); }); });
-    document.getElementById("dd-setup-fold").addEventListener("click", function () { var s = state(); s.folded = true; saveState(s); setup.paint(); });
+  }
+  // Buttons inside the steps list work the same on the page card and in the menu's sheet.
+  function wireSteps(box) {
+    var on = function (sel, fn) { var b = box.querySelector(sel); if (b) b.addEventListener("click", fn); };
+    on("[data-phone]", function () { dd.pair.open(); });
+    on("[data-agent]", function () { dd.agent.openSheet(); });
+    on("[data-syncsheet]", function () { dd.sync.openSheet(); });
+    on("[data-home]", function () { setup.showHomeScreen(); });
+    box.querySelectorAll("[data-start]").forEach(function (b) { b.addEventListener("click", function () { setup.open(b.dataset.start); }); });
+  }
+
+  /* The Setup Center as a sheet, from the program menu. Works even after "Hide this for now". */
+  setup.openSheet = function () {
+    if (!program && dd.getProgram) program = dd.getProgram();
+    var st = state(), n = setup.doneCount(), total = visibleSteps().length;
+    var sh = dd.ui.sheet('<h2>⚙️ Setup &amp; connections <span class="dd-setup-count">' + n + ' of ' + total + ' done</span></h2>' +
+      '<p class="dd-note" style="margin:0 0 8px">Each step is optional. Do them in any order, any time.</p>' +
+      '<ol class="dd-steps">' + stepRows() + '</ol>' +
+      '<div class="dd-btnrow">' + (st.folded && n < total ? '<button class="dd-linkbtn" data-unfold>Show the setup card on the page again</button>' : "") +
+      '<button class="dd-btn ghost" data-close>Close</button></div>', { sticky: true });
+    wireSteps(sh);
+    sh.querySelector("[data-close]").addEventListener("click", dd.ui.closeSheet);
+    var u = sh.querySelector("[data-unfold]");
+    if (u) u.addEventListener("click", function () { var s = state(); s.folded = false; saveState(s); dd.ui.closeSheet(); setup.paint(); });
+    return sh;
   };
 
   /* Just-in-time: an AI feature was tapped with no code. Opens the helper wizard with context. */
@@ -119,7 +153,7 @@
         '<span class="dd-wiz-progress">' + (shownTotal > 1 ? 'Step ' + (shownAt + 1) + ' of ' + shownTotal : '') + '</span></div>' +
       '<div class="dd-wiz-dots">' + dots + '</div>' +
       (cur.context && cur.at === 0 ? '<p class="dd-status show info">' + esc(cur.context) + '</p>' : "") +
-      '<h2>' + esc(sc.title) + '</h2>' +
+      '<h2>' + esc(typeof sc.title === "function" ? sc.title() : sc.title) + '</h2>' +
       (sc.pic ? setup.pic(typeof sc.pic === "function" ? sc.pic() : sc.pic) : "") +
       (sc.todo ? '<p class="dd-todo"><span aria-hidden="true">👉</span> <b>Your turn:</b> ' + (typeof sc.todo === "function" ? sc.todo() : esc(sc.todo)) + '</p>' : "") +
       '<div class="dd-wiz-body">' + body + '</div>' +
@@ -247,7 +281,7 @@
     if (!(dd.ai && dd.ai.hasCode())) return Promise.resolve({ text: scripted || setup.noMatch, live: false });
     var wiz = where && where.wiz, sc = wiz && wiz.screens[where.at];
     var context = "The buyer is in the '" + (wiz ? wiz.title : "setup") + "' wizard, on step " + (where ? where.at + 1 : "?") +
-      " ('" + (sc ? sc.title : "") + "'). That screen says: " + (sc ? stripTags(typeof sc.body === "function" ? sc.body() : sc.body) : "");
+      " ('" + (sc ? (typeof sc.title === "function" ? sc.title() : sc.title) : "") + "'). That screen says: " + (sc ? stripTags(typeof sc.body === "function" ? sc.body() : sc.body) : "");
     return dd.ai.chat({ system: setup.helperPrompt() + "\n\n" + context, history: [{ role: "user", text: question }] }).then(function (r) {
       if (r.ok && r.text) return { text: r.text, live: true };
       return { text: scripted || "The helper can't answer right now (" + r.title.replace(/\.$/, "") + "). " + setup.noMatch, live: false };
@@ -471,6 +505,8 @@
     try { return decodeURIComponent(location.pathname.split("/").pop()) || "the program file"; } catch (e) { return "the program file"; }
   }
   function hostState(v) { var s = state(); if (v !== undefined) { s.hostUrl = v; saveState(s); } return s.hostUrl || ""; }
+  setup.ownAddress = hostState;
+  setup.fileName = fileName;   // the buyer's own copy, remembered from the host wizards (or pasted in Move)
   /* Tidy a pasted address. Returns a full https address, or null if it isn't one. */
   setup.cleanAddress = function (raw) {
     var t = String(raw || "").trim().replace(/^["'<]+|["'>]+$/g, "");
@@ -516,20 +552,35 @@
     return '<span class="dd-bars"><span class="dd-bars-label">' + esc(label) + '</span><span class="dd-bars-cells" aria-label="' + n + ' out of 5">' + cells + '</span></span>';
   }
 
-  /* Screen 1, shared: why, then pick a service. */
+  /* Screen 1, shared. Phase 7.2: when there is a DigiDoughnut version (DD_BUILD.home), the first
+     choice is "Ready to go (recommended)", which opens the Move sheet aimed at it; "My own copy
+     (advanced)" shows today's chooser, unchanged. Without a home address, only the chooser. */
+  function hostChooser() {
+    return facts + phoneWarn() +
+      '<div class="dd-choice">' + setup.hostChoices.map(function (id) { var o = HOSTS[id];
+        return '<button class="dd-choice-btn" data-host="' + id + '"><b>' + esc(o.name) + '</b><span>' + esc(o.blurb) + '</span>' +
+          (o.ease ? '<span class="dd-bars-wrap">' + bars("Easy to set up", o.ease) + bars("Looks after itself", o.lasting) + '</span>' : "") + '</button>'; }).join("") +
+      '</div>' + publicNote;
+  }
+  function offerHome() { return !!dd.env.home && !dd.env.isHome && !!dd.move; }
   setup.wizards.host = {
-    title: "Put it on your phone",
+    title: "Where it lives",
     screens: [
-      { title: "Put it online, for free",
-        pic: { kind: "hero", icons: ["💻", "🌐", "📱"], caption: "Computer → online → phone" },
-        todo: "Pick one of the choices below.",
-        body: function () { return '<p>Your phone can\'t open a file that lives on this computer. So first we put the program online, at its own web address, using a free service.</p>' +
-          facts + phoneWarn() +
-          '<div class="dd-choice">' + setup.hostChoices.map(function (id) { var o = HOSTS[id];
-            return '<button class="dd-choice-btn" data-host="' + id + '"><b>' + esc(o.name) + '</b><span>' + esc(o.blurb) + '</span>' +
-              (o.ease ? '<span class="dd-bars-wrap">' + bars("Easy to set up", o.ease) + bars("Looks after itself", o.lasting) + '</span>' : "") + '</button>'; }).join("") +
-          '</div>' + publicNote; },
+      { title: function () { return offerHome() ? "Where should it live?" : "Put it online, for free"; },
+        pic: function () { return { kind: "hero", icons: ["💻", "🌐", "📱"], caption: "Computer → online → phone" }; },
+        todo: function () { return offerHome() ? "Pick one. You can switch later and take your " + esc(program.dataLabel || "numbers") + " with you." : "Pick one of the choices below."; },
+        body: function () {
+          if (!offerHome()) return '<p>Your phone can\'t open a file that lives on this computer. So first we put the program online, at its own web address, using a free service.</p>' + hostChooser();
+          return '<p>Right now ' + esc(program.name) + ' is a file on this computer. To use it on your phone too, it needs a web address.</p>' +
+            '<div class="dd-choice">' +
+              '<button class="dd-choice-btn dd-choice-rec" data-ready><b>Ready to go (recommended)</b><span>Use the DigiDoughnut version. Works on your phone straight away, nothing to upload.</span></button>' +
+              '<button class="dd-choice-btn" data-own><b>My own copy (advanced)</b><span>Put the file on your own free web space: GitHub, tiiny.host or your own website. About 10 minutes.</span></button>' +
+            '</div><div data-ownlist hidden>' + hostChooser() + '</div>';
+        },
         mount: function (c) {
+          var r = c.el.querySelector("[data-ready]"), o = c.el.querySelector("[data-own]");
+          if (r) r.addEventListener("click", function () { dd.move.open({ to: "home" }); });
+          if (o) o.addEventListener("click", function () { o.classList.add("picked"); var l = c.el.querySelector("[data-ownlist]"); l.hidden = false; try { l.scrollIntoView({ block: "nearest" }); } catch (e) {} });
           c.el.querySelectorAll("[data-host]").forEach(function (b) { b.addEventListener("click", function () {
             var s = state(); s.hostWith = b.dataset.host; saveState(s);
             setup.open("host_" + b.dataset.host);
@@ -1010,6 +1061,11 @@
       if (needsHomeScreen()) setTimeout(function () { setup.showHomeScreen(ev); }, 600);
     });
   };
+
+  if (dd.menu) dd.menu.add({ id: "setup", icon: "⚙️", label: "Setup & connections", order: 10,
+    show: function () { var p = dd.getProgram && dd.getProgram(); return !!(p && p.setup !== false); },
+    note: function () { var n = setup.doneCount(), t = visibleSteps().length; return n === t ? "All set up" : n + " of " + t + " steps done"; },
+    run: function () { setup.openSheet(); } });
 
   if (dd.diag) dd.diag.addSection("Setup", function () {
     if (!program) return ["-"];

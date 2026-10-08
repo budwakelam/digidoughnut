@@ -205,6 +205,11 @@
   // "#", which doesn't reload the page: catch that too.
   window.addEventListener("hashchange", function () { if (/[#&]dd=/.test(location.hash) && dd.getProgram && dd.getProgram()) pair.receive(); });
 
+  if (dd.menu) dd.menu.add({ id: "phone", icon: "📲", label: "Send to my phone", order: 30,
+    show: function () { return !dd.env.isPhone; },
+    note: function () { return dd.env.isFile ? "Needs setup step 3 first" : "Scan a square with your phone's camera"; },
+    run: function () { pair.open(); } });
+
   if (dd.diag) dd.diag.addSection("Phone pairing", function () {
     return ["Last code made: " + (last.made ? last.made.at + " · " + last.made.size + " characters · carried " + last.made.parts : "none this visit"),
             "Last code received: " + (last.received ? last.received.at + " · " + last.received.result : "none this visit")];

@@ -29,6 +29,7 @@
     link.addEventListener("click", function (e) { e.stopPropagation(); ui.privacy(); });
     var data = ui.$("dd-data-link");
     if (data) data.addEventListener("click", function (e) { e.stopPropagation(); dd.backup.open(); });
+    if (dd.menu) dd.menu.mount(program);   // the name becomes the menu button (Phase 7.1)
   };
 
   /* "What this program connects to": every outside connection, in plain words.

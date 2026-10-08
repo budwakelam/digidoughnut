@@ -114,12 +114,14 @@
             : 'turn it on first (setup step 4), and the new version gets everything from your own database.') + '</li>' +
         '<li><b>Neither:</b> tap <b>Download a backup</b> here. Then, in the new version, tap <b>💾 Backup &amp; new versions</b> at the bottom and <b>Restore from a backup</b>.</li>' +
       '</ol>' +
-      '<p class="dd-note">The new version always comes from the same Etsy download link you were given.</p>' +
+      '<p class="dd-note">The new version always comes from the same link you were given when you bought it.</p>' +
+      (dd.move ? '<p class="dd-note">Switching between the DigiDoughnut version and your own copy? <button class="dd-linkbtn" data-move style="padding:0">Move to another copy</button> takes your ' + esc(thing) + ' with you.</p>' : "") +
       '<div class="dd-btnrow">' + (!on && dd.sync && dd.setup ? '<button class="dd-btn ghost" data-sync>Set up live sync</button>' : "") +
         '<button class="dd-btn ghost" data-close>Close</button></div>');
     sh.querySelector("[data-close]").addEventListener("click", dd.ui.closeSheet);
     sh.querySelector("[data-down]").addEventListener("click", function () { backup.download(); });
     sh.querySelector("[data-up]").addEventListener("click", function () { dd.ui.closeSheet(); backup.pick(); });
+    var mv = sh.querySelector("[data-move]"); if (mv) mv.addEventListener("click", function () { dd.move.open(); });
     var sy = sh.querySelector("[data-sync]"); if (sy) sy.addEventListener("click", function () { dd.ui.closeSheet(); dd.setup.open("sync"); });
   };
 
@@ -137,6 +139,10 @@
     ]);
   };
   dd.on("ready", function () { setTimeout(backup.nudge, 3000); });
+
+  if (dd.menu) dd.menu.add({ id: "backup", icon: "💾", label: "Backup & new versions", order: 40,
+    note: function () { return synced() ? "Backed up live in your own Firebase" : "Saved on this device only"; },
+    run: function () { backup.open(); } });
 
   if (dd.diag) dd.diag.addSection("Backup", function () { return ["Backup downloaded this visit: " + last.made + " · restored this visit: " + last.restored]; });
 })();

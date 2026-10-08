@@ -13,7 +13,7 @@ import { execSync } from "node:child_process";
 
 // Platform files, in load order. Add new modules here (dd.ai, dd.setup, ... in later phases).
 const PLATFORM_VENDOR = ["qrcode-generator.js"];   // MIT, vendored: no outside scripts in the shipped file
-const PLATFORM_JS = ["dd.core.js", "dd.store.js", "dd.errors.js", "dd.ui.js", "dd.diag.js", "dd.pair.js", "dd.ai.js", "dd.notes.js", "dd.setup.js", "dd.helper.js", "dd.sync.js", "dd.backup.js", "dd.agent.js"];
+const PLATFORM_JS = ["dd.core.js", "dd.store.js", "dd.errors.js", "dd.ui.js", "dd.menu.js", "dd.diag.js", "dd.pair.js", "dd.ai.js", "dd.notes.js", "dd.setup.js", "dd.helper.js", "dd.sync.js", "dd.backup.js", "dd.move.js", "dd.agent.js"];
 const PLATFORM_CSS = ["dd.ui.css"];
 const WARN_BYTES = 500 * 1024;          // plan target: under 500 KB
 const MAX_BYTES = 3 * 1024 * 1024;      // tiiny.host free upload limit
@@ -43,7 +43,7 @@ function build(name) {
     "{{DD_ACCENT}}": meta.accent,
     // The page title is what browsers suggest as the bookmark name: "Profit Coach · DigiDoughnut".
     "{{DD_TITLE}}": `${meta.name} · DigiDoughnut`,
-    "{{DD_BUILD_JSON}}": JSON.stringify({ built, commit, platform: read("platform/VERSION").trim() }),
+    "{{DD_BUILD_JSON}}": JSON.stringify({ built, commit, platform: read("platform/VERSION").trim(), home: homeFor(name) }),
     "/*{{DD_PLATFORM_CSS}}*/": PLATFORM_CSS.map((f) => read(`platform/css/${f}`)).join("\n"),
     "/*{{DD_PROGRAM_CSS}}*/": readIf(`${dir}/program.css`),
     "<!--{{DD_PROGRAM_BODY}}-->": readIf(`${dir}/program.html`),
@@ -65,6 +65,20 @@ function build(name) {
   writeFileSync(`dist/${name}.html`, html);
   const kb = (Buffer.byteLength(html) / 1024).toFixed(1);
   console.log(`✓ dist/${name}.html  (${meta.name} ${meta.version}, ${kb} KB)`);
+}
+
+/* Where the DigiDoughnut-hosted copy lives (Phase 7.2). Oran looks after hosting; the build only
+   needs the address. build.config.json (optional, not required to build):
+     { "home": "https://example.com/apps/{name}.html" }   {name} = the program folder
+   or per program: { "homes": { "demo": "https://..." } }. Empty = no hosted copy offered.
+   DD_HOME in the environment overrides both (handy for tests). */
+function homeFor(name) {
+  let cfg = {};
+  try { cfg = JSON.parse(readIf("build.config.json") || "{}"); } catch { fail(name, "build.config.json isn't valid JSON"); }
+  const raw = process.env.DD_HOME ?? ((cfg.homes && cfg.homes[name]) || cfg.home || "");
+  const url = String(raw).split("{name}").join(name).trim();
+  if (url && !/^https?:\/\/[^\s]+$/.test(url)) fail(name, `home address "${url}" must start with https://`);
+  return url;
 }
 
 function check(name, html) {

@@ -30,6 +30,15 @@
     // true when opened from a Home Screen icon rather than a browser tab
     isStandalone: (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true
   };
+  /* Phase 7.2: the DigiDoughnut-hosted copy's address is one build setting, DD_BUILD.home.
+     Left empty, anything that depends on it simply doesn't show. isHome may change wording
+     only, never features: both copies are the same file. */
+  dd.env.home = (function (h) { try { if (!h) return ""; var u = new URL(h); u.hash = ""; u.search = ""; return /^https?:$/.test(u.protocol) ? u.href : ""; } catch (e) { return ""; } })(window.DD_BUILD && window.DD_BUILD.home);
+  dd.env.sameAddress = function (a, b) {
+    var norm = function (x) { try { var u = new URL(x, location.href); return (u.origin + u.pathname).replace(/\/index\.html?$/i, "/").toLowerCase(); } catch (e) { return ""; } };
+    return !!a && !!b && norm(a) === norm(b);
+  };
+  dd.env.isHome = !!dd.env.home && dd.env.isHosted && dd.env.sameAddress(location.href, dd.env.home);
 
   /* ---------- program contract ---------- */
   var REQUIRED = ["id", "name", "version", "schemaVersion", "emptyData", "exampleData", "validateData", "migrate", "render"];
@@ -125,6 +134,8 @@
             var body = v[1];
             if (v[0] < program.schemaVersion) body = program.migrate(body, v[0]);
             if (!program.validateData(body)) return false;
+            // Rule 15: a copy that receives data asks before replacing the buyer's own.
+            if (dd.move) return dd.move.receiveData(body, "pair");
             return dd.replaceData(body, { example: false, source: "pair" });
           }
         });

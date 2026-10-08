@@ -314,3 +314,34 @@ body.dd-has-side{padding-right:360px}
 .dd-sync-chip.busy i{animation:dd-breathe 1s ease-in-out infinite}
 .dd-sheet h3.dd-sub{font-size:1rem;margin:16px 0 4px}
 .dd-rules{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.75rem;white-space:pre;overflow:auto;background:#fff;border:1px solid var(--dd-line);border-radius:8px;padding:8px;max-height:180px;margin:6px 0}
+
+/* ===== program menu (Phase 7.1): the name in the header is the button ===== */
+.dd-top>div:first-child{min-width:0}
+.dd-top h1{display:flex;min-width:0}
+.dd-menu-btn{display:inline-flex;align-items:center;gap:8px;background:none;border:1px solid transparent;border-radius:10px;
+  padding:6px 10px 6px 8px;margin:-6px 0 -6px -8px;font:inherit;font-weight:700;color:inherit;cursor:pointer;min-height:40px;
+  position:relative;min-width:0}
+.dd-menu-btn:hover,.dd-menu-btn:focus-visible{background:var(--dd-brand-soft);border-color:var(--dd-brand-soft-d)}
+.dd-menu-ico{font-size:1.05rem;color:var(--dd-brand);line-height:1}
+.dd-menu-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dd-menu-caret{font-size:.75rem;color:var(--dd-muted)}
+.dd-menu-dot{position:absolute;top:4px;left:20px;width:9px;height:9px;border-radius:50%;background:#ef4444;border:2px solid #fff}
+.dd-menu-dot[hidden]{display:none}
+.dd-menu-list{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.dd-menu-item{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#fff;border:1px solid var(--dd-line);
+  border-radius:12px;padding:10px 12px;font:inherit;color:inherit;cursor:pointer;min-height:52px}
+.dd-menu-item:hover,.dd-menu-item:focus-visible{background:var(--dd-brand-soft);border-color:var(--dd-brand-soft-d)}
+.dd-menu-item-ico{font-size:1.25rem;width:28px;text-align:center;flex:none}
+.dd-menu-item-text{flex:1;min-width:0;display:flex;flex-direction:column}
+.dd-menu-item-text b{font-size:.98rem}
+.dd-menu-item-text span{font-size:.82rem;color:var(--dd-muted)}
+.dd-menu-item-go{color:var(--dd-muted);font-size:1.3rem}
+.dd-menu-new{font-style:normal;font-size:.7rem;background:#ef4444;color:#fff;border-radius:999px;padding:1px 7px;margin-left:4px;vertical-align:middle}
+.dd-sheet .dd-setup-count{font-size:.8rem;font-weight:500;color:var(--dd-muted);margin-left:6px}
+
+/* ===== where it lives / move (Phase 7.2, 7.3) ===== */
+.dd-choice-btn.dd-choice-rec{border-color:var(--dd-brand);background:var(--dd-brand-soft)}
+.dd-choice-btn.picked{border-color:var(--dd-brand);box-shadow:0 0 0 3px var(--dd-brand-soft-d)}
+.dd-move-detail{border:1px solid var(--dd-line);border-radius:12px;padding:12px 14px;margin:0 0 10px;background:#fafbff}
+.dd-move-detail p{margin:0 0 8px}
+.dd-status .dd-btnrow{margin-top:8px}
