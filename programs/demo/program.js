@@ -100,21 +100,23 @@ const DD_PROGRAM = {
         ctx.update((d) => { d.items.push({ id: ctx.ui.uid("i"), text, done: false }); });
         return { ok: true, message: "Added '" + text + "'. The list has " + ctx.data.items.length + " items now." };
       } },
-    { name: "set_done", description: "Tick an item off as done, or un-tick it. Finds the item whose text contains the words given.",
-      params: { text: { type: "string", description: "Words from the item's text" },
+    { name: "set_done", description: "Tick an item off as done, or un-tick it. Give the item's id (best), or words from its text.",
+      params: { id: { type: "string", description: "The item's id, from the data", optional: true },
+                text: { type: "string", description: "Words from the item's text, if you don't have the id", optional: true },
                 done: { type: "boolean", description: "true = done, false = not done yet", optional: true } },
       run(args, ctx) {
-        const item = find(ctx.data.items, args.text);
-        if (!item) return { ok: false, message: "No item matches '" + args.text + "'. Items: " + ctx.data.items.map((i) => i.text).join(", ") };
+        const { item, problem } = pick(ctx.data.items, args);
+        if (!item) return { ok: false, message: problem };
         const done = args.done !== false;
         ctx.update((d) => { d.items.find((i) => i.id === item.id).done = done; });
         return { ok: true, message: (done ? "Ticked off '" : "Un-ticked '") + item.text + "'." };
       } },
-    { name: "remove_item", description: "Remove one item from the list. Finds the item whose text contains the words given.",
-      params: { text: { type: "string", description: "Words from the item's text" } },
+    { name: "remove_item", description: "Remove one item from the list. Give the item's id (best), or words from its text.",
+      params: { id: { type: "string", description: "The item's id, from the data", optional: true },
+                text: { type: "string", description: "Words from the item's text, if you don't have the id", optional: true } },
       run(args, ctx) {
-        const item = find(ctx.data.items, args.text);
-        if (!item) return { ok: false, message: "No item matches '" + args.text + "'. Items: " + ctx.data.items.map((i) => i.text).join(", ") };
+        const { item, problem } = pick(ctx.data.items, args);
+        if (!item) return { ok: false, message: problem };
         ctx.update((d) => { d.items = d.items.filter((i) => i.id !== item.id); });
         return { ok: true, message: "Removed '" + item.text + "'." };
       } },
@@ -129,6 +131,24 @@ const DD_PROGRAM = {
       } }
   ]
 };
+
+/* The item an instruction means: by id if given; else exact text; else words it contains, but only
+   when exactly one item matches (two "Milk" items -> ask which, never guess). */
+function pick(items, args) {
+  const list = () => items.map((i) => "'" + i.text + "' (id " + i.id + ")").join(", ");
+  if (args.id) {
+    const item = items.find((i) => i.id === String(args.id));
+    return item ? { item } : { problem: "No item has the id '" + args.id + "'. Items: " + list() };
+  }
+  const w = String(args.text || "").trim().toLowerCase();
+  if (!w) return { problem: "Say which item: give its id or words from its text. Items: " + list() };
+  const exact = items.filter((i) => i.text.toLowerCase() === w);
+  if (exact.length === 1) return { item: exact[0] };
+  const near = exact.length ? exact : items.filter((i) => i.text.toLowerCase().includes(w) || w.includes(i.text.toLowerCase()));
+  if (near.length === 1) return { item: near[0] };
+  if (!near.length) return { problem: "No item matches '" + args.text + "'. Items: " + list() };
+  return { problem: "More than one item matches '" + args.text + "': " + near.map((i) => "'" + i.text + "' (id " + i.id + ")").join(", ") + ". Use the id, or ask the person which one." };
+}
 
 /* The item whose text best matches what the helper said: exact first, then "contains". */
 function find(items, words) {

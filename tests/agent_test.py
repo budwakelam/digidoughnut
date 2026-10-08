@@ -156,6 +156,8 @@ with sync_playwright() as p:
     check("an unknown action: not done, and the message lists the real ones", r and not r["ok"] and "add_item" in r["message"], r)
     r = agent.result(agent.send("add_item", {}))
     check("a missing input: not done, says which", r and not r["ok"] and "'text' is missing" in r["message"], r)
+    r = agent.result(agent.send("remove_item", {}))
+    check("no id and no words: not done, the agent is told how to say which", r and not r["ok"] and "give its id" in r["message"], r)
     r = agent.result(agent.send("remove_item", {"text": "Caviar"}))
     check("the tool's own refusal comes back to the agent", r and not r["ok"] and "No item matches" in r["message"], r)
     check("the list wasn't touched by the refusals", items(page) == ["Flour", "Sugar", "Eggs"])
@@ -181,6 +183,42 @@ with sync_playwright() as p:
     check("Yes: the list is cleared", wait_items(page, []))
     for t in ["Apples", "Pears"]: agent.result(agent.send("add_item", {"text": t}))
     check("the agent's adds land after the clear", wait_items(page, ["Apples", "Pears"]))
+
+    # ------------------------------------------------------------------
+    print("Penny while the agent's big change waits (Oran, 2026-10-07)")
+    def fake_google(route):
+        req = route.request; cors = {"Access-Control-Allow-Origin": "*"}
+        if req.method == "OPTIONS": return route.fulfill(status=204, headers={**cors, "Access-Control-Allow-Headers": "content-type,x-goog-api-key"})
+        ok = lambda body: route.fulfill(status=200, content_type="application/json", headers=cors, body=json.dumps(body))
+        if req.url.split("?")[0].endswith("/models"):
+            return ok({"models": [{"name": "models/gemini-3.8-flash", "supportedGenerationMethods": ["generateContent"]}]})
+        body = json.loads(req.post_data or "{}"); penny_sys.append(body.get("systemInstruction", {}).get("parts", [{}])[0].get("text", ""))
+        last = body["contents"][-1]
+        if any("functionResponse" in x for x in last["parts"]):
+            return ok({"candidates": [{"content": {"role": "model", "parts": [{"text": "Done!"}]}}]})
+        text = " ".join(x.get("text", "") for x in last["parts"]).lower()
+        m = re.search(r"add (.+)", text)
+        return ok({"candidates": [{"content": {"role": "model", "parts": [{"functionCall": {"name": "add_item", "args": {"text": m.group(1)}}}] if m else [{"text": "Hello!"}]}}]})
+    penny_sys = []
+    ctx.route("https://generativelanguage.googleapis.com/**", fake_google)
+    page.evaluate("() => { localStorage.setItem('dd_ai_connections_v1', JSON.stringify({ main: { provider: 'google', code: 'AQ.Ab8RN6TESTfake0123456789abcdefGHIJ' } })); localStorage.setItem('dd_ai_models_v1', JSON.stringify({ google: { model: 'gemini-3.8-flash', candidates: ['gemini-3.8-flash'], checkedAt: Date.now(), order: 3 } })); dd.emit('ai:changed', { connected: true }); }")
+    idp = agent.send("clear_list")
+    agent.result(idp, until=lambda r: r is not None and r.get("waiting"))
+    try: page.wait_for_selector(".dd-helper-agentask", timeout=5000); boxed = True
+    except Exception: boxed = False
+    box = page.locator(".dd-helper-agentask").inner_text() if boxed else ""
+    check("Penny's window shows the agent's waiting question, with Yes / No", boxed and "Your AI agent is waiting for your answer" in box and "Clear all 2 items" in box, box)
+    check("…and says Penny can still help meanwhile", "can still help with anything else" in box)
+    page.fill(".dd-helper-in", "add honey"); page.click("[data-send]")
+    check("Penny still makes changes while the agent waits", wait_items(page, ["Apples", "Pears", "honey"]))
+    check("Penny is told about the waiting question, and that it doesn't stop her", penny_sys and "WAITING for their answer" in penny_sys[-1] and "does not stop you" in penny_sys[-1])
+    page.locator(".dd-helper-agentask [data-agentno]").click()
+    r = agent.result(idp, until=lambda r: r and not r.get("waiting"))
+    check("answering No in Penny's window answers the agent", r and r.get("declined"), r)
+    page.wait_for_timeout(300)
+    check("the box and the top notice both go away", page.locator(".dd-helper-agentask").count() == 0 and page.locator(f"#dd-notice-agentask-{idp}").count() == 0)
+    rid = agent.send("remove_item", {"text": "honey"}); agent.result(rid)
+    check("the list is back to the agent's two items", wait_items(page, ["Apples", "Pears"]))
 
     # ------------------------------------------------------------------
     print("Nothing open: the instruction waits")
@@ -264,10 +302,39 @@ with sync_playwright() as p:
         time.sleep(0.2)
     check("with example data the agent is told it isn't theirs, and gets no data", v and v["example"] and json.loads(v["data"]) is None and "example" in v["summary"], v)
     r = eagent.result(eagent.send("add_item", {"text": "Real thing"}))
-    check("the agent's first change starts the buyer's own list (example cleared, and said so)", r and r["ok"] and "example data" in r["message"] and wait_items(epage, ["Real thing"]), r)
+    check("the agent's first change starts the buyer's own list (examples removed, and said so)", r and r["ok"] and "example items" in r["message"] and wait_items(epage, ["Real thing"]), r)
     check("…and it travels through sync", any(json.loads(x)["text"] == "Real thing" for x in (FB.at("sync/demo/" + ledger(epage) + "/lists/items/items") or {}).values()))
+    # Muse's feedback (2026-10-07)
+    print("Muse's feedback: own ids, safe retries, item ids, fresh view, examples")
+    epage.fill("#demoNew", "Mine too"); epage.click("#demoAdd")
+    r = eagent.call("PUT", eagent.base + "/inbox/muse-add-1.json?auth=" + eagent.token, {"tool": "add_item", "args": {"text": "Bread"}, "at": {".sv": "timestamp"}})
+    r = eagent.result("muse-add-1")
+    check("an instruction under the agent's own id (PUT) works", r and r["ok"], r)
+    eagent.call("PUT", eagent.base + "/inbox/muse-add-1.json?auth=" + eagent.token, {"tool": "add_item", "args": {"text": "Bread"}, "at": {".sv": "timestamp"}})
+    time.sleep(2)
+    check("sending the same id again doesn't add it twice", items(epage).count("Bread") == 1, items(epage))
+    check("…and the retry is cleared from the inbox", eagent.get("/inbox/muse-add-1") is None)
+    eagent.result(eagent.send("add_item", {"text": "Milk"})); eagent.result(eagent.send("add_item", {"text": "Milk"}))
+    r = eagent.result(eagent.send("remove_item", {"text": "milk"}))
+    check("two items with the same words: not done, it lists both with their ids", r and not r["ok"] and r["message"].count("(id ") == 2, r)
+    v = eagent.get("/view"); milk = [i for i in json.loads(v["data"])["items"] if i["text"] == "Milk"]
+    r = eagent.result(eagent.send("remove_item", {"id": milk[1]["id"]}))
+    check("with the item's id from the view it removes exactly that one", r and r["ok"] and items(epage).count("Milk") == 1, (r, items(epage)))
+    v = eagent.get("/view")
+    check("the moment the result is there, the view already shows the change", sum(1 for i in json.loads(v["data"])["items"] if i["text"] == "Milk") == 1)
+    check("the instructions offer PUT with your own id, the streaming wait, and item ids", all(w in ebrief for w in ["PUT BASE/inbox/<your own id>.json", "text/event-stream", "ids from the view"]))
+    # examples: the buyer typed one of their own while the examples were showing
+    xctx, xpage, xerrs = fresh()
+    xpage.fill("#demoNew", "Typed by me"); xpage.click("#demoAdd")
+    check("(the examples are still showing, with the buyer's own item)", xpage.evaluate("() => dd.isExample()") and len(items(xpage)) == 4)
+    xpage.evaluate("(t) => dd.sync.connect(t)", CFG)
+    xa = Agent(xpage.evaluate("() => dd.agent.brief()"))
+    r = xa.result(xa.send("add_item", {"text": "From Muse"}))
+    check("the agent's first change removes the example items but keeps the buyer's own", wait_items(xpage, ["Typed by me", "From Muse"]), items(xpage))
+    check("…and says so", r and "example items" in r["message"], r)
+    xctx.close()
     rep = epage.evaluate("() => dd.diag.text()")
-    check("the support report has an AI agent section", "--- AI agent ---" in rep and "Instructions done: 1" in rep, rep[-600:])
+    check("the support report has an AI agent section", "--- AI agent ---" in rep and "Instructions done: " in rep, rep[-600:])
     check("the support report hides the setup code's key", API_KEY not in rep)
     epage.evaluate("() => dd.ui.privacy()")
     check("the privacy sheet mentions the AI agent", "Your AI agent" in epage.locator(".dd-sheet").inner_text())

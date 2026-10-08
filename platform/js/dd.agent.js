@@ -105,6 +105,9 @@
     var h = dd.sync.handle(); if (!h) return;
     var v = agent.view();
     if (sameView(remoteView, v)) return;
+    // The agent's own browser only fills a missing view: the buyer's devices keep it up to date,
+    // so two copies never take turns rewriting it.
+    if (agent.isAgentDevice() && remoteView) return;
     // Never more than one write every 3 seconds, whatever happens.
     var wait = 3000 - (Date.now() - lastViewAt);
     if (wait > 0) { scheduleView(wait); return; }
@@ -127,7 +130,20 @@
     lastAgent = v = v || {};
     remoteView = v.view || null;
     if (!sameView(remoteView, agent.view())) scheduleView(viewTimer ? undefined : 200);
-    var inbox = v.inbox && typeof v.inbox === "object" ? v.inbox : {}, ids = Object.keys(inbox).sort(), next = true;
+    var inbox = v.inbox && typeof v.inbox === "object" ? v.inbox : {}, done = v.done && typeof v.done === "object" ? v.done : {}, next = true;
+    // Oldest first by the server's time; agents may choose their own ids (PUT), so the id alone isn't an order.
+    var ids = Object.keys(inbox).sort(function (a, b) {
+      var ta = Number(inbox[a] && inbox[a].at) || 0, tb = Number(inbox[b] && inbox[b].at) || 0;
+      return ta - tb || (a < b ? -1 : a > b ? 1 : 0);
+    });
+    // A retried instruction whose result is already there was done once: drop it, never do it twice.
+    var dup = {};
+    ids = ids.filter(function (id) {
+      var d = done[id], item = inbox[id];
+      if (d && !d.waiting && !(item && item.claim && item.claim.by === me)) { dup["inbox/" + id] = null; return false; }
+      return true;
+    });
+    if (Object.keys(dup).length) { var hd = dd.sync.handle(); if (hd) hd.fb.D.update(hd.fb.D.ref(hd.db, hd.path + "/agent"), dup).catch(function () {}); }
     // Instructions run one at a time, oldest first, across ALL open devices, so they land in the
     // order the agent sent them. A fresh claim by another device means: that one is on it, wait.
     ids.forEach(function (id) {
@@ -140,7 +156,9 @@
       if (!busy[id] && !takenElsewhere) process(id, item);
     });
     // Questions answered elsewhere (or withdrawn) disappear here too.
-    Object.keys(asked).forEach(function (id) { if (!inbox[id] || inbox[id].state !== "waiting") { delete asked[id]; dd.ui.clearNotice("agentask-" + id); } });
+    var gone = false;
+    Object.keys(asked).forEach(function (id) { if (!inbox[id] || inbox[id].state !== "waiting") { delete asked[id]; gone = true; dd.ui.clearNotice("agentask-" + id); } });
+    if (gone) dd.emit("agent:asks", agent.waiting());
     prune(v.done);
   }
 
@@ -206,9 +224,9 @@
 
   function run(id, t, args) {
     var note = "";
-    if (dd.isExample()) {   // example data never travels: start the buyer's own, empty, first
-      dd.replaceData(program.emptyData(), { example: false, source: "agent" });
-      note = " (The program was showing example data, so that was cleared first.)";
+    if (dd.isExample()) {   // example data never travels: take the examples out first, keep anything the buyer added
+      dd.replaceData(withoutExamples(dd.getData()), { example: false, source: "agent" });
+      note = " (The program was showing example items, so those were removed first.)";
     }
     var before = JSON.stringify(dd.getData());
     return Promise.resolve().then(function () { return t.run(args, dd.ctx()); }).then(function (res) {
@@ -222,12 +240,30 @@
     });
   }
 
+  /* The data minus the program's example items. Lists: items whose id is one of exampleData()'s
+     are dropped (so example ids must stay fixed). Other values still equal to the example go back to
+     emptyData()'s. Anything the buyer added stays. If the result doesn't check out: empty data. */
+  function withoutExamples(data) {
+    try {
+      var ex = program.exampleData(), empty = program.emptyData(), out = JSON.parse(JSON.stringify(data));
+      Object.keys(out).forEach(function (k) {
+        if (Array.isArray(out[k]) && Array.isArray(ex[k])) {
+          var ids = ex[k].map(function (i) { return i && i.id; }).filter(Boolean);
+          out[k] = out[k].filter(function (i) { return !(i && i.id && ids.indexOf(i.id) >= 0); });
+        } else if (k in ex && JSON.stringify(out[k]) === JSON.stringify(ex[k])) out[k] = empty[k];
+      });
+      return program.validateData(out) ? out : empty;
+    } catch (e) { dd.errors.record("agent.examples", e); return program.emptyData(); }
+  }
+
   function finish(id, res) {
     var h = dd.sync.handle(); if (!h) { delete busy[id]; return; }
     res.at = TS;
     if (res.ok) diag.ran++; else diag.refused++;
     diag.last = new Date().toLocaleTimeString() + " · " + (res.tool || "?") + " · " + (res.ok ? "done" : "not done");
     var u = {}; u["inbox/" + id] = null; u["done/" + id] = res;
+    // The view goes in the SAME write, so once the agent sees the result, the view already shows it.
+    var v = agent.view(); v.updatedAt = TS; u.view = v; lastViewAt = Date.now(); diag.views++;
     return h.fb.D.update(h.fb.D.ref(h.db, h.path + "/agent"), u).then(function () { release(id); }, function (e) { fail("answering", e); delete busy[id]; });
   }
 
@@ -249,15 +285,20 @@
   function ask(id, item) {
     if (asked[id]) return;
     var t = findTool(item.tool); if (!t) return;
-    asked[id] = 1;
+    asked[id] = { id: id, question: item.question || "Do you want to go ahead?", yes: t.yesLabel || "Yes, do it" };
     dd.ui.notice("agentask-" + id, "Your AI agent asks: " + (item.question || "Do you want to go ahead?"), "warn", [
       { label: t.yesLabel || "Yes, do it", primary: true, onClick: function () { answer(id, true); } },
       { label: "No, leave it", onClick: function () { answer(id, false); } }
     ]);
+    dd.emit("agent:asks", agent.waiting());
   }
+  /* The agent's big changes waiting for the buyer's answer (Penny shows them too). */
+  agent.waiting = function () { return Object.keys(asked).sort().map(function (id) { return asked[id]; }); };
+  agent.answer = function (id, yes) { answer(id, yes); };
   function answer(id, yes) {
     if (busy[id]) return;
     busy[id] = 1; dd.ui.clearNotice("agentask-" + id); delete asked[id];
+    dd.emit("agent:asks", agent.waiting());
     claim(id, true).then(function (ok) {
       if (!ok) { delete busy[id]; dd.ui.toast("That was already answered on another device."); return; }
       var item = (lastAgent && lastAgent.inbox && lastAgent.inbox[id]) || {}, t = findTool(item.tool);
@@ -303,14 +344,20 @@
       '   "summary" is plain text. "data" is all my data as JSON text. "tools" lists the actions as JSON text.',
       '   "updatedAt" is when it last changed (milliseconds). If "example" is true, I haven\'t started my own data yet.',
       "", "3. MAKE A CHANGE (one instruction per change):",
-      "   POST BASE/inbox.json?auth=TOKEN",
+      "   PUT BASE/inbox/<your own id>.json?auth=TOKEN",
       '   Body (JSON): {"tool": "<action name>", "args": { <inputs> }, "at": {".sv": "timestamp"}}',
-      '   The answer {"name": "<id>"} is your instruction\'s id.',
+      "   Make up a new id for each change (letters, digits, - and _, up to 64). Sending the same id again is safe:",
+      "   if a call times out, just repeat it, and the change still happens only once.",
+      '   (POST BASE/inbox.json with the same body also works, and answers {"name": "<id>"}, but a retried POST can add it twice.)',
+      "   Where an action takes an item's id, use the ids from the view's data.",
       "   The app carries it out the next time it is open on any of my devices, so it may not happen straight away.",
       "   To make it happen now, open this link in your web browser and leave it open for about 15 seconds:",
       "   " + agent.link(),
       "", "4. CHECK THE RESULT:",
       "   GET BASE/done/<id>.json?auth=TOKEN",
+      "   Instead of asking again and again, you can wait for it: send the same GET with the header",
+      "   Accept: text/event-stream and Firebase streams the result to you the moment it's written.",
+      "   When a result is there, the view (step 2) already shows the change.",
       "   - null: not done yet (the app isn't open anywhere). Tell me it will happen when I next open the app.",
       '   - "ok": true: done; "message" says what changed.',
       '   - "ok": false: not done; "message" says why.',

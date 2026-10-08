@@ -264,3 +264,28 @@ Collected as decisions come up; folded into handoff.md later.
 - NOT YET: Oran's run with Muse (can Muse make REST calls? open the link?). Agent panel with
   forms for browsing-only agents not built (wait for Muse's result). Undo on the buyer's device
   only when that device ran the instruction. Each agent sign-in makes an anonymous user.
+
+### Phase 6: Oran's Muse run PASSED (2026-10-07, 18:46) + Muse's own feedback — demo15
+
+- Oran drove the Demo List with Muse through the brief. One confusion: "Penny wasn't working
+  while the agent's change waited for approval." Not reproduced (Penny edits fine with a parked
+  clear_list; covered by agent_test). Made it impossible to miss: the waiting question now also
+  shows INSIDE Penny's window with Yes / No ("Nothing changes until you answer. Penny can still
+  help with anything else meanwhile."), and Penny's system prompt says it's waiting and doesn't
+  stop her. dd.agent exposes waiting() / answer(id, yes) and emits "agent:asks".
+- Muse's feedback, and what changed:
+  1. Polling: a blocking ?wait isn't possible without a server. The brief now says to GET done/<id>
+     with "Accept: text/event-stream" (Firebase REST streaming) instead of polling.
+  2. View lagged: the view is now written in the SAME update as done/<id>, so a result implies a
+     fresh view. The agent's own browser only fills a missing view (no two copies rewriting it).
+  3. Word matching: demo set_done / remove_item take an optional `id`; words matching more than
+     one item are refused with every match and its id (pick()). Convention for every program:
+     tools that target one record accept its id.
+  4. Example data: the agent's first change on a device still showing examples now removes only
+     items whose id is in exampleData() (example ids must stay fixed), keeping anything the buyer
+     typed. Not reproduced as Muse described it; likely "Keep these" had been tapped earlier, which
+     makes the examples the buyer's own on purpose (asked Oran).
+  5. Idempotency: PUT inbox/<agent's own id> (brief says so); order is by the server time `at`;
+     an inbox item whose done/<id> already exists is dropped, never run twice (done kept 7 days).
+  6. The run-now link needs a browser: by design; API-only agents rely on "next time it's open".
+- agent_test: 91. All suites: 110 · 61 · 200 · 79 · 90 · 22 · 91.

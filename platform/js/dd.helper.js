@@ -118,6 +118,7 @@
         (msgs.length ? '<button class="dd-linkbtn dd-helper-new" data-new>New chat</button>' : "") +
         (mode === "bubble" ? '<button class="dd-linkbtn" data-hide aria-label="Hide the chat">Hide</button>' : "") + '</div>' +
       '<div class="dd-helper-msgs" role="log" aria-live="polite"></div>' +
+      agentAsks() +
       (live ? "" : '<div class="dd-helper-need"><p><b>' + esc(name) + ' needs a free access code from Google first.</b> It\'s free and takes about 2 minutes.</p>' +
         '<button class="dd-btn dd-helper-turnon" data-turnon>Turn on ' + esc(name) + '</button></div>') +
       (live && !msgs.length && program.suggestions && program.suggestions.length ? '<div class="dd-helper-chips">' +
@@ -134,6 +135,9 @@
     input.value = typed;
     input.addEventListener("keydown", function (e) { if (e.key === "Enter" && !busy) helper.ask(); });
     root.querySelector("[data-send]").addEventListener("click", function () { if (busy) dd.ai.stop(); else helper.ask(); });
+    root.querySelectorAll("[data-agentyes],[data-agentno]").forEach(function (b) {
+      b.addEventListener("click", function () { dd.agent.answer(b.getAttribute("data-agentyes") || b.getAttribute("data-agentno"), b.hasAttribute("data-agentyes")); });
+    });
     var nb = root.querySelector("[data-new]"); if (nb) nb.addEventListener("click", newChat);
     var hb = root.querySelector("[data-hide]"); if (hb) hb.addEventListener("click", closeBubble);
     var tb = root.querySelector("[data-turnon]"); if (tb) tb.addEventListener("click", function () { helper.need(); });
@@ -206,6 +210,20 @@
     return out;
   }
 
+  /* The buyer's AI agent (dd.agent) may be waiting for a Yes / No on a big change. Show it right
+     here too (Oran, 2026-10-07: "I was confused at why Penny wasn't working"), and say plainly
+     that it doesn't stop Penny. */
+  function waitingAsks() { return dd.agent && dd.agent.waiting && !dd.agent.isAgentDevice() ? dd.agent.waiting() : []; }
+  function agentAsks() {
+    var w = waitingAsks(); if (!w.length) return "";
+    return '<div class="dd-helper-need dd-helper-agentask"><p><b>Your AI agent is waiting for your answer' + (w.length > 1 ? " (" + w.length + ")" : "") + ':</b></p>' +
+      w.slice(0, 2).map(function (a) {
+        return '<p>' + esc(a.question) + '</p><div class="dd-helper-acts"><button class="dd-btn small danger" data-agentyes="' + esc(a.id) + '">' + esc(a.yes) + '</button>' +
+          '<button class="dd-btn small ghost" data-agentno="' + esc(a.id) + '">No, leave it</button></div>';
+      }).join("") +
+      '<p class="dd-helper-note">Nothing changes until you answer. ' + esc(helper.name()) + ' can still help with anything else meanwhile.</p></div>';
+  }
+
   helper.systemPrompt = function () {
     var name = helper.name(), c = dd.ctx();
     var data = ""; try { data = program.summarizeForAI ? String(program.summarizeForAI(c) || "") : ""; } catch (e) { dd.errors.record("summarizeForAI", e); }
@@ -218,6 +236,9 @@
       "Answer in plain everyday words, 1 to 3 short sentences unless they ask for more. Say 'free access code', never 'API key'. Never show code, JSON or error text. " +
       "Use only the real data below; never make up items or numbers. Don't give tax, legal or medical advice beyond suggesting a professional. " +
       (dd.isExample() ? "Right now the program is showing EXAMPLE data, not theirs. " : "") +
+      (waitingAsks().length ? "The person's own AI agent (a separate assistant, like Muse) asked for a big change that is WAITING for their answer: " +
+        waitingAsks().map(function (a) { return '"' + a.question + '"'; }).join(" and ") + ". You can't answer it for them. If it comes up, tell them to tap Yes or No in the box at the top of this chat. " +
+        "It does not stop you: carry on with what they ask. " : "") +
       "\n\nCurrent data in the program:\n" + (data || "(nothing yet)");
   };
 
@@ -333,6 +354,7 @@
     load();
     if (window.matchMedia) { mq = window.matchMedia(WIDE); var onChange = function () { place(); }; if (mq.addEventListener) mq.addEventListener("change", onChange); else if (mq.addListener) mq.addListener(onChange); }
     place();
+    dd.on("agent:asks", function () { paint(); });
     dd.on("ai:changed", function (ev) {
       paint();
       if (ev && ev.connected && waitingForCode) { waitingForCode = false; setTimeout(helper.open, 300); }
