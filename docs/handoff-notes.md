@@ -340,3 +340,7 @@ yes. 4 AI companies at launch: Google, Groq, OpenRouter, OpenAI, Anthropic. (5 a
   22 · 91 · 83.
 - Next: 7.4 `latest` on the noticeboard + newer-version notice; 7.5 thank-you template; 7.6 AI
   companies (live tests first).
+- Oran (22:53): "we don't want different files for each version". From now on the file sent to Oran
+  is always **demo.html** (same name every time, so uploading it replaces the old one and the list
+  stays). The version lives inside: demo is now 0.1.1 (About, footer). Bump it with every send.
+  The downloaded and hosted copies are the same file too (DD_BUILD.home is identical in both).

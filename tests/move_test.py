@@ -97,7 +97,7 @@ def main():
                     open_item(page, "backup"); check("Backup & new versions opens", "Backup & new versions" in page.inner_text(".dd-sheet h2")); page.keyboard.press("Escape")
                     open_item(page, "privacy"); check("Privacy opens", "connects to" in page.inner_text(".dd-sheet h2")); page.keyboard.press("Escape")
                     open_item(page, "help"); check("Help opens the support details", "--- Program ---" in page.inner_text("#dd-diag-text")); page.keyboard.press("Escape")
-                    open_item(page, "about"); check("About shows name and version", "Version 0.1.0" in page.inner_text(".dd-sheet")); page.keyboard.press("Escape")
+                    open_item(page, "about"); check("About shows name and version", "Version 0.1.1" in page.inner_text(".dd-sheet")); page.keyboard.press("Escape")
                     page.click("#dd-footer p", click_count=3); page.wait_for_timeout(100)
                     check("footer triple-click still opens support details", page.locator("#dd-diag-text").is_visible()); page.keyboard.press("Escape")
                     if dev_name == "desktop":
