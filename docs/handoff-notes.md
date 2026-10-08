@@ -415,3 +415,9 @@ yes. 4 AI companies at launch: Google, Groq, OpenRouter, OpenAI, Anthropic. (5 a
 - Oran (07:38, 10-08): **no "rename it first"**. Buyers download once and get the right name; the
   "(10)" names came from Oran's own testing. Removed the rename note and `DD_BUILD.file`; wizards
   use the file's own name again ("Don't rename the file"). Demo 0.1.8. Suites: 134·61·188·81·108·91·108.
+- Oran (08:22, 10-08): (1) say plainly that live sync is a cloud backup; (2) "in step" means nothing
+  to buyers: say sync. Step 4 is now **"Sync my devices"** ("…and a copy is kept safe in the
+  cloud"); the wizard's first screen says it backs up to the cloud and comes back after clearing the
+  browser; the live sync sheet is "🔄 Live sync" with "☁️ Backed up to the cloud" (and that it's a
+  live copy, so keep a backup file for a dated copy). Chip: "Synced" / "Not syncing". Every
+  "in step" in buyer text is gone. Demo 0.1.9. Suites: 134·61·190·81·109·91·108·22.

@@ -28,7 +28,7 @@
     sync_rules:    ["Your Firebase database said no.", "Open the sync setup again and redo the step where you paste the rules, then tap Publish."],
     sync_offline:  ["Can't reach your Firebase database right now.", "Check your internet. Your changes are kept on this device and go across when it's back."],
     sync_newer:    ["Your other device has a newer version of this program.", "Put the newer file on this device too, then open it from the same address."],
-    sync_moved:    ["This device's live sync address was retired on your other device.", "Open the program on that device and use Send to my phone again to get back in step."],
+    sync_moved:    ["This device's live sync address was retired on your other device.", "Open the program on that device and use Send to my phone again to sync it."],
     sync_file:     ["Live sync needs the program to be online.", "Put it online first (setup step 3, Where it lives), then open it from its web address and turn on sync there."],
     backup_bad:    ["That file didn't look like a backup from this program.", "Choose a file that ends in .json and was made with the Download a backup button."]
   };

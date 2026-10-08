@@ -1,4 +1,4 @@
-"""Phase 5 tests: keep devices in step (dd.sync) and backup / restore (dd.backup).
+"""Phase 5 tests: live sync (dd.sync) and backup / restore (dd.backup).
 
     node build.mjs && python3 tests/sync_test.py
 
@@ -130,7 +130,7 @@ with sync_playwright() as p:
     check("Connect signs in and reaches 'Live sync is on!'", ok, pc.inner_text("#dd-wiz-status") if pc.locator("#dd-wiz-status").count() else "")
     pc.screenshot(path=os.path.join(SCRATCH, "sync_wizard_done.png"))
     pc.click("[data-next]")
-    check("header chip says In step", wait_chip(pc, "In step"), chip(pc))
+    check("header chip says Synced", wait_chip(pc, "Synced"), chip(pc))
     settle(pc)
     check("the list is in the database", remote_items(pc) == ["Eggs", "Flour", "Milk"], remote_items(pc))
     check("setup code saved for every program on this address", pc.evaluate("() => !!JSON.parse(localStorage.getItem('dd_firebase_config_v1')).apiKey"))
@@ -150,7 +150,7 @@ with sync_playwright() as p:
     ph.goto(made["link"])
     check("phone shows the computer's list (it had example data)", wait_items(ph, ["Milk", "Eggs", "Flour"]), items(ph))
     fast(ph)
-    check("phone chip says In step", wait_chip(ph, "In step"), chip(ph))
+    check("phone chip says Synced", wait_chip(ph, "Synced"), chip(ph))
     check("phone is on the same ledger", ledger(ph) == ledger(pc))
     check("phone's setup step 4 ticks itself", "done" in (ph.locator(".dd-step").nth(3).get_attribute("class") or "") or "4 of 4" in ph.inner_text("#dd-setup") or "All set up" in ph.inner_text("#dd-setup"), ph.inner_text("#dd-setup")[:200])
     check("the code is gone from the phone's address bar", "#dd=" not in ph.url)
@@ -182,7 +182,7 @@ with sync_playwright() as p:
     check("back online: the computer gets the phone's item", ok_pc, items(pc))
     check("...and the phone gets the computer's", sorted(items(ph)) == sorted(want) or wait_items(ph, items(pc)), items(ph))
     check("both devices end up with the same order", wait_items(ph, items(pc)), (items(ph), items(pc)))
-    check("phone chip back to In step", wait_chip(ph, "In step"), chip(ph))
+    check("phone chip back to Synced", wait_chip(ph, "Synced"), chip(ph))
 
     print("The same item changed on both while the phone is offline: the newer edit wins")
     def rename(page, old, new): page.evaluate("(a) => dd.update(d => { d.items.find(i => i.text === a[0]).text = a[1]; })", [old, new])
@@ -227,7 +227,7 @@ with sync_playwright() as p:
     try: pc.wait_for_function("() => [...document.querySelectorAll('#demoList .demo-row span')].some(e => e.textContent === 'Reload rice')", timeout=6000); ok = True
     except Exception: ok = False
     check("after the reload the computer gets it", ok, items(pc))
-    check("phone resumed sync on its own", wait_chip(ph, "In step"), chip(ph))
+    check("phone resumed sync on its own", wait_chip(ph, "Synced"), chip(ph))
     check("support report says it resumed", "resumed on load: yes" in ph.evaluate("() => dd.diag.text()"))
 
     print("Undo, clear and the helper's big changes sync like anything else")
@@ -239,6 +239,9 @@ with sync_playwright() as p:
     check("Undo (replaceData) brings it back on the phone", wait_items(ph, before), items(ph))
 
     print("Backup and restore")
+    pc.click("#dd-sync-chip")
+    check("the live sync sheet says it's backed up to the cloud", "Backed up to the cloud" in pc.inner_text(".dd-sheet") and "Live sync" in pc.locator(".dd-sheet h2").inner_text())
+    pc.click("[data-close]")
     pc.click("#dd-data-link")
     check("footer link says Backup & new versions and opens that sheet", "Backup & new versions" in pc.inner_text("#dd-data-link") and "Backup & new versions" in pc.locator(".dd-sheet h2").inner_text(), pc.locator(".dd-sheet h2").inner_text())
     sh = pc.inner_text(".dd-sheet")
@@ -327,7 +330,7 @@ with sync_playwright() as p:
     add(pc, "After cleanup")
     ok = wait_items(ph, items(pc)) and "After cleanup" in items(ph)
     check("the database says no, the program signs in again, and the change arrives", ok, items(ph))
-    check("chip back to In step", wait_chip(pc, "In step"), chip(pc))
+    check("chip back to Synced", wait_chip(pc, "Synced"), chip(pc))
     check("support report notes the fresh sign-in", "signed in again 1x" in pc.evaluate("() => dd.diag.text()"))
 
     print("Turn off, and a reload remembers")
@@ -338,7 +341,7 @@ with sync_playwright() as p:
     ph.reload(); fast(ph); ph.wait_for_timeout(800)
     check("still off after a reload", ph.evaluate("() => dd.sync.state().state") == "off" and "After off" not in items(ph))
     pc.reload(); fast(pc)
-    check("computer resumes on reload", wait_chip(pc, "In step"), chip(pc))
+    check("computer resumes on reload", wait_chip(pc, "Synced"), chip(pc))
 
     print("A newer version on the other device")
     FB.write("set", "sync/demo/" + ledger(pc) + "/meta/schema", 99, None, force=True)
@@ -346,7 +349,7 @@ with sync_playwright() as p:
     check("notice explains in plain words", "newer version" in pc.inner_text("#dd-notices"))
     FB.write("set", "sync/demo/" + ledger(pc) + "/meta/schema", 2, None, force=True)
     pc.reload(); fast(pc)
-    check("back to In step once versions match", wait_chip(pc, "In step"), chip(pc))
+    check("back to Synced once versions match", wait_chip(pc, "Synced"), chip(pc))
     check("no page errors on the computer", not pc_errs, pc_errs[:3])
     check("no page errors on the phone", not ph_errs, ph_errs[:3])
     phone_ctx.close(); pc_ctx.close()
@@ -362,7 +365,7 @@ with sync_playwright() as p:
         ctx, page, errs = fresh()
         r = page.evaluate("(t) => dd.sync.connect(t)", text)
         check(f"{label}: '{r.get('title')}'", not r["ok"] and want in r["title"] and not re.search(r"auth/|PERMISSION|HTTP|Error", r["title"] + r["help"]), r)
-        check(f"{label}: nothing saved, chip shows the problem", page.evaluate("() => localStorage.getItem('dd_firebase_config_v1')") is None and chip(page) == "Not in step", chip(page))
+        check(f"{label}: nothing saved, chip shows the problem", page.evaluate("() => localStorage.getItem('dd_firebase_config_v1')") is None and chip(page) == "Not syncing", chip(page))
         ctx.close()
     FB.reset()
     ctx, page, errs = fresh()

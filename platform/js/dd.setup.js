@@ -38,7 +38,7 @@
         return { gives: "Now: " + (h ? h.title.charAt(0).toLowerCase() + h.title.slice(1) : dd.env.isHosted ? "online at " + location.host : "a file on this computer") + ".", time: "",
                  warn: dd.env.isFile ? "Limited: this computer only, not on your phone" : "" };
       } },
-    { id: "sync", icon: "🔄", title: "Keep devices in step", gives: "Changes on one device show up on the other.", time: "About 10 minutes",
+    { id: "sync", icon: "🔄", title: "Sync my devices", gives: "Changes on one device show up on the other, and a copy is kept safe in the cloud.", time: "About 10 minutes",
       done: function () { return !!(dd.sync && dd.sync.isOn && dd.sync.isOn()); }, wizard: "sync" },
     { id: "agent", icon: "🦾", title: "Connect your AI agent", gives: "Your own AI agent, like Muse, can read and change this program for you.", time: "About 2 minutes",
       done: function () { return !!(dd.agent && dd.agent.connected()); },
@@ -831,7 +831,7 @@
     ].concat(finishScreens("tiiny"))
   };
 
-  /* ---------- "Keep devices in step" (Phase 5) ----------
+  /* ---------- "Sync my devices" (Phase 5) ----------
      Checked against Oran's screenshots, 2026-10-07 (project "etsy", Spark plan): left menu
      "Project shortcuts" > Authentication (Get started the first time) > Sign-in method >
      Native providers > Anonymous > Enable > Save; "Databases & Storage" > Realtime Database
@@ -843,13 +843,14 @@
      Firebase shows includes the database's address (dd.sync also guesses it if it's missing). */
   function syncLink() { return link("sync_console", "https://console.firebase.google.com/"); }
   setup.wizards.sync = {
-    title: "Keep devices in step",
+    title: "Sync my devices",
     onDone: function () { dd.ui.toast("Live sync is on. Now send it to your phone.", 4500); },
     screens: [
       { title: "Your own free database",
         pic: { kind: "hero", icons: ["💻", "🔄", "📱"], caption: "A change on one shows on the other" },
         todo: "Read this, then tap Next.",
-        body: function () { return '<p>Live sync keeps your computer and phone in step: add something on one, and it appears on the other a moment later.</p>' +
+        body: function () { return '<p>Live sync keeps your computer and phone synced: add something on one, and it appears on the other a moment later.</p>' +
+          '<p><b>It also backs up your ' + esc(program.dataLabel || "numbers") + ' to the cloud.</b> If you clear your browser or lose a device, open the program again, reconnect, and it all comes back.</p>' +
           '<p>It uses a free Google <b>Firebase</b> database that belongs to you, in your own Google account. DigiDoughnut never sees it.</p>' +
           '<ul class="dd-facts"><li>✓ Free (Firebase\'s Spark plan). No credit card.</li><li>✓ About 10 minutes, once. Every DigiDoughnut program on this address shares it.</li><li>✓ Easiest on a computer.</li></ul>' +
           (dd.env.isFile ? '<p class="dd-status show warn">Put the program online first (setup step 3, Where it lives), then do this from its web address.</p>' : ""); } },
@@ -919,8 +920,8 @@
         stuck: ["It says sign-in isn't switched on? Go back to the Authentication step.", "It says the database said no? Go back to the rules step and tap Publish."], guide: "sync_paste" },
       { title: "Live sync is on!",
         pic: { kind: "done" },
-        body: function () { return '<p>This device is connected to your database. Now bring your phone in: tap <b>Send to my phone</b> and scan the square. The phone joins straight away and stays in step.</p>' +
-          '<p class="dd-note">The chip at the top of the page shows "In step" while everything is up to date.</p>'; },
+        body: function () { return '<p>This device is connected to your database. Now bring your phone in: tap <b>Send to my phone</b> and scan the square. The phone joins straight away and stays synced.</p>' +
+          '<p class="dd-note">The chip at the top of the page shows "Synced" while everything is up to date.</p>'; },
         action: { label: "📲 Send to my phone", run: function (c) { c.next(); if (dd.pair && !dd.env.isPhone) setTimeout(dd.pair.open, 250); } },
         nextLabel: "Done" }
     ]

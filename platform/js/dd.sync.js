@@ -1,4 +1,4 @@
-/* ===== DigiDoughnut Platform · dd.sync — keep devices in step =====
+/* ===== DigiDoughnut Platform · dd.sync — live sync between devices =====
    Phase 5 (Oran, 2026-10-07). Live sync through the buyer's OWN free Firebase project.
 
    Decisions:
@@ -386,14 +386,14 @@
 
   /* Forget the setup code on this device (all programs on this web address). */
   /* Another device retired this address (Disconnect my agent). Stop here, keep everything on this
-     device, and say how to get back in step. */
+     device, and say how to sync again. */
   function movedAway() {
     stopListening(); rememberOn(false); state = "off"; problem = null;
     dd.store.remove(key("sync_id")); dd.store.remove(key("sync_base")); base = null; pend = {}; stamps = {};
     paint(); dd.emit("sync:changed", { on: false, moved: true });
     var thing = (program && program.dataLabel) || "numbers";
     dd.ui.notice("sync", "Live sync stopped on this device: your " + thing + " moved to a new private address, because an AI agent was disconnected on your other device. " +
-      "Everything here is kept. To get back in step, open the program on that device and use Send to my phone again.", "warn");
+      "Everything here is kept. To sync again, open the program on that device and use Send to my phone again.", "warn");
   }
 
   /* For other platform modules (dd.agent): the live connection, or null when sync isn't on. */
@@ -548,7 +548,7 @@
     }
     resumeAfterPair = false;
     sync.join(a.ledger, a.config).then(function (r) {
-      if (r.ok) dd.ui.toast("Live sync is on. This phone and your computer are in step.", 4000);
+      if (r.ok) dd.ui.toast("Live sync is on. This phone and your computer are synced.", 4000);
       else dd.ui.notice("sync", r.title + " " + r.help, "warn");
     });
   }
@@ -571,19 +571,20 @@
   /* {kind: ok|wait|bad|off, short, long} in plain words */
   sync.status = function () {
     if (state === "connecting") return { kind: "wait", short: "Connecting…", long: "Connecting to your Firebase database." };
-    if (state === "on" && connectedNow) return { kind: "ok", short: "In step", long: "Live sync is on. Changes go to your other devices straight away." };
+    if (state === "on" && connectedNow) return { kind: "ok", short: "Synced", long: "Live sync is on. Changes go to your other devices straight away." };
     if (state === "on") return { kind: "wait", short: "Offline", long: "Can't reach your database right now. Your changes are kept here and go across when you're back online." };
     if (state === "newer") { var n = dd.errors.friendly("sync_newer"); return { kind: "bad", short: "Update needed", long: n.title + " " + n.help }; }
-    if (state === "problem") { var f = dd.errors.friendly(problem, { company: "Firebase" }); return { kind: "bad", short: "Not in step", long: f.title + " " + f.help }; }
+    if (state === "problem") { var f = dd.errors.friendly(problem, { company: "Firebase" }); return { kind: "bad", short: "Not syncing", long: f.title + " " + f.help }; }
     return { kind: "off", short: "Sync off", long: "Live sync is off on this device." };
   };
 
   /* The sheet behind the chip (also Setup step 4's "Change"). */
   sync.openSheet = function () {
     var s = sync.status(), on = sync.isOn(), cfg = sync.config();
-    var sh = dd.ui.sheet('<h2>Keep devices in step</h2>' +
+    var sh = dd.ui.sheet('<h2>🔄 Live sync</h2>' +
       '<p class="dd-status show ' + (s.kind === "ok" ? "ok" : s.kind === "bad" ? "err" : "info") + '">' + dd.ui.esc(s.long) + '</p>' +
       (cfg ? '<p class="dd-note">Your database: <b>' + dd.ui.esc(cfg.projectId) + '</b></p>' : "") +
+      (on ? '<p class="dd-note">☁️ <b>Backed up to the cloud.</b> Your ' + dd.ui.esc(program.dataLabel || "numbers") + ' are kept in your own Firebase database too, so clearing the browser or losing a device doesn\'t lose them. It\'s a live copy: a deletion is deleted there too, so keep a backup file now and then for a dated copy.</p>' : "") +
       '<div class="dd-btnrow">' +
         (on && dd.pair && !dd.env.isPhone ? '<button class="dd-btn" data-phone>📲 Add my phone</button>' : "") +
         (on ? (s.kind !== "ok" ? '<button class="dd-btn ghost" data-retry>Try again now</button>' : "") + '<button class="dd-btn ghost" data-off>Turn off on this device</button>'

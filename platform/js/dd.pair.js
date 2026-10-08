@@ -158,9 +158,9 @@
     if (data) parts.push("your " + thing);
     if (synced) parts.push("live sync");
     var says = parts.length ? "This brings " + parts.join(" and ") + " to your phone. " : "";
-    if (synced && !(dd.isExample && dd.isExample())) says += "Your " + thing + " comes across through live sync, and stays in step from then on.";
+    if (synced && !(dd.isExample && dd.isExample())) says += "Your " + thing + " comes across through live sync, and stays synced from then on.";
     else if (!data && dd.isExample && dd.isExample()) says += "Example data doesn't travel: once you start your own " + thing + ", it will come along too.";
-    else if (made.left.length) says += "Your " + thing + " can't fit in one square, so it will stay on this computer for now. Keeping devices in step (setup step 4) will move it.";
+    else if (made.left.length) says += "Your " + thing + " can't fit in one square, so it will stay on this computer for now. Live sync (setup step 4) will move it.";
     else if (!data) says += "Your " + thing + " will stay on this computer.";
     return says.trim();
   };

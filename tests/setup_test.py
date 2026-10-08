@@ -299,6 +299,12 @@ with sync_playwright() as p:
 
     print("\n== Finish later and the menu icon ==")
     ctx, page, errs = fresh()
+    row = page.inner_text("[data-step=sync]")
+    check("setup step 4 is 'Sync my devices' and says a copy is kept in the cloud", "Sync my devices" in row and "cloud" in row, row)
+    page.click("[data-step=sync] [data-start]")
+    check("the sync steps' first screen says it backs up to the cloud", "backs up your" in page.inner_text(".dd-wiz-body") and "Sync my devices" in page.inner_text(".dd-wiz-top"), page.inner_text(".dd-wiz-top"))
+    ctx.close()
+    ctx, page, errs = fresh()
     page.evaluate("() => { const s = JSON.parse(localStorage.getItem('dd_demo_setup_v1') || '{\"wizards\":{}}'); s.hidden = true; s.folded = true; s.wizards = s.wizards || {}; localStorage.setItem('dd_demo_setup_v1', JSON.stringify(s)); dd.setup.paint(); dd.setup.open('ai'); }")
     page.click("[data-later] >> nth=0")
     check("Finish later with the setup reminder hidden points to the menu", "Settings" in page.inner_text(".dd-toast") and "setup card" not in page.inner_text(".dd-toast"), page.inner_text(".dd-toast"))

@@ -272,7 +272,7 @@ with sync_playwright() as p:
     page.click("[data-yes]")
     try: page.wait_for_function("(old) => { const l = localStorage.getItem('dd_demo_sync_id_v1'); return l && l !== old && dd.sync.state().state === 'on'; }", arg=led, timeout=8000); moved = True
     except Exception: moved = False
-    check("the computer moves to a new private address and stays in step", moved)
+    check("the computer moves to a new private address and stays synced", moved)
     new = ledger(page)
     old_tree = FB.at(f"sync/demo/{led}") or {}
     check("the old address is emptied, only a 'moved' mark is left", old_tree == {"meta": {"v": 1, "schema": 2, "moved": True}} or (set(old_tree) == {"meta"} and old_tree["meta"].get("moved")), old_tree)
@@ -280,7 +280,7 @@ with sync_playwright() as p:
     check("the new address holds the whole list", sorted(json.loads(x)["text"] for x in (FB.at(f"sync/demo/{new}/lists/items/items") or {}).values()) == sorted(want))
     try: ppage.wait_for_selector("#dd-notice-sync", timeout=6000); told = "moved to a new private address" in ppage.locator("#dd-notice-sync").inner_text()
     except Exception: told = False
-    check("the phone stops and says how to get back in step", told and not ppage.evaluate("() => dd.sync.isOn()"))
+    check("the phone stops and says how to sync again", told and not ppage.evaluate("() => dd.sync.isOn()"))
     check("the phone keeps its list", items(ppage) == want, items(ppage))
     check("step 5 is no longer marked done", not page.evaluate("() => dd.agent.connected()"))
     idx = agent.send("add_item", {"text": "Sneaky"})
