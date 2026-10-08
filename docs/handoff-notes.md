@@ -210,3 +210,19 @@ Collected as decisions come up; folded into handoff.md later.
 - If the database says no (stale sign-in, e.g. Auto clean-up after 30 days), dd.sync signs out,
   signs in afresh and tries once (at most once a minute); the report says "signed in again Nx".
 - sync_test: 81 checks (adds the stale sign-in case).
+
+### Phase 5: newest edit wins (2026-10-07, 17:05)
+
+- Oran: offline on the phone works once the page is open again (iOS pauses background pages —
+  expected; added a reconnect nudge on visibilitychange/pageshow). He chose **(a) newest edit
+  wins** for the same item changed on two devices.
+- Edit times: `times/<path with / as |>` = Firebase-clock ms (`.info/serverTimeOffset`), kept
+  locally as `stamps[path] = {t, v}` (a resend keeps its first time). merge(b, l, r, {real, lt, rt}):
+  both changed → newer wins; no time → this device.
+- Found while testing: the SDK's offline queue sends a held write blindly on reconnect, so the
+  older edit won. Now offline changes are HELD (pend[p] = "held"), never given to Firebase;
+  on reconnect we `get()` first (ignored if a live update or a push happened meanwhile), merge,
+  then send. Second bug: the SDK's local view includes our sent-but-unconfirmed writes; only
+  "held" changes may be dropped when they match the database (else a refused write lost the
+  item). sync_test: 90 checks.
+- Oran asked for the next phase: **connect an AI agent (Muse, Dots, Grok Bot)** — see HANDOFF.md.

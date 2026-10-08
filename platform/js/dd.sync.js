@@ -52,7 +52,7 @@
   } } } } }, null, 2);
   var program = null, fb = null, app = null, db = null;
   var ledgerRef = null, unsubs = [], pushTimer = null, starting = null;
-  var base = null, pend = {}, pendSeq = 0, connectedNow = false, resumeAfterPair = false;
+  var base = null, pend = {}, stamps = {}, timeOffset = 0, needFresh = false, pendSeq = 0, events = 0, connectedNow = false, resumeAfterPair = false;
   var state = "off";   // off | connecting | on | problem | newer
   var problem = null;  // friendly error type
   var diag = { pushes: 0, acked: 0, lastPush: "-", remote: 0, applied: 0, lastRemote: "-", lastError: "-", signedIn: "-", resumed: "no", joined: "-", reauths: 0 };
@@ -99,8 +99,12 @@
   function loadBase() {
     var b = dd.store.getJSON(key("sync_base")), mine = b && typeof b === "object" && b.ledger === ledger();
     base = mine ? b.flat : null; pend = mine && b.pend && typeof b.pend === "object" ? b.pend : {};
+    stamps = mine && b.stamps && typeof b.stamps === "object" ? b.stamps : {};
   }
-  function saveBase() { dd.store.setJSON(key("sync_base"), { ledger: ledger(), flat: base, pend: pend }); }
+  function saveBase() { dd.store.setJSON(key("sync_base"), { ledger: ledger(), flat: base, pend: pend, stamps: stamps }); }
+  /* When this device last changed each path (Firebase's clock, so a wrong device clock doesn't matter). */
+  function clock() { return Date.now() + (timeOffset || 0); }
+  function tkey(p) { return p.replace(/\//g, "|"); }
   /* base, with every unconfirmed path marked as changed here, so it's kept and sent again */
   function effBase() {
     if (!base) return null;
@@ -113,7 +117,7 @@
   sync.state = function () { return { state: state, problem: problem, connected: connectedNow }; };
 
   /* ---------- data <-> parts ---------- */
-  function enc(k) { return String(k).replace(/[.#$\[\]\/%,]/g, function (c) { return "%" + c.charCodeAt(0).toString(16).toUpperCase(); }); }
+  function enc(k) { return String(k).replace(/[.#$\[\]\/%,|]/g, function (c) { return "%" + c.charCodeAt(0).toString(16).toUpperCase(); }); }
   function dec(k) { return String(k).replace(/%([0-9A-F]{2})/g, function (_, h) { return String.fromCharCode(parseInt(h, 16)); }); }
   function isList(v) { return Array.isArray(v) && v.every(function (i) { return i && typeof i === "object" && !Array.isArray(i) && typeof i.id === "string" && i.id; }); }
 
@@ -179,14 +183,18 @@
     Object.keys(from).forEach(function (p) { if (!(p in to)) { u[p] = null; n++; } });
     return n ? u : null;
   }
-  /* three-way merge. b = base (null on first join), l = this device, r = the database */
-  sync.merge = function (b, l, r) {
-    var out = {}, all = {};
+  /* three-way merge. b = base (null on first join), l = this device, r = the database.
+     t (optional) = {real: base without unconfirmed marks, lt: this device's edit times, rt: the
+     database's edit times}. When BOTH sides changed the same path, the newer edit wins
+     (Oran, 2026-10-07: "newest edit wins", option a); with no times, this device wins. */
+  sync.merge = function (b, l, r, t) {
+    var out = {}, all = {}, real = t && t.real, lt = (t && t.lt) || {}, rt = (t && t.rt) || {};
     [l, r].concat(b ? [b] : []).forEach(function (m) { Object.keys(m).forEach(function (p) { all[p] = 1; }); });
     Object.keys(all).forEach(function (p) {
       var v;
       if (!b) v = p in r ? r[p] : l[p];                                     // first join: union, database wins
       else if (l[p] === b[p]) v = r[p];                                     // we didn't touch it: take theirs
+      else if (real && r[p] !== real[p] && (rt[p] || 0) > (lt[p] || 0)) v = r[p];   // both changed it: theirs is newer
       else v = l[p];                                                        // we changed it: keep ours
       if (v !== undefined && v !== null) out[p] = v;
     });
@@ -292,7 +300,7 @@
         loadBase();
         return withTimeout(new Promise(function (resolve, reject) {
           unsubs.push(fb.D.onValue(ledgerRef, function (snap) {
-            diag.remote++; diag.lastRemote = now();
+            diag.remote++; diag.lastRemote = now(); events++;
             var ok = onRemote(snap.val());
             if (!gotFirst) { gotFirst = true; ok ? resolve() : reject({ ddType: state === "newer" ? "sync_newer" : "unexpected", raw: "first snapshot not usable" }); }
           }, function (e) {
@@ -310,9 +318,16 @@
       })
       .then(function () {
         try {
-          unsubs.push(fb.D.onValue(fb.D.ref(db, ".info/connected"), function (s) { connectedNow = !!s.val(); paint(); }));
+          unsubs.push(fb.D.onValue(fb.D.ref(db, ".info/connected"), function (s) {
+            var c = !!s.val();
+            if (!c) needFresh = true;
+            if (c && !connectedNow && state === "on") refresh();   // back online: read first, then send
+            connectedNow = c; paint();
+          }));
+          unsubs.push(fb.D.onValue(fb.D.ref(db, ".info/serverTimeOffset"), function (s) { timeOffset = Number(s.val()) || 0; }));
         } catch (e) {}
         state = "on"; problem = null; rememberOn(true); diag.joined = now(); dd.ui.clearNotice("sync");
+        connectedNow = true;   // the first read came from the database itself
         pushNow();
         paint(); dd.emit("sync:changed", { on: true });
         return { ok: true };
@@ -366,6 +381,7 @@
 
   /* ---------- the two directions ---------- */
   function onRemote(v) {
+    needFresh = false;
     var remote = remoteFlat(v), rschema = v && v.meta && typeof v.meta.schema === "number" ? v.meta.schema : null;
     if (rschema !== null && rschema > program.schemaVersion) {
       state = "newer"; problem = "sync_newer"; paint();
@@ -376,7 +392,14 @@
     var example = dd.isExample(), local = localFlat();
     // Example data never travels, and an empty database doesn't replace example data.
     if (example && !Object.keys(remote).length) { base = remote; saveBase(); return true; }
-    var merged = sync.merge(example ? null : effBase(), local, remote);
+    var rt = {};
+    Object.keys((v && v.times) || {}).forEach(function (k) { if (typeof v.times[k] === "number") rt[k.replace(/\|/g, "/")] = v.times[k]; });
+    var lt = {}; Object.keys(stamps).forEach(function (p) { if (stamps[p] && typeof stamps[p].t === "number") lt[p] = stamps[p].t; });
+    var merged = sync.merge(example ? null : effBase(), local, remote, { real: base, lt: lt, rt: rt });
+    // A change held here (offline) that lost to a newer one, or matches the database already, has nothing
+    // left to send. Only held ones: Firebase shows our SENT-but-unconfirmed writes as if they were already
+    // in the database, and if the database then refuses one, forgetting it here would lose the change.
+    Object.keys(pend).forEach(function (p) { if (pend[p] === "held" && merged[p] === remote[p]) delete pend[p]; });
     if (rschema !== null && rschema < program.schemaVersion && Object.keys(remote).length) {
       // Written by an older version: bring it up to date before using it.
       var old = sync.fromFlat(merged);
@@ -402,14 +425,27 @@
     clearTimeout(pushTimer);
     pushTimer = setTimeout(pushNow, ms == null ? sync.limits.debounce : ms);
   }
+  /* Remember when this device changed a path (kept until the value changes again). */
+  function stamp(p, v) { if (!stamps[p] || stamps[p].v !== v) stamps[p] = { t: clock(), v: v }; }
   function pushNow() {
     pushTimer = null;
     if (!ledgerRef || state !== "on" || dd.isExample()) return;
     var local = localFlat(), from = effBase() || {};
     var u = diff(from, local);
     if (!u) return;
+    if (!connectedNow || needFresh) {
+      // Offline: DON'T hand Firebase a write to send blindly on reconnect (it would overwrite a newer
+      // edit from the other device). Keep the change here; on reconnect we read the database first,
+      // merge by edit time, then send what's left.
+      Object.keys(u).forEach(function (p) { stamp(p, local[p]); pend[p] = "held"; });
+      saveBase(); paint();
+      return;
+    }
     var seq = ++pendSeq;
-    Object.keys(u).forEach(function (p) { pend[p] = seq; });
+    Object.keys(u).forEach(function (p) {
+      pend[p] = seq; stamp(p, local[p]);
+      u["times/" + tkey(p)] = stamps[p].t;
+    });
     base = local; saveBase();
     diag.pushes++;
     fb.D.update(ledgerRef, u).then(function () {
@@ -417,6 +453,17 @@
       saveBase(); diag.acked++; diag.lastPush = now(); paint();
     }, function (e) { var t = fail("saving", e); setProblem(t); if (t === "sync_rules") sync.start(); });   // pend keeps the change, so it's sent again
     paint();
+  }
+
+  /* Read the ledger from the database now (after reconnecting), then merge and send. */
+  function refresh() {
+    if (!ledgerRef || !fb.D.get) return;
+    needFresh = true;
+    var r = ledgerRef, at = events + ":" + pendSeq;
+    // Ignore the answer if anything moved meanwhile (a live update came in, or we sent something):
+    // it would be older than what we already have, and would undo our own change here.
+    fb.D.get(r).then(function (snap) { if (r === ledgerRef && at === events + ":" + pendSeq) { diag.remote++; diag.lastRemote = now(); onRemote(snap.val()); paint(); } },
+      function (e) { fail("re-reading", e); });
   }
 
   /* ---------- the QR: the phone joins on scan ---------- */
@@ -510,6 +557,15 @@
       if (state === "on") { schedulePush(); paint(); }
     });
     dd.on("pair:received", joinFromPair);
+    // Phones pause pages in the background. Coming back: reconnect at once rather than waiting for
+    // Firebase's own retry, and restart if it had given up.
+    function back() {
+      if (document.visibilityState && document.visibilityState !== "visible") return;
+      if (state === "on" && db && fb && fb.D.goOnline) try { fb.D.goOnline(db); } catch (e) {}
+      else if (state === "problem" && wasOn() && sync.config()) sync.start();
+    }
+    document.addEventListener("visibilitychange", back);
+    window.addEventListener("pageshow", function (e) { if (e.persisted) back(); });
     window.addEventListener("online", function () { if (wasOn() && state === "problem" && problem === "sync_offline") sync.start(); });
     // A pairing link in the address is read just after this; it may bring a different ledger.
     if (/[#&]dd=/.test(location.hash)) { resumeAfterPair = true; paint(); }

@@ -184,6 +184,42 @@ with sync_playwright() as p:
     check("both devices end up with the same order", wait_items(ph, items(pc)), (items(ph), items(pc)))
     check("phone chip back to In step", wait_chip(ph, "In step"), chip(ph))
 
+    print("The same item changed on both while the phone is offline: the newer edit wins")
+    def rename(page, old, new): page.evaluate("(a) => dd.update(d => { d.items.find(i => i.text === a[0]).text = a[1]; })", [old, new])
+    def tick(page, text, on=True): page.evaluate("(a) => dd.update(d => { d.items.find(i => i.text === a[0]).done = a[1]; })", [text, on])
+    def row(page, text): return page.evaluate("(t) => { const i = dd.getData().items.find(x => x.text === t); return i ? i.done : null; }", text)
+    ph.evaluate("() => window.__fakeNet(false)")
+    rename(ph, "Milk", "Oat milk"); ph.wait_for_timeout(400)          # older edit, on the phone
+    tick(pc, "Milk", False); pc.wait_for_timeout(400)                 # newer edit, on the computer
+    ph.evaluate("() => window.__fakeNet(true)")
+    try: ph.wait_for_function("() => dd.getData().items.some(i => i.text === 'Milk' && !i.done)", timeout=6000); ok = True
+    except Exception: ok = False
+    check("phone renamed Milk first, computer un-ticked it later: the computer's newer edit wins on the phone", ok, items(ph))
+    settle(pc)
+    check("...and the computer keeps it", row(pc, "Milk") is False and "Oat milk" not in items(pc), items(pc))
+    ph.evaluate("() => window.__fakeNet(false)")
+    tick(pc, "Flour", True); pc.wait_for_timeout(400)                 # older, on the computer
+    rename(ph, "Flour", "Rye flour"); ph.wait_for_timeout(400)        # newer, on the offline phone
+    ph.evaluate("() => window.__fakeNet(true)")
+    try: pc.wait_for_function("() => dd.getData().items.some(i => i.text === 'Rye flour')", timeout=6000); ok = True
+    except Exception: ok = False
+    check("computer ticked Flour first, offline phone renamed it later: the phone's newer edit wins", ok, items(pc))
+    check("...on both devices", wait_items(ph, items(pc)), (items(ph), items(pc)))
+    ph.evaluate("() => window.__fakeNet(false)")
+    ph.locator(".demo-row", has_text="Bread").locator(".demo-x").click(); ph.wait_for_timeout(400)   # older: delete
+    rename(pc, "Bread", "Sliced bread"); pc.wait_for_timeout(400)                                     # newer: edit
+    ph.evaluate("() => window.__fakeNet(true)")
+    try: ph.wait_for_function("() => dd.getData().items.some(i => i.text === 'Sliced bread')", timeout=6000); ok = True
+    except Exception: ok = False
+    check("phone deleted Bread, computer edited it later: the edit wins and Bread comes back", ok, items(ph))
+    check("both devices agree after all that", wait_items(pc, items(ph)), (items(ph), items(pc)))
+    m = page_merge = pc.evaluate("""() => dd.sync.merge({'p': 'old'}, {'p': 'mine'}, {'p': 'theirs'}, { real: {'p': 'old'}, lt: {'p': 5}, rt: {'p': 9} })""")
+    check("merge: both changed, theirs newer -> theirs", m == {"p": "theirs"}, m)
+    m = pc.evaluate("""() => dd.sync.merge({'p': 'old'}, {'p': 'mine'}, {'p': 'theirs'}, { real: {'p': 'old'}, lt: {'p': 9}, rt: {'p': 5} })""")
+    check("merge: both changed, mine newer -> mine", m == {"p": "mine"}, m)
+    m = pc.evaluate("""() => dd.sync.merge({'p': 'old'}, {'p': 'mine'}, {'p': 'theirs'}, { real: {'p': 'old'}, lt: {'p': 5}, rt: {} })""")
+    check("merge: their edit has no time (older version) -> mine", m == {"p": "mine"}, m)
+
     print("A change made offline survives a reload")
     ph.evaluate("() => window.__fakeNet(false)")
     add(ph, "Reload rice"); ph.wait_for_timeout(300)
@@ -243,7 +279,8 @@ with sync_playwright() as p:
     print("A stale sign-in (Firebase's Auto clean-up) heals itself")
     FB.tokens.clear()
     add(pc, "After cleanup")
-    check("the database says no, the program signs in again, and the change arrives", wait_items(ph, items(pc)) and "After cleanup" in items(ph), items(ph))
+    ok = wait_items(ph, items(pc)) and "After cleanup" in items(ph)
+    check("the database says no, the program signs in again, and the change arrives", ok, items(ph))
     check("chip back to In step", wait_chip(pc, "In step"), chip(pc))
     check("support report notes the fresh sign-in", "signed in again 1x" in pc.evaluate("() => dd.diag.text()"))
 

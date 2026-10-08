@@ -110,6 +110,10 @@ class FakeFirebase:
                 u = urlparse(self.path); q = parse_qs(u.query)
                 if u.path == "/_dump":
                     with me.lock: return self.reply(200, {"tree": me.tree})
+                if u.path == "/get":
+                    path = _segs((q.get("path") or [""])[0]); token = (q.get("token") or [""])[0]
+                    if not me.can_read(path, token): return self.reply(403, {"error": "PERMISSION_DENIED"})
+                    with me.lock: return self.reply(200, {"value": _get(me.tree, path), "seq": me.seq})
                 if u.path != "/listen":
                     return self.reply(404, {})
                 path = _segs((q.get("path") or [""])[0]); token = (q.get("token") or [""])[0]
@@ -304,10 +308,18 @@ export function getDatabase(app) { if (!app._db || app._db.closed) app._db = new
 export function ref(db, path) { return { db, path: norm(path) }; }
 export function onValue(r, cb, cancel) {
   const db = r.db;
+  if (r.path.startsWith(".info/") && r.path !== ".info/connected") { setTimeout(() => cb({ val: () => 0 })); return () => {}; }
   if (r.path === ".info/connected") { db.conn.push(cb); setTimeout(() => cb({ val: () => db.connected })); return () => { db.conn = db.conn.filter(c => c !== cb); }; }
   const l = { path: r.path, cb, cancel, ready: false, last: undefined };
   db.listeners.push(l); db.open(l);
   return () => { if (l.es) l.es.close(); db.listeners = db.listeners.filter(x => x !== l); };
+}
+export async function get(r) {
+  if (window.__fakeOffline) { const e = new Error("Error: Client is offline."); throw e; }
+  const res = await fetch(__SERVER + "/get?path=" + encodeURIComponent(r.path) + "&token=" + encodeURIComponent(r.db.app._token || ""));
+  if (res.status === 403) { const e = new Error("permission_denied"); e.code = "PERMISSION_DENIED"; throw e; }
+  const j = await res.json(); const v = j.value;
+  return { val: () => clone(v), exists: () => v != null };
 }
 export function update(r, values) { return r.db.write({ op: "update", path: r.path, value: clone(values) }); }
 export function set(r, value) { return r.db.write({ op: "set", path: r.path, value: clone(value) }); }
