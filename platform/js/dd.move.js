@@ -24,121 +24,182 @@
   function syncOn() { return !!(dd.sync && dd.sync.isOn && dd.sync.isOn()); }
   function own() { return dd.setup && dd.setup.ownAddress ? dd.setup.ownAddress() : ""; }
 
-  /* Which copy is this? {kind: "home" | "own" | "file", title, line} */
+  /* Which place is this? {kind: "home" | "own" | "file", place: one of PLACES' ids, title} */
   move.here = function () {
-    if (dd.env.isHome) return { kind: "home", title: "Hosted by DigiDoughnut", line: "This is the DigiDoughnut version, at " + location.host + ". Open it on any device, nothing to upload." };
-    if (dd.env.isHosted) return { kind: "own", title: "Your own copy at " + location.host, line: "This copy lives at your own web address. Open it on any device from that address." };
-    return { kind: "file", title: "A file on this computer", line: "Your phone can't open a file that lives on this computer. Put it online to use it on your phone too." };
+    if (dd.env.isHome) return { kind: "home", place: "digidoughnut", title: "The DigiDoughnut version" };
+    if (dd.env.isHosted) {
+      var h = location.hostname.toLowerCase();
+      var place = /\.github\.io$/.test(h) ? "github" : /(^|\.)tiiny\.(site|host|co)$/.test(h) ? "tiiny" : /\.neocities\.org$/.test(h) ? "neocities" : "other";
+      return { kind: "own", place: place, title: "Your own copy at " + location.host };
+    }
+    return { kind: "file", place: "computer", title: "A file on this computer" };
   };
 
-  /* ---------- 🏠 Where it lives (menu item 2) ---------- */
+  /* ---------- 🏠 Where it lives: one screen, every place, plain pros and cons ----------
+     Oran, 2026-10-07: show where it lives now (highlighted), then every place it could live,
+     with scales (easy to set up, time, on your phone, looks after itself) and the pros and
+     cons, for someone who knows nothing. One switch: bring my data along. */
+  var PLACES = {
+    digidoughnut: { icon: "🍩", name: "The DigiDoughnut version", tag: "Recommended",
+      what: "DigiDoughnut keeps the program online for you. Open the link and it's ready.",
+      ease: 5, lasting: 5, time: "1 minute", phone: true,
+      pros: ["Nothing to sign up for or upload", "Works on your phone straight away", "New versions arrive by themselves"],
+      cons: ["It lives at DigiDoughnut's web address (your data still stays on your own devices)"] },
+    github: { icon: "🐙", name: "GitHub", tag: "Best do-it-yourself choice",
+      what: "A free GitHub account shows the file as your own web page.",
+      ease: 3, lasting: 5, time: "About 10 minutes", phone: true,
+      pros: ["Free, no ads, never expires", "Your own web address", "One account holds all your DigiDoughnut programs"],
+      cons: ["You make a GitHub account and upload the file", "You upload new versions yourself"] },
+    tiiny: { icon: "🌱", name: "tiiny.host",
+      what: "A quick free page for one file.",
+      ease: 4, lasting: 2, time: "About 5 minutes", phone: true,
+      pros: ["Quick to set up", "Your own web address"],
+      cons: ["One program per free account", "You log in every 3 months to keep it online", "A small tiiny.host banner on the page"] },
+    other: { icon: "🌐", name: "My own website or another host",
+      what: "Already have web hosting? Put the file there.",
+      ease: 0, lasting: 0, time: "Depends on your host", phone: true,
+      pros: ["Your own domain name", "You control everything"],
+      cons: ["You need web hosting already", "You upload new versions yourself"] },
+    neocities: { icon: "🐱", name: "Neocities",
+      what: "A free page for your file.",
+      ease: 4, lasting: 4, time: "About 10 minutes", phone: true,
+      pros: ["Free"], cons: ["Its free plan blocks the helper"] },
+    computer: { icon: "💻", name: "A file on this computer",
+      what: "The file you downloaded, opened straight from this computer.",
+      ease: 5, lasting: 3, time: "Nothing to do", phone: false,
+      pros: ["Nothing to set up", "Nothing online"],
+      cons: ["Only on this computer: your phone can't open it", "Easy to lose track of which file is which"] }
+  };
+  move.places = PLACES;
+
+  function bars(label, n) {
+    if (!n) return "";
+    var cells = ""; for (var i = 1; i <= 5; i++) cells += '<i class="' + (i <= n ? "on" : "") + '"></i>';
+    return '<span class="dd-bars"><span class="dd-bars-label">' + esc(label) + '</span><span class="dd-bars-cells" aria-label="' + n + ' out of 5">' + cells + '</span></span>';
+  }
+  function placeCard(id, isHere) {
+    var o = PLACES[id], ownHost = id !== "digidoughnut" && id !== "computer";
+    return '<div class="dd-place' + (isHere ? " here" : "") + '"' + (ownHost ? ' data-host="' + id + '"' : "") + ' data-place="' + id + '">' +
+      '<div class="dd-place-top"><span class="dd-place-ico" aria-hidden="true">' + o.icon + '</span>' +
+        '<span class="dd-place-title"><b class="dd-place-name">' + esc(o.name) + '</b>' +
+        (isHere ? '<i class="dd-place-here">✓ You are here</i>' : o.tag ? '<i class="dd-place-tag">' + esc(o.tag) + '</i>' : "") + '</span></div>' +
+      '<p class="dd-place-what">' + esc(isHere && id !== "computer" && id !== "digidoughnut" ? o.what + " Yours is at " + location.host + "." : o.what) + '</p>' +
+      '<div class="dd-place-scales">' + bars("Easy to set up", o.ease) + bars("Looks after itself", o.lasting) +
+        '<span class="dd-scale-text">⏱ ' + esc(o.time) + '</span><span class="dd-scale-text">' + (o.phone ? "📱 Works on your phone" : "📵 Not on your phone") + '</span></div>' +
+      '<div class="dd-place-pc"><ul class="dd-pros">' + o.pros.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join("") + '</ul>' +
+        '<ul class="dd-cons">' + o.cons.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join("") + '</ul></div>' +
+      (isHere ? "" : '<div class="dd-place-act" data-act-box></div>') +
+    '</div>';
+  }
+
   move.where = function () {
-    var h = move.here(), t = thing();
+    var p = dd.getProgram(), t = thing(), here = move.here(), mine = own();
+    var ownHosts = (dd.setup && dd.setup.hostChoices) || ["github", "tiiny", "other"];
+    var others = ["digidoughnut"].concat(ownHosts, ["computer"]).filter(function (id) { return id !== here.place && PLACES[id]; });
+    if (here.place === "digidoughnut") others = others.filter(function (id) { return id !== "digidoughnut"; });
+    var example = dd.isExample();
+    var bring = [t].concat(dd.ai && dd.ai.hasCode() ? ["free access code"] : [], syncOn() ? ["live sync"] : []).join(", ").replace(/, ([^,]*)$/, " and $1");
     var sh = dd.ui.sheet('<h2>🏠 Where it lives</h2>' +
-      '<p class="dd-status show ' + (h.kind === "file" ? "info" : "ok") + '"><b>' + (h.kind === "file" ? "" : "✓ ") + esc(h.title) + '</b><br>' + esc(h.line) + '</p>' +
-      '<p class="dd-note">Your ' + esc(t) + ' is kept in this browser, at this address. ' +
-        (syncOn() ? "Live sync is on, so it's also in your own Firebase database." : "Another copy keeps its own, until you move your " + esc(t) + " across or turn on live sync.") + '</p>' +
+      '<p class="dd-note" style="margin-top:0">' + esc(p.name) + ' can live in different places. The place decides which devices can open it. You can switch any time.</p>' +
+      '<h3 class="dd-sub">Where it lives now</h3>' + placeCard(here.place, true) +
+      '<h3 class="dd-sub">Other places it could live</h3>' +
+      '<label class="dd-check dd-bring"><input type="checkbox" id="dd-bring"' + (example ? " disabled" : " checked") + '> ' +
+        (example ? "Bring my " + esc(t) + " along (what you see now are only examples, so there's nothing of yours to bring yet)" : "Bring my " + esc(bring) + " along") + '</label>' +
+      others.map(function (id) { return placeCard(id, false); }).join("") +
+      '<p class="dd-note">Got a newer version of the file? Put it in the same place with the same file name, and your ' + esc(t) + ' stays.</p>' +
       '<div class="dd-btnrow">' +
-        (h.kind === "file" && dd.setup ? '<button class="dd-btn" data-online>Put it online</button>' : "") +
-        '<button class="dd-btn' + (h.kind === "file" ? " ghost" : "") + '" data-move>Move to another copy</button>' +
+        (here.kind !== "file" && !dd.env.isPhone && dd.pair ? '<button class="dd-btn ghost" data-phone>📲 Send to my phone</button>' : "") +
+        (here.kind !== "file" && dd.env.isPhone && !dd.env.isStandalone && dd.setup && dd.setup.showHomeScreen ? '<button class="dd-btn ghost" data-homescreen>Add to Home Screen</button>' : "") +
         '<button class="dd-btn ghost" data-close>Close</button></div>', { sticky: true });
+    sh.classList.add("dd-sheet-wide");
     sh.querySelector("[data-close]").addEventListener("click", dd.ui.closeSheet);
-    sh.querySelector("[data-move]").addEventListener("click", function () { move.open(); });
-    var on = sh.querySelector("[data-online]"); if (on) on.addEventListener("click", function () { dd.ui.closeSheet(); dd.setup.open("host"); });
+    var ph = sh.querySelector("[data-phone]"); if (ph) ph.addEventListener("click", function () { dd.pair.open(); });
+    var hs = sh.querySelector("[data-homescreen]"); if (hs) hs.addEventListener("click", function () { dd.setup.showHomeScreen(); });
+    others.forEach(function (id) { fillAction(sh, id, mine, here); });
     return sh;
   };
+  move.open = function () { return move.where(); };   // older callers ("Move to another copy")
 
-  /* ---------- Move to another copy ----------
-     opts.to: "home" | "own" | "same" to open with that one picked. */
-  move.open = function (opts) {
-    opts = opts || {};
-    var p = dd.getProgram(), t = thing(), here = move.here();
-    var mine = own(), ownIsHere = mine && dd.env.isHosted && dd.env.sameAddress(mine, location.href);
-    var choices = [];
-    // Always offered (Oran, 2026-10-07). Before its address is set in the build, it says so.
-    if (!dd.env.isHome)
-      choices.push({ id: "home", title: "The DigiDoughnut version", line: dd.env.home ? "Ready to go at " + hostOf(dd.env.home) + ". Works on your phone straight away."
-                                                                                : "Ready to go. Works on your phone straight away, nothing to upload." });
-    if (here.kind !== "own" || (mine && !ownIsHere))
-      choices.push({ id: "own", title: "My own copy", line: mine && !ownIsHere ? "At " + hostOf(mine) : "Paste its web address" });
-    choices.push({ id: "same", title: "A new version at this same " + (here.kind === "file" ? "place" : "address"), line: "Nothing to move" });
-    var pick = choices.filter(function (c) { return c.id === opts.to; })[0] ? opts.to : null;
-
-    var sh = dd.ui.sheet('<h2>Move to another copy</h2>' +
-      '<p class="dd-note" style="margin-top:0">Takes your ' + esc([t].concat(dd.ai && dd.ai.hasCode() ? ["free access code"] : [], syncOn() ? ["live sync"] : []).join(", ").replace(/, ([^,]*)$/, " and $1")) +
-        ' with you. You can come back any time.</p>' +
-      '<div class="dd-choice">' + choices.map(function (c) {
-        return '<button class="dd-choice-btn" data-to="' + c.id + '"><b>' + esc(c.title) + '</b><span>' + esc(c.line) + '</span></button>';
-      }).join("") + '</div>' +
-      '<div data-detail></div>' +
-      '<div class="dd-status" id="dd-move-status"></div>' +
-      '<div class="dd-btnrow"><button class="dd-btn ghost" data-close>Close</button></div>', { sticky: true });
-    sh.querySelector("[data-close]").addEventListener("click", dd.ui.closeSheet);
-    sh.querySelectorAll("[data-to]").forEach(function (b) { b.addEventListener("click", function () { choose(b.dataset.to); }); });
-    if (pick) choose(pick);
-    return sh;
-
-    function choose(id) {
-      sh.querySelectorAll("[data-to]").forEach(function (b) { b.classList.toggle("picked", b.dataset.to === id); });
-      dd.ui.clearStatus(sh.querySelector("#dd-move-status"));
-      var box = sh.querySelector("[data-detail]");
-      if (id === "same") {
-        box.innerHTML = '<div class="dd-move-detail"><p><b>Nothing to move.</b> ' + (here.kind === "file"
-          ? "Save the new file in place of this one, keeping the same file name, and open it in this same browser. Your " + esc(t) + " should still be there. If it isn't, use <b>💾 Backup &amp; new versions</b> to carry it across."
-          : "Upload the new file over the old one, keeping the same file name, so the address stays the same. Your " + esc(t) + " just stays.") + '</p>' +
-          (syncOn() ? '<p class="dd-note">Live sync is on, so your ' + esc(t) + ' is also safe in your own Firebase database.</p>' : "") + '</div>';
-        return;
-      }
-      if (id === "home" && !dd.env.home) {
-        box.innerHTML = '<div class="dd-move-detail"><p><b>Almost ready.</b> The DigiDoughnut version isn\'t switched on in this file yet. ' +
-          'It will be in the next update, from the same link you got this file from. Your ' + esc(t) + ' stays right here meanwhile.</p>' +
-          '<p class="dd-note">Need it on your phone today? Pick <b>My own copy</b> instead.</p></div>';
-        return;
-      }
-      var target = id === "home" ? dd.env.home : (mine && !ownIsHere ? mine : "");
-      box.innerHTML = '<div class="dd-move-detail">' +
-        (id === "own" && !target ? '<p>Paste the web address of your own copy:</p><input class="dd-input" id="dd-move-addr" placeholder="e.g. yourname.github.io/digidoughnut/' + esc(fileName()) + '" autocomplete="off" autocapitalize="off" spellcheck="false">' : "") +
-        '<p class="dd-note" data-travels>' + esc(travels()) + '</p>' +
-        '<div class="dd-btnrow"><button class="dd-btn" data-go>' + (dd.isExample() ? "Open it" : "Open it with my " + esc(t)) + '</button></div>' +
-        '<p class="dd-note">It opens in a new tab. The link works for 10 minutes, once.</p></div>';
-      box.querySelector("[data-go]").addEventListener("click", function () {
-        var dest = target;
-        if (!dest) {
-          dest = dd.setup && dd.setup.cleanAddress ? dd.setup.cleanAddress(box.querySelector("#dd-move-addr").value) : null;
-          if (!dest) { dd.ui.status(sh.querySelector("#dd-move-status"), "warn", "Paste the address of your own copy first.", "It starts with https:// and ends with the file name, like " + fileName() + "."); return; }
+  function fillAction(sh, id, mine, here) {
+    var card = sh.querySelector('[data-place="' + id + '"]'), box = card.querySelector("[data-act-box]"), t = thing();
+    var bringOn = function () { var b = sh.querySelector("#dd-bring"); return !!(b && b.checked && !b.disabled); };
+    var btn = function (label, cls, fn, attr) {
+      var b = document.createElement("button"); b.className = "dd-btn small" + (cls ? " " + cls : ""); b.textContent = label;
+      if (attr) b.setAttribute(attr, ""); b.addEventListener("click", fn); box.appendChild(b); return b;
+    };
+    var say = function (kind, html) { var n = card.querySelector(".dd-place-msg") || document.createElement("p"); n.className = "dd-place-msg dd-status show " + kind; n.innerHTML = html; card.appendChild(n); return n; };
+    if (id === "digidoughnut") {
+      btn("Use the DigiDoughnut version", "", function () {
+        if (!dd.env.home) { say("info", "<b>Almost ready.</b> The DigiDoughnut version isn't switched on in this file yet. It comes in the next update, from the same link you got this file from. Your " + esc(t) + " stays right here meanwhile."); return; }
+        go(dd.env.home, card);
+      }, "data-act");
+      return;
+    }
+    if (id === "computer") {
+      btn("How to use the file", "ghost", function () {
+        var m = say("info", "Open the program file you downloaded (often in your Downloads folder) by double-clicking it. " +
+          "It keeps its own " + esc(t) + ". To take yours along, download a backup here, then in the file open the menu (top left) → 💾 Backup &amp; new versions → Restore from a backup.");
+        if (!dd.isExample() && dd.backup) { var r = document.createElement("div"); r.className = "dd-btnrow"; r.innerHTML = '<button class="dd-btn small">⬇ Download a backup</button>'; r.firstChild.addEventListener("click", function () { dd.backup.download(); }); m.appendChild(r); }
+      }, "data-act");
+      return;
+    }
+    // GitHub / tiiny.host / own website / Neocities: open the copy you already have, or set one up.
+    var remembered = mine && !(dd.env.isHosted && dd.env.sameAddress(mine, location.href)) && placeOf(mine) === id ? mine : "";
+    if (remembered) btn("Open my copy at " + hostOf(remembered), "", function () { go(remembered, card); }, "data-act");
+    var going = dd.setup && dd.setup.hostInProgress && dd.setup.hostInProgress(id);
+    btn(going ? "Continue setting it up" : remembered ? "Set up a new one" : "Set it up, step by step", remembered ? "ghost" : "", function () {
+      dd.setup.startHost(id);
+    }, remembered ? "data-setup" : "data-act");
+    if (!remembered) {
+      // Already have a copy there (made on another device)? Paste its address and go.
+      var have = document.createElement("button"); have.className = "dd-linkbtn"; have.textContent = "I already have one"; have.setAttribute("data-have", "");
+      box.appendChild(have);
+      have.addEventListener("click", function () {
+        have.remove();
+        var row = document.createElement("div"); row.className = "dd-copyrow";
+        row.innerHTML = '<input class="dd-input" data-addr placeholder="Paste its web address" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="dd-btn small" data-open>Open it</button>';
+        card.appendChild(row);
+        row.querySelector("[data-open]").addEventListener("click", function () {
+          var dest = dd.setup && dd.setup.cleanAddress ? dd.setup.cleanAddress(row.querySelector("[data-addr]").value) : null;
+          if (!dest) { var m = card.querySelector(".dd-place-msg") || document.createElement("p"); m.className = "dd-place-msg dd-status show warn"; m.innerHTML = "<b>Paste the address first.</b> It starts with https:// and ends with the file name, like " + esc(fileName()) + "."; card.appendChild(m); return; }
           if (dd.setup && dd.setup.ownAddress) dd.setup.ownAddress(dest);
-        }
-        go(dest);
+          go(dest, card);
+        });
       });
     }
-    function travels() {
-      if (dd.isExample()) return "These are example " + t + ", so they don't travel. The other copy starts with its own examples.";
-      if (syncOn()) return "Live sync is on: the other copy joins your same database, so your " + t + " is there and stays in step. Anything already in that copy is combined with it.";
-      return "Your " + t + " goes across in the link. If the other copy already has a different " + t + " of yours, it asks before replacing it.";
-    }
-    function go(dest) {
-      var made = dd.pair.makeLink({ base: dest, includeCode: true, maxLink: 60000 });
-      var st = sh.querySelector("#dd-move-status");
-      last.opened = new Date().toLocaleTimeString() + " → " + hostOf(dest) + " · " + made.link.length + " characters" + (made.left.length ? " · data too big" : "");
-      if (made.left.length) {
-        // Too big for a link: say so, and offer the backup way. Still open the copy (code and sync travel).
-        dd.ui.status(st, "warn", "Your " + t + " is too big to carry in a link.",
-          "Download a backup here. Then, in the other copy, open the menu (top left), tap 💾 Backup & new versions, and Restore from a backup.");
+    if (dd.env.isPhone) { var n = document.createElement("span"); n.className = "dd-note"; n.textContent = " Best done on your computer."; box.appendChild(n); }
+  }
+  function placeOf(url) { try { var h = new URL(url).hostname; return /\.github\.io$/.test(h) ? "github" : /tiiny\./.test(h) ? "tiiny" : /neocities\.org$/.test(h) ? "neocities" : "other"; } catch (e) { return ""; } }
+
+  /* Open another copy, carrying everything (or nothing, if "Bring my … along" is off). */
+  function go(dest, card) {
+    var sh = (card && card.closest(".dd-sheet")) || document.querySelector(".dd-sheet");
+    var bringBox = sh && sh.querySelector("#dd-bring"), bare = !!(bringBox && !bringBox.checked && !bringBox.disabled);
+    var made = dd.pair.makeLink({ base: dest, includeCode: true, maxLink: 60000, bare: bare }), t = thing();
+    last.opened = new Date().toLocaleTimeString() + " → " + hostOf(dest) + " · " + made.link.length + " characters" + (bare ? " · nothing carried" : "") + (made.left.length ? " · data too big" : "");
+    var say = function (kind, html) { if (!card) { dd.ui.toast(html.replace(/<[^>]+>/g, ""), 5000); return null; } var n = card.querySelector(".dd-place-msg") || document.createElement("p"); n.className = "dd-place-msg dd-status show " + kind; n.innerHTML = html; card.appendChild(n); return n; };
+    if (made.left.length) {
+      var m = say("warn", "<b>Your " + esc(t) + " is too big to carry in a link.</b> Download a backup here. Then, in the other copy, open the menu (top left) → 💾 Backup &amp; new versions → Restore from a backup.");
+      if (m) {
         var row = document.createElement("div"); row.className = "dd-btnrow";
         row.innerHTML = '<button class="dd-btn small" data-down>⬇ Download a backup</button><button class="dd-btn small ghost" data-open>Open the other copy</button>';
-        st.appendChild(row);
+        m.appendChild(row);
         row.querySelector("[data-down]").addEventListener("click", function () { dd.backup && dd.backup.download(); });
         row.querySelector("[data-open]").addEventListener("click", function () { window.open(made.link, "_blank", "noopener"); });
-        return;
       }
-      window.open(made.link, "_blank", "noopener");
-      dd.ui.status(st, "ok", "Opened in a new tab.", "Check your " + t + " there, then bookmark that page and use it from now on. This copy stays as it is.");
+      return made;
     }
-  };
+    window.open(made.link, "_blank", "noopener");
+    say("ok", "<b>Opened in a new tab.</b> " + (bare ? "It starts fresh there." : "Your " + esc(t) + " came along.") + " Bookmark that page and use it from now on. This copy stays as it is.");
+    return made;
+  }
+  move.go = go;
+
   function fileName() {
     if (dd.setup && dd.setup.fileName) { var f = dd.setup.fileName(); if (/\.html?$/i.test(f)) return f; }
     var p = dd.getProgram(); return p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + ".html";
   }
+  move.fileName = fileName;
 
   /* ---------- the receiving guard (rule 15) ----------
      Called with data that has already been upgraded and checked. Returns true when it was put in
@@ -180,7 +241,7 @@
   }
 
   if (dd.menu) dd.menu.add({ id: "where", icon: "🏠", label: "Where it lives", order: 20,
-    note: function () { return move.here().title; }, run: function () { move.where(); } });
+    note: function () { return "Now: " + move.here().title.charAt(0).toLowerCase() + move.here().title.slice(1); }, run: function () { move.where(); } });
 
   if (dd.diag) dd.diag.addSection("Where it lives", function () {
     return ["This copy: " + move.here().title + (dd.env.home ? " · DigiDoughnut version: " + hostOf(dd.env.home) : " · no DigiDoughnut version set"),

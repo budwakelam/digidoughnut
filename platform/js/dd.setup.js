@@ -31,12 +31,10 @@
     // gets the choice (the DigiDoughnut version, or the buyer's own copy).
     { id: "phone", icon: "🏠", title: "Where it lives", gives: "Put it online, so it works on your phone too.", time: "About 1 minute",
       done: function () { return dd.env.isHosted; }, wizard: "host",
-      // Always say where it lives NOW, then what's on offer (Oran, 2026-10-07).
-      text: function (done) {
-        if (dd.env.isHome) return { gives: "Now: hosted by DigiDoughnut. Works on your phone too." };
-        // The DigiDoughnut version is ALWAYS offered (Oran, 2026-10-07), even before its address is set.
-        if (done) return { gives: "Now: your own copy at " + location.host + ". The DigiDoughnut version is there too, if you'd rather use it." };
-        return { gives: "Now: a file on this computer. Use the DigiDoughnut version: works on your phone straight away, nothing to upload. Or put your own copy online.", time: "About 1 minute" };
+      // Oran, 2026-10-07: the row just says where it lives now; "Change" opens the Where it lives screen.
+      text: function () {
+        var h = dd.move ? dd.move.here() : null;
+        return { gives: "Now: " + (h ? h.title.charAt(0).toLowerCase() + h.title.slice(1) : dd.env.isHosted ? "online at " + location.host : "a file on this computer") + ".", time: "" };
       } },
     { id: "sync", icon: "🔄", title: "Keep devices in step", gives: "Changes on one device show up on the other.", time: "About 10 minutes",
       done: function () { return !!(dd.sync && dd.sync.isOn && dd.sync.isOn()); }, wizard: "sync" },
@@ -73,19 +71,15 @@
       var done = s.done(), wiz = s.wizard && setup.wizards[s.wizard];
       var btn = s.id === "agent" ? (syncOn ? '<button class="' + (done ? 'dd-linkbtn' : 'dd-btn small') + '" data-agent>' + (done ? "Settings" : "Start") + '</button>'
                                            : '<span class="dd-note">Needs step 4 first</span>')
-        : done && s.id === "phone" ? '<span class="dd-step-btns">' + (needsHomeScreen() ? '<button class="dd-btn small" data-home>Add to Home Screen</button>'
-            : !dd.env.isPhone && dd.pair ? '<button class="dd-btn small ghost" data-phone>📲 Send to my phone</button>' : "") +
-            (dd.move ? '<button class="dd-linkbtn" data-where>Change</button>' : "") + '</span>'
+        : s.id === "phone" && dd.move ? '<button class="dd-btn small' + (done ? " ghost" : "") + '" data-start="host">Change</button>'
         : done && s.id === "sync" && dd.sync ? '<button class="dd-linkbtn" data-syncsheet>Settings</button>' : done
         ? (wiz && wiz.ready !== false && s.id !== "try" ? '<button class="dd-linkbtn" data-start="' + s.wizard + '">Change</button>' : "")
-        : s.id === "phone" && dd.move ? '<span class="dd-step-btns"><button class="dd-btn small" data-usehome>Use DigiDoughnut\'s</button>' +
-            '<button class="dd-btn small ghost" data-start="host" data-ownstart="1">' + (inProgress(st, "host") ? "Continue my own copy" : "My own copy") + '</button></span>'
         : (wiz && wiz.ready !== false ? '<button class="dd-btn small" data-start="' + s.wizard + '">' + (inProgress(st, s.wizard) ? "Continue" : "Start") + '</button>'
                                       : '<span class="dd-note">Coming soon</span>');
       var text = s.text ? s.text(done) : null;   // a step may word itself by state (step 3, Phase 7.2)
       return '<li class="dd-step' + (done ? " done" : "") + '" data-step="' + s.id + '"><span class="dd-tick" aria-hidden="true">' + (done ? "✓" : i + 1) + '</span>' +
         '<div class="dd-step-text"><b><span class="dd-step-icon" aria-hidden="true">' + (s.icon || "") + '</span> ' + esc(text && text.title || s.title) + '</b><span>' +
-        esc(text && text.gives || s.gives) + (done ? "" : " · " + esc(text && text.time || s.time)) + '</span></div>' + btn + '</li>';
+        esc(text && text.gives || s.gives) + (done || (text && text.time === "") ? "" : " · " + esc(text && text.time || s.time)) + '</span></div>' + btn + '</li>';
     }).join("");
   }
   // Buttons inside the steps list work the same on the page card and in the menu's sheet.
@@ -96,8 +90,7 @@
     on("[data-syncsheet]", function () { dd.sync.openSheet(); });
     on("[data-home]", function () { setup.showHomeScreen(); });
     on("[data-where]", function () { dd.move.where(); });
-    on("[data-usehome]", function () { dd.move.open({ to: "home" }); });
-    box.querySelectorAll("[data-start]").forEach(function (b) { b.addEventListener("click", function () { setup.open(b.dataset.start, b.dataset.ownstart ? { own: true } : null); }); });
+    box.querySelectorAll("[data-start]").forEach(function (b) { b.addEventListener("click", function () { setup.open(b.dataset.start); }); });
   }
 
   /* The Setup Center as a sheet, from the program menu. Works even after "Hide this for now". */
@@ -127,9 +120,11 @@
     if (!program && dd.getProgram) program = dd.getProgram();   // programs with no setup card can still open a wizard
     // "Put it on your phone" picks up inside whichever service the buyer already chose.
     if (id === "host") {
-      var hs = state(), only = hostChoice();
+      var only = hostChoice();
       if (only) id = "host_" + only;
-      else if (hs.hostWith && hs.wizards["host_" + hs.hostWith]) id = "host_" + hs.hostWith;
+      // Oran, 2026-10-07: one clear screen with every place it can live, the current one highlighted.
+      else if (dd.move) { dd.move.where(); return; }
+      else { var hs = state(); if (hs.hostWith && hs.wizards["host_" + hs.hostWith]) id = "host_" + hs.hostWith; }
     }
     var wiz = setup.wizards[id]; if (!wiz || wiz.ready === false || !wiz.screens.length) return;
     var st = state(), at = (st.wizards[id] && st.wizards[id].at) || 0;
@@ -203,7 +198,7 @@
   /* Leave a sub-wizard for its chooser (e.g. pick a different service). Its place is forgotten. */
   function toParent() {
     var s = state(), parent = cur.wiz.parent; delete s.wizards[cur.id]; s.hostWith = null; saveState(s);
-    setup.open(parent, { own: true });   // back from GitHub / tiiny: keep the own-copy list open
+    setup.open(parent);
   }
 
   /* The same icon as the setup card's row, so it's always clear which step you're in. */
@@ -512,6 +507,8 @@
   }
   function hostState(v) { var s = state(); if (v !== undefined) { s.hostUrl = v; saveState(s); } return s.hostUrl || ""; }
   setup.ownAddress = hostState;
+  setup.hostInProgress = function (svc) { return !!state().wizards["host_" + svc]; };
+  setup.startHost = function (svc) { var s = state(); s.hostWith = svc; saveState(s); setup.open("host_" + svc); };
   setup.fileName = fileName;   // the buyer's own copy, remembered from the host wizards (or pasted in Move)
   /* Tidy a pasted address. Returns a full https address, or null if it isn't one. */
   setup.cleanAddress = function (raw) {
@@ -632,7 +629,7 @@
             ? '<li><b>Getting an update?</b> Upload the new file to the same place with the <b>same file name</b>, replacing the old one, so the address stays the same.</li>'
             : '<li><b>Getting an update?</b> Upload the new file to Neocities with the <b>same file name</b>. It replaces the old one and keeps the same address.</li>') +
           '</ul>' +
-          '<p>Last step: in the new tab, open the setup card and tap <b>Send to my phone</b>. On your phone, add it to your Home Screen when it asks.</p>' +
+          '<p>Last step: in the new tab, tap the program\'s name at the top left (the menu) and tap <b>📲 Send to my phone</b>. On your phone, add it to your Home Screen when it asks.</p>' +
           (svc === "tiiny" ? '<p class="dd-note">You can ignore the small tiiny.host banner on your page.</p>' : ""); },
         nextLabel: "Done" }
     ];

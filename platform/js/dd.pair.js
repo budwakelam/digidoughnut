@@ -75,7 +75,8 @@
     var payload = { v: 1, t: Math.floor(Date.now() / 1000).toString(36), i: newId() };
     var included = [], left = [];
     // Small, essential pieces first; the program's numbers last (they're the optional extra).
-    pieces.slice().sort(function (a, b) { return (a.optional ? 1 : 0) - (b.optional ? 1 : 0); }).forEach(function (p) {
+    // bare: open the other copy carrying nothing ("Bring my … along" switched off)
+    if (!opts.bare) pieces.slice().sort(function (a, b) { return (a.optional ? 1 : 0) - (b.optional ? 1 : 0); }).forEach(function (p) {
       var v; try { v = p.give(opts); } catch (e) { dd.errors.record("pair.give:" + p.key, e); }
       if (v === undefined || v === null) return;
       payload[p.key] = v;

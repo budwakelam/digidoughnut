@@ -346,3 +346,28 @@ body.dd-has-side{padding-right:360px}
 .dd-move-detail p{margin:0 0 8px}
 .dd-status .dd-btnrow{margin-top:8px}
 .dd-step-btns{display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+
+/* ===== Where it lives: every place as a card (Oran, 2026-10-07) ===== */
+.dd-sheet.dd-sheet-wide{max-width:640px}
+.dd-place{border:2px solid var(--dd-line);border-radius:14px;padding:14px 16px;margin:0 0 12px;background:#fff}
+.dd-place.here{border-color:var(--dd-ok);background:var(--dd-okbg);box-shadow:0 0 0 3px var(--dd-okline)}
+.dd-place-top{display:flex;align-items:center;gap:10px}
+.dd-place-ico{font-size:1.6rem;line-height:1;width:34px;text-align:center;flex:none}
+.dd-place-title{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.dd-place-name{font-size:1.05rem}
+.dd-place-here,.dd-place-tag{font-style:normal;font-size:.75rem;font-weight:700;border-radius:999px;padding:2px 9px}
+.dd-place-here{background:var(--dd-ok);color:#fff}
+.dd-place-tag{background:var(--dd-brand-soft);color:var(--dd-brand)}
+.dd-place-what{margin:6px 0 8px;font-size:.92rem}
+.dd-place-scales{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;font-size:.8rem;color:var(--dd-muted);margin:0 0 8px}
+.dd-scale-text{white-space:nowrap}
+.dd-place-pc{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;font-size:.86rem}
+@media (max-width:520px){.dd-place-pc{grid-template-columns:1fr}}
+.dd-pros,.dd-cons{list-style:none;margin:0;padding:0}
+.dd-pros li,.dd-cons li{padding-left:22px;position:relative;margin:2px 0}
+.dd-pros li::before{content:"✓";position:absolute;left:2px;color:var(--dd-ok);font-weight:700}
+.dd-cons li::before{content:"✗";position:absolute;left:2px;color:var(--dd-bad);font-weight:700}
+.dd-place-act{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.dd-place-msg{margin:10px 0 0}
+.dd-bring{display:flex;gap:8px;align-items:flex-start;background:var(--dd-brand-soft);border-radius:10px;padding:10px 12px;margin:0 0 12px;font-size:.92rem}
+.dd-bring input{margin-top:4px;width:18px;height:18px;flex:none}

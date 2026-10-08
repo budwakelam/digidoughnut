@@ -356,3 +356,21 @@ yes. 4 AI companies at launch: Google, Groq, OpenRouter, OpenAI, Anthropic. (5 a
   from GitHub/tiiny keeps the own list open. Move always lists "The DigiDoughnut version"; with no
   address in the build it says "Almost ready… in the next update" and offers no broken link.
   setup_test choice checks now scope to `[data-host]`. Demo 0.1.3. Suites: 110·61·200·79·101·22·91·85.
+- Oran (23:43): rethink "Where it lives" for someone who knows nothing. Built (demo 0.1.4):
+  - Step 3 row: "Now: a file on this computer." / "Now: the DigiDoughnut version." / "Now: your own
+    copy at <host>." and ONE button, **Change** (`[data-start=host]`). Send to my phone and Add to
+    Home Screen moved into the Where it lives screen (and the menu).
+  - `setup.open("host")` now opens `dd.move.where()`: ONE screen. "Where it lives now" = the current
+    place, highlighted (green, "✓ You are here"); then "Other places it could live": DigiDoughnut
+    (Recommended), then `setup.hostChoices` (GitHub "Best do-it-yourself choice", tiiny.host, own
+    website), then "A file on this computer". Every card: what it is, scales (Easy to set up, Looks
+    after itself, time, works on your phone), ✓ pros / ✗ cons, one action. `dd.move.places` holds
+    the wording. The "Free. No credit card / 5 to 10 minutes / never uploaded" list is gone.
+  - One switch at the top of the options: "Bring my <list>, free access code and live sync along"
+    (on by default; disabled with examples). Off = `makeLink({bare:true})`, nothing carried.
+  - Own-host cards: "Open my copy at <host>" (remembered), "Set it up, step by step" /
+    "Continue setting it up" (`setup.startHost(id)`), "I already have one" (paste address).
+    The current place is detected by host name (github.io, tiiny, neocities, else own website).
+  - The old Move sheet is gone (`move.open` → `move.where`). New-version advice is one line on the
+    screen: same place, same file name. Host wizard finish screen says "Send to my phone" is in the
+    menu. Suites: 110·61·201·79·101·22·91·90.
