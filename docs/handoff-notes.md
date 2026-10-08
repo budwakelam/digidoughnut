@@ -289,3 +289,18 @@ Collected as decisions come up; folded into handoff.md later.
      an inbox item whose done/<id> already exists is dropped, never run twice (done kept 7 days).
   6. The run-now link needs a browser: by design; API-only agents rely on "next time it's open".
 - agent_test: 91. All suites: 110 · 61 · 200 · 79 · 90 · 22 · 91.
+
+### Backup made obvious (2026-10-07, 19:16) — demo16
+
+- Oran: updates go out through the Etsy download link (he replaces the file; past buyers
+  re-download). No key/update gate. Make backing up obvious, and say that live sync already
+  keeps a live copy for a new version.
+- Footer link "💾 Backup & new versions" (was "Backup"). The sheet says, first thing, either
+  "backed up live in your own Firebase database" (sync in step) or "saved on this device only";
+  shows the date of the last backup on this device (`dd_<id>_backup_at_v1`); "Moving to a new
+  version?" lists the three ways: same place + same file name (data just stays), live sync,
+  backup file + Restore. The live sync sheet has a "💾 Backup & new versions" button too.
+- Monthly nudge (dd.backup.nudge, 3 s after ready): only with real data, sync off, no backup in
+  30 days; the first visit only starts the clock; "Later" = another 30 days
+  (`dd_<id>_backup_nudge_v1`).
+- sync_test: 101. All suites: 110 · 61 · 200 · 79 · 101 · 22 · 91.

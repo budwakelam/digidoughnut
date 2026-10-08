@@ -33,6 +33,9 @@
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
     last.made = new Date().toLocaleTimeString();
+    dd.store.set(lastKey(), new Date().toISOString());
+    dd.store.set(dd.store.programKey(dd.getProgram().id, "backup_nudge"), String(Date.now()));
+    dd.ui.clearNotice("backup");
     dd.ui.toast("Backup downloaded. Keep it somewhere safe.", 3500);
     return true;
   };
@@ -87,20 +90,53 @@
     document.body.appendChild(input); input.click();
   };
 
-  /* "Your data": backup, restore, and where things stand with sync. Opened from the footer. */
+  /* ---------- "Backup & new versions" (footer, sync sheet) ----------
+     Oran, 2026-10-07: make backing up obvious, and say plainly how data reaches a new version:
+     same web address = it just stays; live sync on = it's already safe in their own Firebase;
+     otherwise download a backup and restore it in the new version. */
+  function lastKey() { return dd.store.programKey(dd.getProgram().id, "backup_at"); }
+  backup.lastMade = function () { var t = dd.store.get(lastKey()); return t && !isNaN(Date.parse(t)) ? new Date(t) : null; };
+  function synced() { return !!(dd.sync && dd.sync.status && dd.sync.status().kind === "ok"); }
+
   backup.open = function () {
-    var p = dd.getProgram(), thing = p.dataLabel || "numbers", s = dd.sync && dd.sync.status ? dd.sync.status() : null;
-    var sh = dd.ui.sheet('<h2>Your ' + esc(thing) + '</h2>' +
-      '<p>Everything here is saved in this browser, on this device.</p>' +
+    var p = dd.getProgram(), thing = p.dataLabel || "numbers", on = synced(), last = backup.lastMade();
+    var sh = dd.ui.sheet('<h2>💾 Backup &amp; new versions</h2>' +
+      (on ? '<p class="dd-status show ok"><b>✓ Your ' + esc(thing) + ' is backed up live</b> in your own Firebase database (live sync). A new version of ' + esc(p.name) + ' picks it all up by itself.</p>'
+          : '<p class="dd-status show warn"><b>Your ' + esc(thing) + ' is saved on this device only.</b> Download a backup now and then, and always before you move to a new version.</p>') +
       '<h3 class="dd-sub">Keep a copy</h3>' +
-      '<p class="dd-note">Download a backup file now and then, and keep it somewhere safe (your Documents folder, a USB stick or your email). If anything goes wrong, you can put it back.</p>' +
+      '<p class="dd-note">A backup is a small file you keep (your Documents folder, a USB stick or your email). Last backup on this device: <b>' +
+        (last ? esc(last.toLocaleDateString()) : "never") + '</b>.</p>' +
       '<div class="dd-btnrow"><button class="dd-btn" data-down>⬇ Download a backup</button><button class="dd-btn ghost" data-up>Restore from a backup</button></div>' +
-      (s ? '<h3 class="dd-sub">Other devices</h3><p class="dd-note">' + esc(s.kind === "off" ? "Live sync is off. Set it up in step 4 of the setup card to keep your devices in step." : s.long) + '</p>' : "") +
-      '<div class="dd-btnrow"><button class="dd-btn ghost" data-close>Close</button></div>');
+      '<h3 class="dd-sub">Moving to a new version?</h3>' +
+      '<ol class="dd-home-steps">' +
+        '<li><b>Same place, same name:</b> upload the new file over the old one, keeping its file name. Your ' + esc(thing) + ' just stays. This is the easiest way.</li>' +
+        '<li><b>Live sync on:</b> ' + (on ? "you're all set. Open the new version, turn on live sync there, and everything comes across."
+            : 'turn it on first (setup step 4), and the new version gets everything from your own database.') + '</li>' +
+        '<li><b>Neither:</b> tap <b>Download a backup</b> here. Then, in the new version, tap <b>💾 Backup &amp; new versions</b> at the bottom and <b>Restore from a backup</b>.</li>' +
+      '</ol>' +
+      '<p class="dd-note">The new version always comes from the same Etsy download link you were given.</p>' +
+      '<div class="dd-btnrow">' + (!on && dd.sync && dd.setup ? '<button class="dd-btn ghost" data-sync>Set up live sync</button>' : "") +
+        '<button class="dd-btn ghost" data-close>Close</button></div>');
     sh.querySelector("[data-close]").addEventListener("click", dd.ui.closeSheet);
     sh.querySelector("[data-down]").addEventListener("click", function () { backup.download(); });
     sh.querySelector("[data-up]").addEventListener("click", function () { dd.ui.closeSheet(); backup.pick(); });
+    var sy = sh.querySelector("[data-sync]"); if (sy) sy.addEventListener("click", function () { dd.ui.closeSheet(); dd.setup.open("sync"); });
   };
+
+  /* A gentle monthly nudge when the data lives on this device only and hasn't been backed up. */
+  var NUDGE_MS = 30 * 24 * 3600 * 1000;
+  backup.nudge = function () {
+    var p = dd.getProgram(); if (!p || dd.isExample() || synced() || (dd.sync && dd.sync.isOn && dd.sync.isOn())) return;
+    var k = dd.store.programKey(p.id, "backup_nudge"), snooze = Number(dd.store.get(k)) || 0, last = backup.lastMade();
+    if (!snooze) { dd.store.set(k, String(Date.now())); return; }   // first visit with real data: start the clock, don't nag
+    if (Date.now() - snooze < NUDGE_MS || (last && Date.now() - last.getTime() < NUDGE_MS)) return;
+    var thing = p.dataLabel || "numbers";
+    dd.ui.notice("backup", "Your " + thing + " is only on this device, and it's been a while since your last backup.", "info", [
+      { label: "Download a backup", primary: true, onClick: function () { dd.ui.clearNotice("backup"); backup.download(); } },
+      { label: "Later", onClick: function () { dd.store.set(k, String(Date.now())); dd.ui.clearNotice("backup"); } }
+    ]);
+  };
+  dd.on("ready", function () { setTimeout(backup.nudge, 3000); });
 
   if (dd.diag) dd.diag.addSection("Backup", function () { return ["Backup downloaded this visit: " + last.made + " · restored this visit: " + last.restored]; });
 })();

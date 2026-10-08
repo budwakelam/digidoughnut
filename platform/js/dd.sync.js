@@ -588,10 +588,13 @@
         (on && dd.pair && !dd.env.isPhone ? '<button class="dd-btn" data-phone>📲 Add my phone</button>' : "") +
         (on ? (s.kind !== "ok" ? '<button class="dd-btn ghost" data-retry>Try again now</button>' : "") + '<button class="dd-btn ghost" data-off>Turn off on this device</button>'
             : (cfg ? '<button class="dd-btn" data-on>Turn it on</button>' : '<button class="dd-btn" data-setup>Set it up</button>')) +
+        (dd.backup ? '<button class="dd-btn ghost" data-backup>💾 Backup &amp; new versions</button>' : "") +
         '<button class="dd-btn ghost" data-close>Close</button></div>' +
-      '<p class="dd-note">Turning it off keeps everything on this device. Your other devices carry on as before.</p>');
+      '<p class="dd-note">Turning it off keeps everything on this device. Your other devices carry on as before.' +
+        (on ? ' While it\'s on, your own database holds a live copy, so a new version of the program picks everything up by itself.' : "") + '</p>');
     var q = function (s) { return sh.querySelector(s); };
     q("[data-close]").addEventListener("click", dd.ui.closeSheet);
+    if (q("[data-backup]")) q("[data-backup]").addEventListener("click", function () { dd.ui.closeSheet(); dd.backup.open(); });
     if (q("[data-phone]")) q("[data-phone]").addEventListener("click", function () { dd.ui.closeSheet(); dd.pair.open(); });
     if (q("[data-off]")) q("[data-off]").addEventListener("click", function () { sync.stop(); dd.ui.closeSheet(); dd.ui.toast("Live sync is off on this device."); });
     if (q("[data-retry]")) q("[data-retry]").addEventListener("click", function () { dd.ui.closeSheet(); sync.start(); });

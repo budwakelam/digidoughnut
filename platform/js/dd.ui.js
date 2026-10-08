@@ -23,7 +23,7 @@
     ui.$("dd-footer").innerHTML =
       '<p>Made with care by DigiDoughnut · ' + ui.esc(program.name) + ' ' + ui.esc(program.version) + '</p>' +
       '<p>Your ' + ui.esc(program.dataLabel || "numbers") + ' ' + (program.dataLabel && !/s$/.test(program.dataLabel) ? "is" : "are") + ' stored on this device. ' +
-      (dd.backup ? '<button class="dd-linkbtn dd-foot-link" id="dd-data-link">Backup</button> · ' : "") +
+      (dd.backup ? '<button class="dd-linkbtn dd-foot-link" id="dd-data-link">💾 Backup &amp; new versions</button> · ' : "") +
       '<button class="dd-linkbtn dd-foot-link" id="dd-privacy-link">Privacy</button></p>';
     var link = ui.$("dd-privacy-link");
     link.addEventListener("click", function (e) { e.stopPropagation(); ui.privacy(); });
