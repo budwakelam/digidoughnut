@@ -421,3 +421,25 @@ yes. 4 AI companies at launch: Google, Groq, OpenRouter, OpenAI, Anthropic. (5 a
   browser; the live sync sheet is "🔄 Live sync" with "☁️ Backed up to the cloud" (and that it's a
   live copy, so keep a backup file for a dated copy). Chip: "Synced" / "Not syncing". Every
   "in step" in buyer text is gone. Demo 0.1.9. Suites: 134·61·190·81·109·91·108·22.
+- Oran (09:17, 10-08): **first real product: the Etsy pricing tool.** Working title **Price Pilot**
+  (`programs/pricing`, id `pricing`, 0.1.0), helper **Margo** 🧮 (Oran: not Penny; name is changeable).
+  Oran's calls: hosting will be DigiDoughnut (address later, `home` stays blank); no listing writer
+  (the AI is there to run the app, not to write their copy); product photos by link ("Copy image
+  address" on Etsy); an import piece belongs in the platform, separate from onboarding.
+  - Fees checked 2026-10-08 (etsy.com/legal/fees, /legal/etsy-payments): listing US$0.20, txn 6.5%
+    on price + shipping, processing US 3%+$0.25, CA 3%/4%+C$0.25 (US buyers = home), UK 4%+£0.20,
+    AU 3%/4%+A$0.25, NZ 3%/4%+NZ$0.30, EU 4%+€0.30; offsite ads 15%/12% (US$10k), cap US$100;
+    regulatory (from 2026-06-22) UK 0.48, FR 1.14, IT 0.80, ES 0.88. **Canada 1.15% is unconfirmed**
+    (Canada repealed its DST; not found whether Etsy dropped the fee). Tax on fees on by default
+    outside the US (CA 5% GST). Every rate is fixable by the buyer (My shop → Etsy's fee rates).
+  - NEW platform module **dd.files** ("Add a file"): menu item, a sheet with a drop area and the
+    program's how-to, 📎 in the helper's chat (+ drop on the chat; she then answers "What stands
+    out?"), `dd.files.dropZone(el)`, `parseCSV/table/number`. Contract: `files: {accept, label,
+    howTo, take(file, text, ctx)}`. Undo on every file. 15 MB limit. Nothing uploaded.
+  - Etsy downloads read: Order Items (per product), Orders (shipping, coupons, processing fees),
+    monthly statement (charges by kind per month; a statement replaces its months). Names and
+    addresses are never kept; only dates, items, amounts, country.
+  - aitest fix: its tool check read `ctx.data` from mount time, stale since "first change ends
+    example mode" makes a new object; it only showed once aitest was rebuilt.
+  - Suites: platform 134 · ai 61 · setup 190 · helper 81 · sync 109 · agent 91 · move 108 · pair 22 ·
+    **pricing 89**. pair: `QR_DECODER=/path/qr.js` (the test runs `node` itself).

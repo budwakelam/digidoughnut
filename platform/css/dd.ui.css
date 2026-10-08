@@ -381,3 +381,13 @@ body.dd-has-side{padding-right:360px}
 .dd-setup-chip-x{background:none;border:none;color:var(--dd-muted);font-size:.9rem;width:34px;height:34px;border-radius:50%;cursor:pointer}
 .dd-setup-chip-x:hover{background:var(--dd-brand-soft);color:var(--dd-ink)}
 @media print{.dd-top,.dd-footer,#dd-setup,#dd-notices,#dd-helper-home,#dd-helper-fab,.dd-btnrow,.demo-actions{display:none !important}}
+
+/* dd.files: "Add a file" drop areas (first product, 2026-10-08) */
+.dd-drop{border:2px dashed var(--dd-brand);border-radius:var(--dd-radius);background:var(--dd-brand-soft);padding:22px 14px;
+         display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;margin:6px 0 10px}
+.dd-drop span{color:var(--dd-muted);font-size:.9rem}
+.dd-drop-big{font-size:2rem;line-height:1}
+.dd-drop-over{background:var(--dd-brand-soft-d);outline:3px solid var(--dd-brand);outline-offset:2px}
+.dd-drop-how{font-size:.9rem}
+.dd-drop-how ol{padding-left:20px;margin:6px 0}
+.dd-helper-clip{padding:0 12px;min-width:44px;font-size:1.1rem}

@@ -96,6 +96,7 @@
       }
     }
     root = home;
+    if (dd.files) dd.files.dropZone(home, function (f) { if (dd.files.enabled()) helper.addFile(f); });
     paint();
   }
   helper.mode = function () { return mode; };
@@ -126,6 +127,7 @@
         program.suggestions.slice(0, 4).map(function (t) { return '<button class="dd-helper-chip">' + esc(t) + '</button>'; }).join("") + '</div>' : "") +
       '<div class="dd-helper-row"><input class="dd-input dd-helper-in" placeholder="' + esc(live ? "Tell " + name + " what to do…" : "Type your question…") +
         '" autocomplete="off" aria-label="Message for ' + esc(name) + '">' +
+        (dd.files && dd.files.enabled() ? '<button class="dd-btn ghost dd-helper-clip" data-clip aria-label="Add ' + esc(dd.files.label()) + '" title="Add ' + esc(dd.files.label()) + '">📎</button>' : "") +
         '<button class="dd-btn dd-helper-send" data-send>' + (busy ? "Stop" : "Send") + '</button></div>';
     var box = root.querySelector(".dd-helper-msgs");
     if (!msgs.length) bubble(box, { who: "bot", text: cfg.greeting });
@@ -139,6 +141,7 @@
     root.querySelectorAll("[data-agentyes],[data-agentno]").forEach(function (b) {
       b.addEventListener("click", function () { dd.agent.answer(b.getAttribute("data-agentyes") || b.getAttribute("data-agentno"), b.hasAttribute("data-agentyes")); });
     });
+    var cb = root.querySelector("[data-clip]"); if (cb) cb.addEventListener("click", function () { if (!busy) dd.files.pick().then(function (f) { if (f) helper.addFile(f); }); });
     var nb = root.querySelector("[data-new]"); if (nb) nb.addEventListener("click", newChat);
     var hb = root.querySelector("[data-hide]"); if (hb) hb.addEventListener("click", closeBubble);
     var tb = root.querySelector("[data-turnon]"); if (tb) tb.addEventListener("click", function () { helper.need(); });
@@ -307,6 +310,26 @@
     save();
     return turn(m.retry);
   }
+
+  /* ---------- a file handed to the helper (📎 or dropped on the chat) ----------
+     The program reads it (dd.files); the result shows as her reply, with Undo. If she's switched
+     on, she then says what stands out, so the buyer gets the answer without asking. */
+  helper.addFile = function (file) {
+    if (busy || !dd.files) return Promise.resolve(null);
+    add({ who: "me", text: "📎 " + String(file.name || "a file").slice(0, 80) });
+    setBusy(true, helper.name() + " is reading the file…");
+    return dd.files.take(file).then(function (r) {
+      var m = { who: r.ok ? "bot" : "bot err", text: r.message || (r.ok ? "Done." : "That file didn't work.") };
+      if (r.ok && r.before !== r.after) { m.id = dd.ui.uid("m"); m.undo = true; undos[m.id] = { before: r.before, after: r.after, example: r.example }; }
+      add(m); setBusy(false);
+      if (r.ok && r.before !== r.after && dd.ai && dd.ai.hasCode()) {
+        add({ who: "note", text: "The person just added " + dd.files.label() + ": " + m.text });
+        add({ who: "me", text: "What stands out?" });
+        return turn("What stands out?");
+      }
+      return m;
+    });
+  };
 
   /* ---------- Yes / No for big changes ---------- */
   function answerPending(m, yes) {

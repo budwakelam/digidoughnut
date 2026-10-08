@@ -84,7 +84,7 @@ const DD_PROGRAM = {
       busy(true, "tToolStatus");
       const res = await dd.ai.chat({ system: "You manage a list. Always use add_item, once per item.",
         history: [{ role: "user", text: "Add these three items to my list: apples, bread, milk." }], tools: [addTool] });
-      const n = ctx.data.items.length;
+      const n = dd.getData().items.length;   // ctx.data is the data at mount; the first change makes a new object
       showResult("tToolStatus", res, () => n === 3 ? "Pass: all 3 items were added." : `Only ${n} of 3 items were added.`);
       if (res.ok && n !== 3) ui.status("tToolStatus", "warn", `Only ${n} of 3 items were added.`, "Run it again. If it keeps happening, send the support details.");
     });

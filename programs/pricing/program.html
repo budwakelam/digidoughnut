@@ -1,0 +1,101 @@
+<!-- PROGRAM-SPECIFIC markup for Price Pilot. Goes inside <main id="dd-app">. -->
+<div class="dd-card" id="ppCalcCard">
+  <h2>💲 Price a product</h2>
+  <div class="pp-pickrow" id="ppPickRow">
+    <select class="dd-input" id="ppPick" aria-label="Which product"></select>
+    <button class="dd-btn ghost" id="ppNew">➕ New</button>
+  </div>
+  <div id="ppEmpty" class="pp-empty" hidden>
+    <p>Add your first product to see every Etsy fee and what you really make.</p>
+    <button class="dd-btn" id="ppNew2">➕ Add a product</button>
+    <p class="dd-note">Or just tell Margo: "Add a soap bar, $3 materials, 10 minutes, $9 price".</p>
+  </div>
+  <div id="ppForm">
+    <div class="pp-namerow">
+      <img id="ppImg" class="pp-photo" alt="" referrerpolicy="no-referrer" hidden onerror="this.hidden=true">
+      <label class="pp-field pp-grow"><span>Product name</span><input class="dd-input" id="ppName" autocomplete="off"></label>
+    </div>
+
+    <div class="pp-cols">
+      <div>
+        <h3 class="pp-h3">What the buyer pays <span class="pp-cur" id="ppCurr"></span></h3>
+        <label class="pp-field"><span>Listing price</span><input class="dd-input" id="ppPrice" inputmode="decimal" autocomplete="off"></label>
+        <label class="pp-field"><span>Shipping the buyer pays <small>0 = free shipping</small></span><input class="dd-input" id="ppShipCharged" inputmode="decimal" autocomplete="off"></label>
+        <h3 class="pp-h3">What one costs you</h3>
+        <label class="pp-field"><span>Materials</span><input class="dd-input" id="ppMaterials" inputmode="decimal" autocomplete="off"></label>
+        <div class="pp-two">
+          <label class="pp-field"><span>Minutes to make</span><input class="dd-input" id="ppMinutes" inputmode="decimal" autocomplete="off"></label>
+          <label class="pp-field"><span>Hourly rate</span><input class="dd-input" id="ppHourly" inputmode="decimal" autocomplete="off"></label>
+        </div>
+        <div class="pp-two">
+          <label class="pp-field"><span>Packaging</span><input class="dd-input" id="ppPackaging" inputmode="decimal" autocomplete="off"></label>
+          <label class="pp-field"><span>Shipping label</span><input class="dd-input" id="ppShipCost" inputmode="decimal" autocomplete="off"></label>
+        </div>
+      </div>
+      <div class="pp-results">
+        <div class="pp-hero">
+          <span class="pp-hero-label">Profit per sale</span>
+          <span id="ppProfit" class="pp-big"></span>
+          <span id="ppMargin" class="pp-margin"></span>
+          <span id="ppKeep" class="pp-keep"></span>
+        </div>
+        <div id="ppBreakdown"></div>
+        <div class="pp-facts">
+          <div><span>Break-even price</span><b id="ppBreakEven"></b></div>
+          <div><span>To make <span class="pp-inline"><span class="pp-sym"></span><input class="dd-input pp-mini" id="ppGoal" inputmode="decimal" aria-label="Monthly goal"></span> a month</span><span id="ppNeed"></span></div>
+          <div><span>Profit I want per sale <span class="pp-inline"><span class="pp-sym"></span><input class="dd-input pp-mini" id="ppTarget" inputmode="decimal" aria-label="Profit wanted per sale"></span></span>
+               <span><b id="ppTargetOut"></b> <button class="dd-btn small" id="ppUseTarget" hidden>Use this price</button></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pp-whatif">
+      <h3 class="pp-h3">Try a what-if</h3>
+      <div class="pp-whatif-row">
+        <label class="pp-field pp-small"><span>Sale discount %</span><input class="dd-input" id="ppDiscount" inputmode="decimal" placeholder="0" autocomplete="off"></label>
+        <label class="pp-check"><input type="checkbox" id="ppAd"> <span id="ppAdLabel">This sale came from an offsite ad</span></label>
+      </div>
+      <div class="pp-whatif-row">
+        <input class="dd-input" id="ppScName" placeholder="Name it, e.g. Holiday sale" autocomplete="off" aria-label="What-if name">
+        <button class="dd-btn ghost" id="ppSaveSc">Save as a what-if</button>
+      </div>
+    </div>
+
+    <details class="pp-details">
+      <summary>Photo link and notes</summary>
+      <label class="pp-field"><span>Photo link <small>On your Etsy listing, right-click the photo → "Copy image address", then paste it here</small></span><input class="dd-input" id="ppPhoto" placeholder="https://i.etsystatic.com/…" autocomplete="off"></label>
+      <label class="pp-field"><span>Notes</span><input class="dd-input" id="ppNotes" autocomplete="off"></label>
+      <button class="dd-linkbtn pp-delete" id="ppDelete">🗑 Delete this product</button>
+    </details>
+    <p class="dd-note pp-shopline"><span id="ppShopLine"></span> · <button class="dd-linkbtn" id="ppShopBtn">Change</button></p>
+  </div>
+</div>
+
+<div id="ppHelper"></div>   <!-- Margo sits here on phones -->
+
+<div class="dd-card">
+  <h2>🧪 What-ifs <span class="pp-for" id="ppScFor"></span></h2>
+  <div id="ppScenarios"></div>
+</div>
+
+<div class="dd-card">
+  <h2>📦 My products <span class="pp-for" id="ppProdCount"></span></h2>
+  <div id="ppProducts"></div>
+</div>
+
+<div class="dd-card" id="ppSalesCard">
+  <h2>📈 My Etsy sales</h2>
+  <div id="ppSalesEmpty">
+    <div class="dd-drop" id="ppSalesDrop">
+      <div class="dd-drop-big" aria-hidden="true">📄</div>
+      <b>See what really sold, and what Etsy really took</b>
+      <span>Drop an Etsy download here, or <button class="dd-btn small" id="ppAddFile">Add an Etsy download</button></span>
+    </div>
+    <p class="dd-note">Read on this device only. Names and addresses in the file are skipped.</p>
+  </div>
+  <div id="ppSalesBody" hidden></div>
+</div>
+
+<div class="dd-card pp-phonecard">
+  <p class="dd-note" style="margin:0">Your shop numbers are saved in this browser. <button class="dd-linkbtn" id="ppPhone">📲 Send to my phone</button></p>
+</div>
