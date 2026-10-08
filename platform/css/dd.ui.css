@@ -345,3 +345,4 @@ body.dd-has-side{padding-right:360px}
 .dd-move-detail{border:1px solid var(--dd-line);border-radius:12px;padding:12px 14px;margin:0 0 10px;background:#fafbff}
 .dd-move-detail p{margin:0 0 8px}
 .dd-status .dd-btnrow{margin-top:8px}
+.dd-step-btns{display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:flex-end}

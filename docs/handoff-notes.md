@@ -344,3 +344,8 @@ yes. 4 AI companies at launch: Google, Groq, OpenRouter, OpenAI, Anthropic. (5 a
   is always **demo.html** (same name every time, so uploading it replaces the old one and the list
   stays). The version lives inside: demo is now 0.1.1 (About, footer). Bump it with every send.
   The downloaded and hosted copies are the same file too (DD_BUILD.home is identical in both).
+- Oran (23:04): step 3 must always say where it lives NOW and offer the DigiDoughnut version.
+  Row text: "Now: a file on this computer. Ready to go: the DigiDoughnut version…" / "Now: hosted by
+  DigiDoughnut" / "Now: your own copy at <host>". Done rows get a "Change" link (Where it lives
+  sheet) beside Send to my phone. The home address is still blank on purpose ("we will get to
+  that"), so a blank build shows the own-copy wording. Demo 0.1.2.

@@ -97,7 +97,7 @@ def main():
                     open_item(page, "backup"); check("Backup & new versions opens", "Backup & new versions" in page.inner_text(".dd-sheet h2")); page.keyboard.press("Escape")
                     open_item(page, "privacy"); check("Privacy opens", "connects to" in page.inner_text(".dd-sheet h2")); page.keyboard.press("Escape")
                     open_item(page, "help"); check("Help opens the support details", "--- Program ---" in page.inner_text("#dd-diag-text")); page.keyboard.press("Escape")
-                    open_item(page, "about"); check("About shows name and version", "Version 0.1.1" in page.inner_text(".dd-sheet")); page.keyboard.press("Escape")
+                    open_item(page, "about"); check("About shows name and version", "Version 0.1.2" in page.inner_text(".dd-sheet")); page.keyboard.press("Escape")
                     page.click("#dd-footer p", click_count=3); page.wait_for_timeout(100)
                     check("footer triple-click still opens support details", page.locator("#dd-diag-text").is_visible()); page.keyboard.press("Escape")
                     if dev_name == "desktop":
@@ -131,7 +131,7 @@ def main():
         page.keyboard.press("Escape")
         fresh(page, HOME)
         s3 = page.locator('.dd-setup-card [data-step="phone"]')
-        check("home address: step 3 done, Hosted by DigiDoughnut", "done" in s3.get_attribute("class") and "Hosted by DigiDoughnut" in s3.inner_text(), s3.inner_text())
+        check("home address: step 3 done, Hosted by DigiDoughnut", "done" in s3.get_attribute("class") and "hosted by DigiDoughnut" in s3.inner_text(), s3.inner_text())
         check("home address: isHome", page.evaluate("dd.env.isHome") is True)
         open_item(page, "where")
         check("Where it lives sheet says Hosted by DigiDoughnut", "Hosted by DigiDoughnut" in page.inner_text(".dd-sheet"))
@@ -141,7 +141,7 @@ def main():
         fresh(page, OWN)
         s3 = page.locator('.dd-setup-card [data-step="phone"]')
         host = OWN.split("/")[2]
-        check("other address: step 3 done, Your own copy at <host>", "done" in s3.get_attribute("class") and f"Your own copy at {host}" in s3.inner_text(), s3.inner_text())
+        check("other address: step 3 done, Your own copy at <host>", "done" in s3.get_attribute("class") and f"your own copy at {host}" in s3.inner_text(), s3.inner_text())
         check("other address: not isHome", page.evaluate("dd.env.isHome") is False)
         check("no page errors", not errors, "; ".join(errors[:3]))
         ctx.close()

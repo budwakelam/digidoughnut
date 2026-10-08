@@ -31,10 +31,12 @@
     // gets the choice (the DigiDoughnut version, or the buyer's own copy).
     { id: "phone", icon: "🏠", title: "Where it lives", gives: "Put it online, so it works on your phone too.", time: "About 1 minute",
       done: function () { return dd.env.isHosted; }, wizard: "host",
+      // Always say where it lives NOW, then what's on offer (Oran, 2026-10-07).
       text: function (done) {
-        if (dd.env.isHome) return { gives: "Hosted by DigiDoughnut. Works on your phone too." };
-        if (done) return { gives: "Your own copy at " + location.host + "." };
-        return dd.env.home ? null : { gives: "Put it online, so it works on your phone too.", time: "About 10 minutes" };
+        if (dd.env.isHome) return { gives: "Now: hosted by DigiDoughnut. Works on your phone too." };
+        if (done) return { gives: "Now: your own copy at " + location.host + "." + (dd.env.home ? " The DigiDoughnut version is ready too." : "") };
+        if (dd.env.home) return { gives: "Now: a file on this computer. Ready to go: the DigiDoughnut version works on your phone straight away, nothing to upload.", time: "About 1 minute" };
+        return { gives: "Now: a file on this computer. Put it online so it works on your phone too.", time: "About 10 minutes" };
       } },
     { id: "sync", icon: "🔄", title: "Keep devices in step", gives: "Changes on one device show up on the other.", time: "About 10 minutes",
       done: function () { return !!(dd.sync && dd.sync.isOn && dd.sync.isOn()); }, wizard: "sync" },
@@ -71,9 +73,9 @@
       var done = s.done(), wiz = s.wizard && setup.wizards[s.wizard];
       var btn = s.id === "agent" ? (syncOn ? '<button class="' + (done ? 'dd-linkbtn' : 'dd-btn small') + '" data-agent>' + (done ? "Settings" : "Start") + '</button>'
                                            : '<span class="dd-note">Needs step 4 first</span>')
-        : done && s.id === "phone" && needsHomeScreen() ? '<button class="dd-btn small" data-home>Add to Home Screen</button>'
-        : done && s.id === "phone" && dd.env.isPhone ? ""
-        : done && s.id === "phone" && dd.pair ? '<button class="dd-btn small ghost" data-phone>📲 Send to my phone</button>'
+        : done && s.id === "phone" ? '<span class="dd-step-btns">' + (needsHomeScreen() ? '<button class="dd-btn small" data-home>Add to Home Screen</button>'
+            : !dd.env.isPhone && dd.pair ? '<button class="dd-btn small ghost" data-phone>📲 Send to my phone</button>' : "") +
+            (dd.move ? '<button class="dd-linkbtn" data-where>Change</button>' : "") + '</span>'
         : done && s.id === "sync" && dd.sync ? '<button class="dd-linkbtn" data-syncsheet>Settings</button>' : done
         ? (wiz && wiz.ready !== false && s.id !== "try" ? '<button class="dd-linkbtn" data-start="' + s.wizard + '">Change</button>' : "")
         : (wiz && wiz.ready !== false ? '<button class="dd-btn small" data-start="' + s.wizard + '">' + (inProgress(st, s.wizard) ? "Continue" : "Start") + '</button>'
@@ -91,6 +93,7 @@
     on("[data-agent]", function () { dd.agent.openSheet(); });
     on("[data-syncsheet]", function () { dd.sync.openSheet(); });
     on("[data-home]", function () { setup.showHomeScreen(); });
+    on("[data-where]", function () { dd.move.where(); });
     box.querySelectorAll("[data-start]").forEach(function (b) { b.addEventListener("click", function () { setup.open(b.dataset.start); }); });
   }
 
