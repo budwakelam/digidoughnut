@@ -456,7 +456,7 @@
     if (rschema !== null && rschema < program.schemaVersion && Object.keys(remote).length) {
       // Written by an older version: bring it up to date before using it.
       var old = sync.fromFlat(merged);
-      try { if (old) merged = sync.toFlat(program.migrate(old, rschema)); } catch (e) { dd.errors.record("sync.migrate", e); return false; }
+      try { if (old) merged = sync.toFlat(dd.migrateData(program, old, rschema)); } catch (e) { dd.errors.record("sync.migrate", e); return false; }
     }
     if (!example && same(merged, local)) { base = remote; saveBase(); if (!same(remote, local)) schedulePush(0); return true; }
     var next = sync.fromFlat(merged);

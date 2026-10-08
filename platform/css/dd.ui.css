@@ -405,3 +405,59 @@ body.dd-has-side{padding-right:360px}
 .dd-drop-how{font-size:.9rem}
 .dd-drop-how ol{padding-left:20px;margin:6px 0}
 .dd-helper-clip{padding:0 12px;min-width:44px;font-size:1.1rem}
+
+/* ===== the look (dd.brand): banner, colours, footer logo — 2026-10-08 ===== */
+:root{--dd-accent2:#f59e0b;--dd-accent-raw:var(--dd-brand)}
+.dd-top.dd-top-hero{border-bottom:0;box-shadow:0 1px 0 var(--dd-line)}
+.dd-top.dd-top-hero::after{content:"";position:absolute;left:0;right:0;bottom:-3px;height:3px;background:linear-gradient(90deg,var(--dd-accent-raw),var(--dd-accent2))}
+.dd-top.dd-top-hero .dd-tag{display:none}
+.dd-top-logo{width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid var(--dd-brand-soft-d);flex:none}
+#dd-hero[hidden]{display:none}
+.dd-hero{position:relative;overflow:hidden;border-radius:20px;margin:6px 0 16px;min-height:150px;display:flex;align-items:flex-end;
+  color:#fff;box-shadow:0 10px 30px -12px var(--dd-accent-raw),0 2px 6px rgba(16,24,40,.08);isolation:isolate}
+.dd-hero-plain{background:var(--dd-hero-sprinkles),
+  radial-gradient(120% 140% at 0% 0%,var(--dd-accent-raw) 0%,transparent 60%),
+  radial-gradient(120% 140% at 100% 100%,var(--dd-accent2) 0%,transparent 55%),
+  linear-gradient(120deg,var(--dd-accent-raw),var(--dd-accent2));background-size:128px 136px,auto,auto,auto}
+.dd-hero-blob{position:absolute;border-radius:50%;filter:blur(2px);opacity:.28;z-index:-1;background:#fff}
+.dd-hero-blob.a{width:220px;height:220px;right:-50px;top:-90px}
+.dd-hero-blob.b{width:120px;height:120px;right:150px;bottom:-70px;opacity:.18}
+.dd-hero-img{background:#111 var(--dd-hero-img) center / cover no-repeat;min-height:clamp(120px,22vw,220px)}
+.dd-hero-img::before{content:"";position:absolute;inset:0;z-index:0;background:linear-gradient(180deg,rgba(0,0,0,0) 35%,rgba(0,0,0,.55) 100%)}
+.dd-hero-img.dd-hero-notext::before{display:none}
+.dd-hero-probe{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.dd-hero-text{position:relative;z-index:1;display:flex;align-items:center;gap:14px;padding:22px 24px;min-width:0}
+.dd-hero-title{font-size:clamp(1.5rem,3.6vw,2.3rem);font-weight:900;line-height:1.05;letter-spacing:-.02em;text-shadow:0 2px 12px rgba(0,0,0,.25);
+  overflow-wrap:anywhere}
+.dd-hero-sub{font-size:.95rem;font-weight:600;opacity:.95;margin-top:4px;text-shadow:0 1px 6px rgba(0,0,0,.3)}
+.dd-hero-mark{width:58px;height:58px;flex:none;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:2rem;
+  background:rgba(255,255,255,.22);border:2px solid rgba(255,255,255,.55);box-shadow:inset 0 0 0 4px rgba(255,255,255,.1);backdrop-filter:blur(4px)}
+.dd-hero-logo{width:64px;height:64px;flex:none;border-radius:50%;object-fit:cover;border:3px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.25);background:#fff}
+.dd-hero-edit{position:absolute;top:12px;right:12px;z-index:2;border:0;border-radius:99px;padding:7px 13px;font:inherit;font-size:.82rem;font-weight:700;
+  background:rgba(255,255,255,.9);color:#111827;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18);min-height:34px}
+.dd-hero-edit:hover{background:#fff}
+@media (max-width:520px){ .dd-hero{border-radius:16px;min-height:120px} .dd-hero-text{padding:16px} .dd-hero-mark{width:46px;height:46px;font-size:1.6rem;border-radius:14px}
+  .dd-hero-logo{width:50px;height:50px} .dd-hero-sub{font-size:.85rem}
+  .dd-hero-text{padding-right:56px} .dd-hero-edit-label,.dd-hero-tag{display:none} .dd-hero-edit{padding:6px 10px;font-size:1rem} }
+@media print{ #dd-hero,.dd-hero-edit{display:none !important} }
+
+/* the Look & branding sheet */
+.dd-brand-preview .dd-hero{margin:4px 0 6px;min-height:110px}
+.dd-brand-preview .dd-hero-title{font-size:1.5rem}
+.dd-swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px;margin:6px 0 10px}
+.dd-swatch{display:flex;flex-direction:column;align-items:center;gap:4px;border:2px solid var(--dd-line);background:#fff;border-radius:12px;padding:8px 6px;cursor:pointer;font:inherit;font-size:.76rem;color:var(--dd-ink)}
+.dd-swatch i{width:40px;height:40px;border-radius:50%;display:block;box-shadow:inset 0 0 0 2px rgba(255,255,255,.6)}
+.dd-swatch.on{border-color:var(--dd-brand);box-shadow:0 0 0 3px var(--dd-brand-soft-d)}
+.dd-colorrow{display:flex;gap:16px;flex-wrap:wrap}
+.dd-colorrow label{display:flex;align-items:center;gap:8px;font-weight:600;font-size:.92rem}
+.dd-colorrow small{display:block;font-weight:400;color:var(--dd-muted);font-size:.78rem}
+.dd-colorrow input[type=color]{width:46px;height:40px;border:1px solid var(--dd-line);border-radius:10px;padding:2px;background:#fff;cursor:pointer}
+.dd-brand-field{display:block;margin:0 0 10px}
+.dd-brand-field>span{display:block;font-weight:600;font-size:.9rem;margin-bottom:4px}
+.dd-brand-field small{font-weight:400;color:var(--dd-muted)}
+
+/* the footer: DigiDoughnut's logo */
+.dd-foot-brand{display:flex;align-items:center;justify-content:center;gap:8px;margin:0 0 4px !important}
+.dd-foot-logo{height:60px;width:auto;filter:drop-shadow(0 2px 3px rgba(0,0,0,.12))}
+/* the helper's corner button picks up the two colours */
+.dd-helper-fab{background:linear-gradient(135deg,var(--dd-brand),var(--dd-brand-d))}

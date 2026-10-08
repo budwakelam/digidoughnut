@@ -302,7 +302,8 @@
     var name = helper.name(), before = snapshot(), wasExample = dd.isExample(), pendings = [], started = Date.now();
     setBusy(true, name + STATUS.thinking);
     var hist = history();
-    var tools = (program.tools || []).map(function (t) {
+    var own = (program.tools || []).concat(dd.brand && program.brand !== false ? [dd.brand.tool] : []);
+    var tools = own.map(function (t) {
       return { name: t.name, description: t.description, params: t.params, run: function (args) {
         var q = null;
         try { q = typeof t.confirm === "function" ? t.confirm(args, dd.ctx()) : t.confirm; } catch (e) { dd.errors.record("confirm:" + t.name, e); }

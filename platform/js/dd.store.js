@@ -73,7 +73,7 @@
         // Saved by a NEWER version of this program. Keep a copy, then try to carry on.
         keepForRecovery(program.id, rawText, "newer schema " + fromVersion);
       } else if (fromVersion < program.schemaVersion) {
-        body = program.migrate(body, fromVersion);
+        body = dd.migrateData(program, body, fromVersion);
         source = "migrated";
       }
       if (!program.validateData(body)) throw new Error("validateData said no (from v" + fromVersion + ")");

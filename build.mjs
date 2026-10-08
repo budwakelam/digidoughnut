@@ -13,7 +13,7 @@ import { execSync } from "node:child_process";
 
 // Platform files, in load order. Add new modules here (dd.ai, dd.setup, ... in later phases).
 const PLATFORM_VENDOR = ["qrcode-generator.js"];   // MIT, vendored: no outside scripts in the shipped file
-const PLATFORM_JS = ["dd.core.js", "dd.store.js", "dd.errors.js", "dd.ui.js", "dd.menu.js", "dd.diag.js", "dd.pair.js", "dd.ai.js", "dd.notes.js", "dd.setup.js", "dd.files.js", "dd.helper.js", "dd.sync.js", "dd.backup.js", "dd.move.js", "dd.agent.js"];
+const PLATFORM_JS = ["dd.core.js", "dd.store.js", "dd.errors.js", "dd.ui.js", "dd.menu.js", "dd.diag.js", "dd.pair.js", "dd.ai.js", "dd.notes.js", "dd.setup.js", "dd.files.js", "dd.helper.js", "dd.brand.js", "dd.sync.js", "dd.backup.js", "dd.move.js", "dd.agent.js"];
 const PLATFORM_CSS = ["dd.ui.css"];
 const WARN_BYTES = 500 * 1024;          // plan target: under 500 KB
 const MAX_BYTES = 3 * 1024 * 1024;      // tiiny.host free upload limit
@@ -49,7 +49,9 @@ function build(name) {
     "/*{{DD_PLATFORM_CSS}}*/": PLATFORM_CSS.map((f) => read(`platform/css/${f}`)).join("\n"),
     "/*{{DD_PROGRAM_CSS}}*/": readIf(`${dir}/program.css`),
     "<!--{{DD_PROGRAM_BODY}}-->": readIf(`${dir}/program.html`),
-    "/*{{DD_PLATFORM_JS}}*/": PLATFORM_VENDOR.map((f) => read(`platform/vendor/${f}`)).concat(
+    // The DigiDoughnut logo, embedded so the page never fetches an outside picture.
+    "/*{{DD_PLATFORM_JS}}*/": [`window.DD_LOGO = "data:image/webp;base64,${readFileSync("platform/assets/logo.webp").toString("base64")}";`].concat(
+                               PLATFORM_VENDOR.map((f) => read(`platform/vendor/${f}`))).concat(
                                PLATFORM_JS.map((f) => `/* ---- ${f} ---- */\n` + read(`platform/js/${f}`))).join("\n"),
     "/*{{DD_PROGRAM_JS}}*/": programJs,
   };

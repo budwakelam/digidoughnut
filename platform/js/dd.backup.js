@@ -60,7 +60,7 @@
     }
     var v = raw.schemaVersion | 0, body = raw.data;
     if (v > p.schemaVersion) return { ok: false, type: "backup_newer", title: "That backup was made by a newer version of " + p.name + ".", help: "Open it in the newer version instead, or contact DigiDoughnut and we'll help." };
-    try { if (v < p.schemaVersion) body = p.migrate(body, v); } catch (e) { dd.errors.record("backup.migrate", e); return bad(); }
+    try { if (v < p.schemaVersion) body = dd.migrateData(p, body, v); } catch (e) { dd.errors.record("backup.migrate", e); return bad(); }
     if (!p.validateData(body)) return bad();
     var sync = null;
     if (raw.sync && typeof raw.sync === "object" && /^[0-9a-f]{32}$/.test(String(raw.sync.ledger)) && dd.sync) {

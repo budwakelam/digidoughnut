@@ -129,7 +129,7 @@ with sync_playwright() as p:
     cut = page.evaluate("() => { const k = dd.helper.SUMMARY_MAX; dd.helper.SUMMARY_MAX = 5; const t = dd.helper.systemPrompt(); dd.helper.SUMMARY_MAX = k; return t; }")
     check("a big program's summary is cut short before it's sent", "cut short" in cut and len(cut.split("Current data in the program:")[1]) < 300, cut[-300:])
     tools = [f["name"] for f in G.sent[0]["tools"][0]["functionDeclarations"]]
-    check("she was given the program's four tools", tools == ["add_item", "set_done", "remove_item", "clear_list"], tools)
+    check("she was given the program's four tools, plus the platform's look tool", tools == ["add_item", "set_done", "remove_item", "clear_list", "change_look"], tools)
 
     print("\n== Undo ==")
     page.click(".dd-helper-undo")

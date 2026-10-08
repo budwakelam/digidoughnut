@@ -49,7 +49,7 @@ def suite(browser, device_name, device, mode):
     check("first run shows example data", items(page) == ["Buy flour", "Book the market table", "Print price tags"], str(items(page)))
     check("example notice is shown", page.locator("#dd-notice-example").is_visible())
     check("nothing saved until the buyer acts", page.evaluate(f"() => localStorage.getItem('{KEY}')") is None)
-    check("footer has brand line + version", "Made with care by DigiDoughnut · Demo List " + VERSION in page.inner_text("#dd-footer"))
+    check("footer has the DigiDoughnut logo + version", "Made with care by" in page.inner_text("#dd-footer") and page.locator("#dd-footer img.dd-foot-logo[alt=DigiDoughnut]").count() == 1 and "Demo List " + VERSION in page.inner_text("#dd-footer"))
     check("page title is the bookmark name", page.title() == "Demo List · DigiDoughnut", page.title())
     page.screenshot(path=os.path.join(SHOTS, f"{device_name}-{mode}-first-run.png"), full_page=True)
 

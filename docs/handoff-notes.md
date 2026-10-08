@@ -490,3 +490,19 @@ yes. 4 AI companies at launch: Google, Groq, OpenRouter, OpenAI, Anthropic. (5 a
   - build.mjs reads id/name/version from the DD_PROGRAM object (a preset table's `name:` was being picked up).
   - pricing.html is 527 KB, past the 500 KB soft target (warning only; the 3 MB hard limit is far off).
   - Suites: platform 134 · ai 61 · setup 190 · helper 81 · sync 109 · agent 91 · move 108 · pair 22 · **pricing 138**.
+- Oran (12:58, 10-08): **the look (platform `dd.brand`), Price Pilot 0.4.0.** "The top banner looks sterile"; logo in the
+  footer; let buyers pick their colours and use their Etsy shop banner.
+  - Banner `#dd-hero` (new in shell.html) above the notices. Out of the box: the program's two colours
+    (`DD_PROGRAM.accent` + new `accent2`), sprinkles (inline SVG), the program's `icon`, name and tagline, and a
+    "🎨 Make it yours" button. Buyers' own: Etsy banner picture link, shop icon link, shop name, show/hide the name on
+    the banner, hide the banner, 10 colour presets + two colour pickers, "Back to <program>'s own look".
+  - Saved as `data.brand` (inside the program's data): syncs, backs up, travels in the QR (pair piece `b`, even in
+    example mode). Changing the look never ends example mode (replaceData with the same flag). "Clear them and start
+    mine" keeps it. `dd.migrateData(program, body, v)` replaces every `program.migrate()` call so upgrades keep it.
+  - Links are https only, colours #rrggbb; a picture that doesn't load falls back to the colours (support report says so).
+    A light main colour is deepened until white button text is 4.5:1.
+  - Menu → ⚙️ Settings → 🎨 Look & branding (first in Settings). Margo has a platform tool `change_look` (every program
+    with a banner). Sticky header: shop icon beside the name, a two-colour line under it.
+  - Footer: the DigiDoughnut logo (platform/assets/logo.webp, 360×120, 21 KB; original PNG kept beside it), embedded at
+    build as `window.DD_LOGO`. pricing.html is now 581 KB (500 KB is a soft target).
+  - Suites: platform 134 · ai 61 · setup 190 · helper 81 · sync 109 · agent 91 · move 108 · pair 22 · **pricing 155**.

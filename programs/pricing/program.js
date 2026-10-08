@@ -189,9 +189,11 @@ const DD_PROGRAM = {
   id: "pricing",
   name: "Price Pilot",
   tagline: "Etsy pricing & profit, with an AI helper",
-  version: "0.3.0",
+  version: "0.4.0",
   schemaVersion: 2,
   accent: "#c2410c",
+  accent2: "#f59e0b",   // the banner's second colour (dd.brand)
+  icon: "🏷️",
   dataLabel: "shop numbers",
   exampleNotice: "You're looking at three example products so you can try things out. Change anything and it becomes yours.",
 

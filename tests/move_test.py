@@ -86,7 +86,7 @@ def main():
                 check("button shows the program's name", "Demo List" in btn.inner_text())
                 top, sub = menu_labels(page)
                 want_top = ["Clear the list", "Print my list", "Ask Penny", "Settings", "Help & support details", "About"]
-                want_sub = ["Setup & connections", "Where it lives"] + ([] if dev_name == "iphone" else ["Send to my phone"]) + ["Backup & new versions", "Privacy"]
+                want_sub = ["Look & branding", "Setup & connections", "Where it lives"] + ([] if dev_name == "iphone" else ["Send to my phone"]) + ["Backup & new versions", "Privacy"]
                 check("menu: the program's own items first, then Settings, Help, About", top == want_top, str(top))
                 check("Settings holds the platform items" + (" (no Send to my phone on a phone)" if dev_name == "iphone" else ""), sub == want_sub, str(sub))
                 # The menu doesn't close on a stray click (rule 9)

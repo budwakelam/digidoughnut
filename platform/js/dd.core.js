@@ -122,6 +122,15 @@
   };
 
   dd.getData = function () { return data; };
+
+  /* Upgrade older data with the program's migrate(), keeping the platform's own key (data.brand,
+     the buyer's look) that the program doesn't know about. Use this, never program.migrate(). */
+  dd.migrateData = function (p, body, fromVersion) {
+    var keep = body && typeof body === "object" ? body.brand : undefined;
+    var out = p.migrate(body, fromVersion);
+    if (keep !== undefined && out && typeof out === "object" && out.brand === undefined) out.brand = keep;
+    return out;
+  };
   dd.ctx = function () { return ctx(); };
   dd.getProgram = function () { return program; };
   dd.isExample = function () { return meta.example; };
@@ -131,7 +140,9 @@
     if (!meta.example || program.showExampleNotice === false) { dd.ui.clearNotice("example"); return; }
     dd.ui.notice("example", program.exampleNotice || "You're looking at example numbers so you can try things out.", "info", [
       { label: "Clear them and start mine", primary: true, onClick: function () {
-          dd.replaceData(program.emptyData(), { example: false, source: "start-fresh" });
+          var fresh = program.emptyData();
+          if (data && data.brand) fresh.brand = data.brand;   // the buyer's look stays
+          dd.replaceData(fresh, { example: false, source: "start-fresh" });
           dd.ui.toast("All clear. It's yours now.");
         } },
       { label: "Keep these", onClick: function () { meta.example = false; persist("keep-example"); paintExampleNotice(); } }
@@ -151,6 +162,7 @@
       if (program.mount) program.mount(ctx());
       if (dd.menu) dd.menu.fromProgram(program);   // the program's own menu items, at the top
       render();
+      if (dd.brand) dd.brand.start(program);
       // Sync listens for changes and for pairing links, so it starts before the link is read.
       if (dd.agent) dd.agent.attach(program);   // before sync: an agent link picks the ledger
       if (dd.sync) dd.sync.attach(program);
@@ -163,7 +175,7 @@
           take: function (v) {
             if (!Array.isArray(v) || v.length !== 2) return false;
             var body = v[1];
-            if (v[0] < program.schemaVersion) body = program.migrate(body, v[0]);
+            if (v[0] < program.schemaVersion) body = dd.migrateData(program, body, v[0]);
             if (!program.validateData(body)) return false;
             // Rule 15: a copy that receives data asks before replacing the buyer's own.
             if (dd.move) return dd.move.receiveData(body, "pair");
