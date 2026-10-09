@@ -456,6 +456,13 @@ img.dd-digibot-face{width:96px;height:96px}
 .dd-menu-item-ico{font-size:1.25rem;width:40px;height:40px;flex:none;display:flex;align-items:center;justify-content:center;
   background:var(--dd-brand-soft);border-radius:10px}
 .dd-menu-item:hover .dd-menu-item-go,.dd-menu-item:focus-visible .dd-menu-item-go{color:var(--dd-brand)}
+/* bottom trio: the template's own items (Settings, Help, About) — three across, distinct from the app cards */
+.dd-menu-trio{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:2px}
+.dd-menu-trio-item{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px;background:var(--dd-brand-soft);border:1px solid var(--dd-line);border-radius:12px;cursor:pointer;color:var(--dd-ink);font:inherit}
+.dd-menu-trio-item:hover,.dd-menu-trio-item:focus-visible{background:#fff;border-color:var(--dd-brand-soft-d)}
+.dd-menu-trio-ico{font-size:1.4rem;line-height:1}
+.dd-menu-trio-label{font-size:.78rem;font-weight:600;text-align:center}
+.dd-menu-trio-dot{position:absolute;top:8px;right:8px;width:10px;height:10px;border-radius:50%;background:var(--dd-brand)}
 .dd-sheet .dd-setup-count{font-size:.8rem;font-weight:500;color:var(--dd-muted);margin-left:6px}
 
 /* ===== where it lives / move (Phase 7.2, 7.3) ===== */
@@ -1649,6 +1656,13 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
       '<span class="dd-menu-item-text"><b>' + esc(it.label) + (badge ? ' <i class="dd-menu-new">New</i>' : "") + '</b>' +
       (note ? '<span>' + esc(note) + '</span>' : "") + '</span><span class="dd-menu-item-go" aria-hidden="true">›</span></button>';
   }
+  function trioHtml(it) {
+    var badge = false; try { badge = !!(it.badge && it.badge()); } catch (e) {}
+    return '<button class="dd-menu-trio-item" role="menuitem" data-item="' + esc(it.id) + '">' +
+      (badge ? '<span class="dd-menu-trio-dot" aria-hidden="true"></span>' : "") +
+      '<span class="dd-menu-trio-ico" aria-hidden="true">' + (it.icon || "") + '</span>' +
+      '<span class="dd-menu-trio-label">' + esc(it.trio || it.label) + '</span></button>';
+  }
   function wire(sh, list) {
     sh.querySelectorAll("[data-item]").forEach(function (b) {
       b.addEventListener("click", function () {
@@ -1679,10 +1693,11 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     var p = dd.getProgram && dd.getProgram(), all = menu.items();
     var app = all.filter(function (it) { return groupOf(it) === "app"; });
     var end = all.filter(function (it) { return groupOf(it) === "end"; });
-    var top = app.concat([settingsRow]).concat(end);
+    var trio = [settingsRow].concat(end);
+    var top = app.concat(trio);
     var sh = dd.ui.sheet(menu.headHtml() +
       (app.length ? '<div class="dd-menu-list" role="menu">' + app.map(rowHtml).join("") + '</div><div class="dd-menu-sep" role="separator"></div>' : "") +
-      '<div class="dd-menu-list" role="menu">' + [settingsRow].concat(end).map(rowHtml).join("") + '</div>' +
+      '<div class="dd-menu-trio" role="menu">' + trio.map(trioHtml).join("") + '</div>' +
       '<div class="dd-btnrow"><button class="dd-btn ghost" data-close>Close</button></div>', { sticky: true });
     sh.querySelector("[data-close]").addEventListener("click", dd.ui.closeSheet);
     wire(sh, top);
@@ -1811,7 +1826,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     }
   }
 
-  if (dd.menu) dd.menu.add({ id: "help", icon: "🛟", label: "Help & support details", order: 60, group: "end",
+  if (dd.menu) dd.menu.add({ id: "help", icon: "🛟", label: "Help & support details", trio: "Help", order: 60, group: "end",
     note: function () { return "If DigiDoughnut support asks for them"; }, run: function () { diag.open(); } });
 
   /* Three clicks/taps on the footer within 600 ms. */
