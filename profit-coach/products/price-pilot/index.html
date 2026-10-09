@@ -80,6 +80,7 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
 
 /* sheets (modal dialogs) */
 .dd-overlay{position:fixed;inset:0;background:rgba(17,24,39,.55);z-index:50;display:flex;align-items:center;justify-content:center;padding:18px}
+.dd-overlay-dark{background:rgba(8,10,16,.85)}
 .dd-sheet{background:#fff;border-radius:18px;max-width:520px;width:100%;padding:24px;max-height:92vh;overflow:auto}
 .dd-sheet h2{margin:0 0 8px;font-size:1.25rem}
 .dd-sheet pre{white-space:pre-wrap;word-break:break-word;font-size:.78rem;background:#f8fafc;border:1px solid var(--dd-line);
@@ -116,9 +117,7 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
 .dd-foot-note{white-space:normal}}
 .dd-foot-logo{height:54px;width:auto;vertical-align:middle}
 
-/* ===== Setup Center (dd.setup) ===== */
-.dd-setup-card h2{justify-content:flex-start}
-.dd-setup-count{margin-left:auto;font-size:.78rem;font-weight:700;padding:3px 10px;border-radius:99px;background:var(--dd-brand-soft);color:var(--dd-brand)}
+/* ===== Setup Center (dd.setup): steps list + wizard (the home-page card is gone, Oran 2026-10-08) ===== */
 .dd-steps{list-style:none;margin:0;padding:0}
 .dd-step{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--dd-line)}
 .dd-step:first-child{border-top:none}
@@ -128,8 +127,6 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
 .dd-step-text{flex:1;min-width:0;display:flex;flex-direction:column}
 .dd-step-text span{font-size:.85rem;color:var(--dd-muted)}
 .dd-step.done .dd-step-text b{color:var(--dd-muted)}
-.dd-setup-chip{display:block;margin:0 0 14px auto;background:var(--dd-card);border:1px solid var(--dd-line);border-radius:99px;padding:8px 14px;
-               font:inherit;font-size:.85rem;font-weight:600;color:var(--dd-brand);cursor:pointer;min-height:40px;box-shadow:var(--dd-shadow)}
 
 /* the wizard (a sheet with class dd-wiz) */
 .dd-wiz-top{display:flex;justify-content:space-between;align-items:center;font-size:.82rem;color:var(--dd-muted);margin:0 0 8px}
@@ -460,7 +457,6 @@ img.dd-digibot-face{width:96px;height:96px}
 .dd-menu-trio-ico{font-size:1.4rem;line-height:1}
 .dd-menu-trio-label{font-size:.78rem;font-weight:600;text-align:center}
 .dd-menu-trio-dot{position:absolute;top:8px;right:8px;width:10px;height:10px;border-radius:50%;background:var(--dd-brand)}
-.dd-sheet .dd-setup-count{font-size:.8rem;font-weight:500;color:var(--dd-muted);margin-left:6px}
 
 /* ===== where it lives / move (Phase 7.2, 7.3) ===== */
 .dd-choice-btn.dd-choice-rec{border-color:var(--dd-brand);background:var(--dd-brand-soft)}
@@ -496,13 +492,9 @@ img.dd-digibot-face{width:96px;height:96px}
 .dd-bring input{margin-top:4px;width:18px;height:18px;flex:none}
 .dd-step-warn{display:inline-block;font-style:normal;font-size:.76rem;font-weight:600;color:var(--dd-warn);background:var(--dd-warnbg);border:1px solid var(--dd-warnline);border-radius:999px;padding:0 8px;margin-left:2px}
 
-/* ===== menu groups + hide the setup reminder (Oran, 2026-10-08) ===== */
+/* ===== menu groups (Oran, 2026-10-08) ===== */
 .dd-menu-sep{height:1px;background:var(--dd-line);margin:10px 4px}
 .dd-menu-back{padding:4px 0;margin:-6px 0 4px;font-weight:600}
-.dd-setup-chipwrap{display:flex;justify-content:flex-end;align-items:center;gap:2px;margin:0 0 14px}
-.dd-setup-chipwrap .dd-setup-chip{margin:0}
-.dd-setup-chip-x{background:none;border:none;color:var(--dd-muted);font-size:.9rem;width:34px;height:34px;border-radius:50%;cursor:pointer}
-.dd-setup-chip-x:hover{background:var(--dd-brand-soft);color:var(--dd-ink)}
 @media print{.dd-top,.dd-footer,#dd-setup,#dd-notices,#dd-helper-home,#dd-helper-fab,.dd-btnrow,.demo-actions{display:none !important}}
 
 /* dd.files: "Add a file" drop areas (first product, 2026-10-08) */
@@ -1469,7 +1461,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     ui.closeSheet();
     lastFocus = document.activeElement;
     var overlay = document.createElement("div");
-    overlay.className = "dd-overlay";
+    overlay.className = "dd-overlay" + (opts.overlayClass ? " " + opts.overlayClass : "");
     overlay.innerHTML = '<div class="dd-sheet" role="dialog" aria-modal="true">' + html + '</div>';
     // sticky: a click beside the sheet doesn't close it (Oran: "older people click off to the
     // side and it's gone"). The sheet gives a little nudge instead, and opts.onOutside can explain.
@@ -2936,22 +2928,10 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
   /* ---------- the card / chip ---------- */
   setup.paint = function () {
     var host = document.getElementById("dd-setup"); if (!host || !program) return;
-    var st = state(), n = setup.doneCount(), total = visibleSteps().length;
     if (dd.menu) dd.menu.refreshDot();
-    // Hidden for good (Oran, 2026-10-08): nothing on the page; Setup stays in Menu → Settings.
-    if (st.hidden) { host.innerHTML = ""; return; }
-    if (st.folded || n === total) {
-      host.innerHTML = '<span class="dd-setup-chipwrap"><button class="dd-setup-chip" id="dd-setup-chip">' + (n === total ? "✓ All set up" : "Setup: " + n + " of " + total + " done") + '</button>' +
-        '<button class="dd-setup-chip-x" id="dd-setup-hide" aria-label="Hide the setup reminder" title="Hide the setup reminder">✕</button></span>';
-      document.getElementById("dd-setup-chip").addEventListener("click", function () { var s = state(); s.folded = false; saveState(s); setup.paint(); });
-      document.getElementById("dd-setup-hide").addEventListener("click", setup.askHide);
-      return;
-    }
-    host.innerHTML = '<div class="dd-card dd-setup-card"><h2>Set up ' + esc(program.name) + ' <span class="dd-setup-count">' + n + ' of ' + total + ' done</span></h2>' +
-      '<p class="dd-note" style="margin:0 0 8px">Each step is optional. Do them in any order, any time.</p><ol class="dd-steps">' + stepRows() + '</ol>' +
-      '<div class="dd-btnrow"><button class="dd-linkbtn" id="dd-setup-fold">Hide setup</button></div></div>';
-    wireSteps(host);
-    document.getElementById("dd-setup-fold").addEventListener("click", setup.askHide);
+    // Oran, 2026-10-08: setup never lives on the page. First run gets the gate modal;
+    // afterwards it's Menu → Settings → Setup & connections (menu dot until it's done).
+    host.innerHTML = "";
   };
 
   function stepRows() {
@@ -2972,7 +2952,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
         (text && text.warn ? ' <i class="dd-step-warn">⚠ ' + esc(text.warn) + '</i>' : "") + '</span></div>' + btn + '</li>';
     }).join("");
   }
-  // Buttons inside the steps list work the same on the page card and in the menu's sheet.
+  // Buttons inside the steps list work the same in the menu's sheet.
   function wireSteps(box) {
     var on = function (sel, fn) { var b = box.querySelector(sel); if (b) b.addEventListener("click", fn); };
     on("[data-agent]", function () { dd.agent.openSheet(); });
@@ -2980,33 +2960,32 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     box.querySelectorAll("[data-start]").forEach(function (b) { b.addEventListener("click", function () { setup.open(b.dataset.start); }); });
   }
 
-  /* "Hide setup reminder?" Asked first, so nobody loses it by accident. */
-  setup.askHide = function () {
-    return dd.ui.confirm("Hide the setup reminder?",
-      "You can open it any time from the main menu: tap " + program.name + " at the top left, then ⚙️ Settings → Setup & connections.",
-      "Hide it", "Keep it").then(function (yes) {
-        if (!yes) return false;
-        var s = state(); s.hidden = true; s.folded = true; saveState(s); setup.paint();
-        dd.ui.toast("Hidden. Setup is in the menu, under Settings.", 3500);
-        return true;
-      });
-  };
-  setup.showReminder = function () { var s = state(); s.hidden = false; s.folded = false; saveState(s); setup.paint(); };
-
-  /* The Setup Center as a sheet, from the program menu. Works even after "Hide this for now". */
-  setup.openSheet = function () {
+  /* The Setup Center as a sheet, from the program menu. First run opens it as a gate modal. */
+  setup.openSheet = function (opts) {
+    opts = opts || {};
     if (!program && dd.getProgram) program = dd.getProgram();
     var st = state(), n = setup.doneCount(), total = visibleSteps().length;
-    var sh = dd.ui.sheet(dd.menu.headHtml({ title: "Setup & connections", icon: "🧰", sub: n + " of " + total + " done" }) +
+    var gate = !!opts.gate;
+    var head = gate ? dd.menu.headHtml({ title: "Welcome to " + program.name, icon: program.icon || "🍩", sub: "A couple of quick steps — each one is optional." })
+                   : dd.menu.headHtml({ title: "Setup & connections", icon: "🧰", sub: n + " of " + total + " done" });
+    var sh = dd.ui.sheet(head +
       '<p class="dd-note" style="margin:0 0 8px">Each step is optional. Do them in any order, any time.</p>' +
       '<ol class="dd-steps">' + stepRows() + '</ol>' +
-      '<div class="dd-btnrow">' + (st.hidden || (st.folded && n < total) ? '<button class="dd-linkbtn" data-unfold>Show the setup reminder on the page again</button>' : "") +
-      '<button class="dd-btn ghost" data-close>Close</button></div>', { sticky: true });
+      '<div class="dd-btnrow"><button class="dd-btn ghost" data-close>' + (gate ? "Not now" : "Close") + '</button></div>',
+      { sticky: true,
+        overlayClass: gate ? "dd-overlay-dark" : null,
+        onClose: gate ? function () { var s = state(); s.welcomed = true; saveState(s); } : null });
     wireSteps(sh);
     sh.querySelector("[data-close]").addEventListener("click", dd.ui.closeSheet);
-    var u = sh.querySelector("[data-unfold]");
-    if (u) u.addEventListener("click", function () { dd.ui.closeSheet(); setup.showReminder(); });
     return sh;
+  };
+
+  /* First run only: the setup sheet opens itself as a modal over a darkened screen. Never again. */
+  setup.maybeGate = function () {
+    if (!program || program.setup === false) return;
+    var st = state();
+    if (st.welcomed || st.hidden || Object.keys(st.wizards || {}).length) return;
+    setup.openSheet({ gate: true });
   };
 
   /* Just-in-time: an AI feature was tapped with no code. Opens the helper wizard with context. */
@@ -3872,6 +3851,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     dd.on("ai:changed", setup.paint);
     dd.on("sync:changed", function () { setup.paint(); setup.homeNudge(); });
     dd.on("ready", function () { setTimeout(setup.homeNudge, 1500); });
+    dd.on("ready", function () { setTimeout(setup.maybeGate, 900); });
     dd.on("change", function (ev) { if (ev && ev.source !== "sync") setup.homeNudge(); });
     dd.on("pair:received", function (ev) {
       setup.paint();
@@ -3882,6 +3862,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
 
   if (dd.menu) dd.menu.add({ id: "setup", icon: "🧰", label: "Setup & connections", order: 10,
     show: function () { var p = dd.getProgram && dd.getProgram(); return !!(p && p.setup !== false); },
+    badge: function () { return setup.doneCount() < setup.visibleSteps().length; },
     note: function () { var n = setup.doneCount(), t = visibleSteps().length; return n === t ? "All set up" : n + " of " + t + " steps done"; },
     run: function () { setup.openSheet(); } });
 
