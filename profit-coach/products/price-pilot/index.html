@@ -624,6 +624,16 @@ img.dd-digibot-face{width:96px;height:96px}
 .pp-pname{flex:1;font-weight:600;min-width:0}
 .pp-pname small,.pp-pprofit small{display:block;font-weight:400;color:var(--dd-muted);font-size:.8rem}
 .pp-pprofit{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.pp-searchrow{margin:2px 0 10px}
+.pp-searchrow .dd-input{max-width:360px}
+.pp-plist-wrap{max-height:392px;overflow-y:auto;padding:2px 6px 2px 2px;border-radius:8px}
+.pp-plist.compact{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px}
+.pp-prow.compact{padding:6px 8px;gap:8px;border-radius:10px}
+.pp-prow.compact .pp-thumb{width:28px;height:28px;border-radius:6px}
+.pp-prow.compact .pp-thumb-empty{font-size:1rem}
+.pp-prow.compact .pp-pname{font-size:.85rem}
+.pp-prow.compact .pp-pprofit{font-size:.9rem}
+.pp-nomatch{color:var(--dd-muted);font-size:.9rem;padding:14px 4px;text-align:center}
 .pp-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .pp-compare{border-collapse:collapse;font-size:.88rem;min-width:100%;font-variant-numeric:tabular-nums}
 .pp-compare th,.pp-compare td{padding:6px 10px;border-bottom:1px solid var(--dd-line);text-align:right;white-space:nowrap}
@@ -743,6 +753,7 @@ img.dd-digibot-face{width:96px;height:96px}
 <!-- PROGRAM-SPECIFIC markup for Price Pilot. Goes inside <main id="dd-app">. -->
 <div class="dd-card" id="ppProdCard">
   <h2>📦 My products <span class="pp-for" id="ppProdCount"></span><button class="dd-btn small" id="ppNew">➕ New product</button></h2>
+  <div class="pp-searchrow" id="ppSearchRow" hidden><input class="dd-input" id="ppSearch" type="search" placeholder="Search products…" autocomplete="off" aria-label="Search products"></div>
   <div id="ppEmpty" class="pp-empty" hidden>
     <p>Add your first product to see every Etsy fee and what you really make.</p>
     <button class="dd-btn" id="ppNew2">➕ Add a product</button>
@@ -6712,7 +6723,7 @@ function ppPct(n) { var a = Math.abs(n) < 10 && Math.round(n * 100) % 10 ? (Math
 
 /* ---------- the program ---------- */
 var PP_EX_SETTINGS = null;   // example settings = the empty settings, so untouched ones never stick
-var ppSel = null, ppWhatIf = { discount: 0, ad: false };
+var ppSel = null, ppWhatIf = { discount: 0, ad: false }, ppSearchQ = "";
 
 const DD_PROGRAM = {
   id: "pricing",
@@ -7483,15 +7494,20 @@ function ppSummary(d) {
   out.push("Cost types tracked: " + (ppCostTypes(s).map(function (c) {
     return c.name + " (" + PP_KINDS[c.kind].label.toLowerCase() + (c.kind === "time" ? ", " + m(c.rate) + "/hour" : "") + ", default " + c.value + ")";
   }).join("; ") || "none") + ". Not tracked (can be switched on): " + (s.costs.filter(function (c) { return !c.on; }).map(function (c) { return c.name; }).join(", ") || "none") + ".");
-  out.push("Products (" + d.products.length + "):" + (d.products.length ? "" : " none yet."));
+  out.push("Products (" + d.products.length + "):" + (d.products.length ? " one line each; full numbers for the selected product. Use the explain_price tool for any product's full breakdown." : " none yet."));
+  var selId = (typeof ppSel !== "undefined") ? ppSel : null;
   d.products.forEach(function (p) {
     var c = ppCalc(p, s);
-    out.push("- " + p.name + " (id " + p.id + "): price " + m(p.price) + ", buyer shipping " + m(p.shipCharged) +
+    if (p.id === selId) {
+      out.push("- " + p.name + " (id " + p.id + ") [selected]: price " + m(p.price) + ", buyer shipping " + m(p.shipCharged) +
       (p.shipAdd != null ? " (+" + m(p.shipAdd) + " each extra item)" : "") + (p.shipIntl != null ? ", abroad " + m(p.shipIntl) : "") +
       (p.labelIntl != null ? ", label abroad " + m(p.labelIntl) : "") + ", costs: " +
       (c.cost.lines.map(function (l) { return l.name.toLowerCase() + " " + (l.kind === "time" ? l.value + " min" : l.kind === "percent" ? ppPct(l.value) : m(l.value)); }).join(", ") || "none") +
       " → total costs " + m(c.cost.total) + ", Etsy fees " + m(c.fees.total) + ", profit " + m(c.profit) + " (" + ppPct(c.margin) + "), break-even " + (c.breakEven == null ? "n/a" : m(c.breakEven)) +
       (c.profit > 0 ? ", " + Math.ceil(s.goal / c.profit) + " sales/month for the goal" : "") + (p.photo ? ", has photo" : "") + (p.notes ? ". Notes: " + p.notes : ""));
+    } else {
+      out.push("- " + p.name + " (id " + p.id + "): price " + m(p.price) + ", profit " + m(c.profit) + " (" + ppPct(c.margin) + ")");
+    }
   });
   if (d.scenarios.length) {
     out.push("What-ifs:");
@@ -7541,6 +7557,12 @@ function ppNewProduct(ctx) {
 
 function ppMount(ctx) {
   var $ = ctx.ui.$;
+  if (dd.menu && dd.menu.aboutExtras && !ppMount._aboutPushed) {
+    ppMount._aboutPushed = true;
+    dd.menu.aboutExtras.push(function () {
+      return '<p class="dd-note">Big catalog? Price Pilot handles a few hundred products. The helper always sees your full product list and pulls up full numbers for whatever you ask about.</p>';
+    });
+  }
   PP_INPUTS.forEach(function (f) {
     var el = $(f[0]); if (!el) return;
     el.addEventListener("input", function () {
@@ -7555,6 +7577,8 @@ function ppMount(ctx) {
     });
   });
   $("ppNew").addEventListener("click", function () { ppNewProduct(dd.ctx()); });
+  var ppSearchEl = $("ppSearch");
+  if (ppSearchEl) ppSearchEl.addEventListener("input", function () { ppSearchQ = ppSearchEl.value; ppRenderProducts(dd.ctx()); });
   $("ppNew2").addEventListener("click", function () { ppNewProduct(dd.ctx()); });
   $("ppDelete").addEventListener("click", function () {
     var p = ppSelected(dd.getData()); if (!p) return;
@@ -7815,15 +7839,21 @@ function ppRenderMoney(ctx) {
 
 function ppRenderProducts(ctx) {
   var d = ctx.data, s = d.settings, esc = ctx.ui.esc, box = ctx.ui.$("ppProducts");
-  ctx.ui.$("ppProdCount").textContent = d.products.length ? d.products.length + (d.products.length === 1 ? " product" : " products") : "";
-  if (!d.products.length) { box.innerHTML = ""; return; }
-  box.innerHTML = '<div class="pp-plist">' + d.products.map(function (p) {
+  var q = (ppSearchQ || "").trim().toLowerCase();
+  var total = d.products.length;
+  var list = q ? d.products.filter(function (p) { return p.name.toLowerCase().indexOf(q) !== -1; }) : d.products;
+  ctx.ui.$("ppProdCount").textContent = total ? (q ? list.length + " of " + total + " products" : total + (total === 1 ? " product" : " products")) : "";
+  ctx.ui.$("ppSearchRow").hidden = !total;
+  if (!total) { box.innerHTML = ""; return; }
+  if (!list.length) { box.innerHTML = '<p class="pp-nomatch">No products match "' + esc((ppSearchQ || "").trim()) + '".</p>'; return; }
+  var compact = total >= 20;
+  box.innerHTML = '<div class="pp-plist-wrap"><div class="pp-plist' + (compact ? " compact" : "") + '">' + list.map(function (p) {
     var c = ppCalc(p, s);
-    return '<button class="pp-prow' + (p.id === ppSel ? " on" : "") + '" data-p="' + esc(p.id) + '">' +
+    return '<button class="pp-prow' + (compact ? " compact" : "") + (p.id === ppSel ? " on" : "") + '" data-p="' + esc(p.id) + '">' +
       (p.photo ? '<img class="pp-thumb" alt="" referrerpolicy="no-referrer" src="' + esc(p.photo) + '" onerror="this.style.visibility=\'hidden\'">' : '<span class="pp-thumb pp-thumb-empty" aria-hidden="true">📦</span>') +
       '<span class="pp-pname">' + esc(p.name) + '<small>' + ppMoney(p.price, s) + '</small></span>' +
       '<span class="pp-pprofit ' + (c.profit > 0 ? "pp-good" : "pp-bad-text") + '">' + ppMoney(c.profit, s) + '<small>' + ppPct(c.margin) + '</small></span></button>';
-  }).join("") + '</div>';
+  }).join("") + '</div></div>';
   box.querySelectorAll("[data-p]").forEach(function (b) {
     b.addEventListener("click", function () { ppSel = b.getAttribute("data-p"); ppWhatIf = { discount: 0, ad: false }; ppRender(dd.ctx()); ppScrollIfHidden("ppCalcCard"); });
   });
