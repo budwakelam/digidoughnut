@@ -4856,17 +4856,13 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     });
   }
 
-  /* The sticky top bar: the user's shop icon (or the program's icon) sits between the menu button and the program's name. */
+  /* The sticky top bar: the program's application icon, always. Oran 2026-10-09: this is the
+     product's icon and the buyer can't change it — their shop icon lives on the banner (paintHero). */
   function paintTop(L) {
     var top = document.getElementById("dd-top"); if (!top) return;
     top.classList.toggle("dd-top-hero", program.brand !== false && !L.hidden);
     var slot = document.getElementById("dd-top-icon"); if (!slot) return;
-    if (L.logo) {
-      slot.innerHTML = '<img class="dd-top-logo" alt="" referrerpolicy="no-referrer" src="' + esc(L.logo) + '">';
-      slot.firstChild.addEventListener("error", function () { slot.textContent = program.icon || "🍩"; });
-    } else {
-      slot.textContent = program.icon || "🍩";
-    }
+    slot.textContent = program.icon || "🍩";
   }
 
   /* ---------- the "🎨 Look & branding" sheet ---------- */
