@@ -35,8 +35,19 @@ main>section{min-height:0;overflow:hidden;display:flex;flex-direction:column}
 #overlay .dot{fill:var(--accent);stroke:#000;stroke-width:2;pointer-events:none}
 #overlay .dot.act{fill:#fff}
 #overlay text{fill:#000;font:700 11px system-ui;pointer-events:none;text-anchor:middle;dominant-baseline:central}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:16px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 14px;display:flex;flex-direction:column;gap:0}
 .panel h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px}
+/* folding sections: one open at a time */
+.panel>.sec{border-bottom:1px solid var(--line)}
+.panel>.sec:last-child{border-bottom:0}
+.panel>.sec>h2{margin:0;padding:12px 0;cursor:pointer;display:flex;align-items:center;gap:8px;user-select:none}
+.panel>.sec>h2::after{content:'▸';margin-left:auto;font-size:14px;transition:transform .15s}
+.panel>.sec.open>h2{color:var(--accent)}
+.panel>.sec.open>h2::after{transform:rotate(90deg)}
+.panel>.sec>h2:hover{color:var(--text)}
+.panel>.sec>h2 .peek{text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%}
+.panel>.sec>.secBody{padding:0 0 14px}
+.panel>.sec:not(.open)>.secBody{display:none}
 button,select,input[type=text],textarea{font:inherit;color:var(--text);background:#2a2230;border:1px solid var(--line);border-radius:5px;padding:7px 10px}
 textarea{resize:vertical;min-height:54px}
 button{cursor:pointer}
@@ -114,6 +125,10 @@ button.heart.on{color:#ff4f6d;border-color:#7a2636;background:#2e1520}
 .pieces button.sel{border-color:var(--accent);color:var(--accent)}
 .pieces button.cutp{color:#ff8f86}
 .note{background:#221b27;border:1px solid var(--line);border-radius:6px;padding:8px 10px;color:var(--muted);font-size:12px;margin-top:8px}
+.remoteBox pre{background:#000;border:1px solid var(--line);border-radius:4px;padding:6px 8px;color:#ffb070;font-size:11px;white-space:pre;overflow:auto;margin:6px 0}
+.remoteBox textarea{width:100%;font:12px ui-monospace,monospace}
+.remoteBox .steps{padding-left:18px;margin:8px 0;color:var(--muted);font-size:12px}.remoteBox .steps li{margin-bottom:6px}.remoteBox .steps b{color:var(--text)}
+.remoteBox a{color:var(--accent)}
 .remoteBox code{background:#000;border:1px solid var(--line);border-radius:4px;padding:3px 7px;color:#ffb070;font-size:12px;word-break:break-all}
 #rmDot{width:8px;height:8px;border-radius:50%;display:inline-block;background:#555;margin-right:6px}
 #rmDot.on{background:#3ddc84}
@@ -139,7 +154,6 @@ body.remote header,body.remote main,body.remote .tvbar{display:none}
   <h1>🎃 <b>Haunted</b> Projector</h1>
   <span id="status"><span class="dot"></span><span id="statusTxt">Projector window: closed</span></span>
   <button id="btnExitFs" class="small" style="display:none">Exit full screen</button>
-  <button class="toggle" id="btnMirror" title="Turn on when the projector is behind a sheet or screen. Shortcut: M">⇋ Mirror: Off</button>
   <button class="boo" id="btnBoo" title="Shortcut: B">BOO!</button>
   <button class="primary" id="btnOut">Open projector window</button>
 </header>
@@ -148,10 +162,11 @@ body.remote header,body.remote main,body.remote .tvbar{display:none}
     <code id="tvUrl"></code><button class="small" id="btnCopyTv">Copy</button></div>
   <details><summary>How it works</summary><ul>
     <li>Line everything up here first, with the projector window in <b>full screen</b>. Then plug the stick into the projector in the same spot.</li>
-    <li>The TV stays linked to this page. While this page is open, any change you make here shows up on the TV by itself — no need to copy the address again.</li>
+    <li>The address holds your whole setup, so it <b>changes when you change anything</b>. Copy it again after changes.</li>
+    <li>Connected your own Firebase database (see <b>Phone remote &amp; TV link</b> in the side panel)? Then the address gets much shorter, and changes you make here show up on the TV by themselves.</li>
     <li>Typing tip: the free Fire TV app on your phone has a keyboard for the TV's browser.</li>
     <li>The TV remembers the last setup and the link. Next time, just open the address up to <b>/display/</b>.</li>
-    <li>Want to scare people from your phone? See <b>Phone remote</b> in the side panel.</li>
+    <li>On the TV, the remote's right arrow skips to the next scene.</li>
     <li>On the TV, press <b>OK</b> on the remote to start (full screen and sound). Press OK again any time for a jump scare.</li>
     <li>Costume photos and your own sound files stay on this computer. They don't go to the TV.</li>
     <li>Fire TV: turn off the screensaver, and use Display &rarr; Calibrate Display so the picture reaches the edges.</li>
@@ -161,7 +176,6 @@ body.remote header,body.remote main,body.remote .tvbar{display:none}
   <section>
     <div id="stage">
       <div id="stageContent"></div>
-      <div id="mirrorBadge">⇋ Mirrored on the projector</div>
       <svg id="overlay"></svg>
     </div>
     <p class="help" style="margin-top:10px">Drag the orange corners until each shape sits exactly on your real surface. Corners snap to each other (hold Alt to stop snapping). Drag inside a shape to move it. Arrow keys nudge the white corner (Shift = bigger steps). Press <b>B</b> for a jump scare.</p>
@@ -174,7 +188,6 @@ body.remote header,body.remote main,body.remote .tvbar{display:none}
         <label class="chk"><input type="checkbox" id="chkAlign"> Line-up mode (numbered test pattern)</label>
         <label class="chk"><input type="checkbox" id="chkGrid"> Full-screen grid (numbered squares)</label>
         <p class="help" id="gridTip">Take a photo of the grid on your house with your phone. Then drag each corner here onto the same numbered square as in your photo. The little marks show the middle of each side.</p>
-        <label class="chk"><input type="checkbox" id="chkMirror"> Mirror (projector behind a sheet or screen)</label>
         <label class="chk"><input type="checkbox" id="chkSoft"> Soft edges (hides small gaps)</label>
       </div>
     </div>
@@ -206,8 +219,9 @@ body.remote header,body.remote main,body.remote .tvbar{display:none}
         <div class="plist" id="plist"></div>
         <div class="row" style="margin-top:6px"><button class="add small" id="btnPlAdd">+ Add to playlist</button></div></div>
       <div id="optBox"></div>
-      <div class="field"><span>Flip this shape</span>
-        <div class="row"><button class="toggle small" id="btnFlipX" title="Mirror left and right, just for this shape">⇆ Sideways</button><button class="toggle small" id="btnFlipY" title="Turn upside down, just for this shape">⇅ Upside down</button></div></div>
+      <div class="field"><span>Mirror</span>
+        <div class="row"><button class="toggle small" id="btnFlipX" title="Flip left and right, just for this shape">⇆ Mirror (shining from behind)</button><button class="toggle small" id="btnFlipY" title="Turn upside down, just for this shape">⇅ Upside down</button></div>
+        <p class="help" style="margin-top:6px">Shining onto a window or sheet from behind? Turn on Mirror so words read the right way from outside.</p></div>
       <div class="field" id="frameBox"><span>Frame</span>
         <select id="selFrame">
           <option value="none">No frame</option>
@@ -247,15 +261,36 @@ body.remote header,body.remote main,body.remote .tvbar{display:none}
       <div class="row" style="margin-top:8px"><button class="small" id="btnNext" title="Shortcut: N">⏭ Next scene now</button></div>
     </div>
     <div>
-      <h2>Phone remote</h2>
+      <h2>Phone remote &amp; TV link</h2>
       <div class="remoteBox">
-        <p class="help"><span id="rmDot"></span><span id="rmState">Not linked yet</span></p>
-        <p class="help" style="margin-top:6px">Open this on your phone to scare people from anywhere:</p>
-        <div class="row" style="margin-top:6px;flex-wrap:nowrap"><code id="rmUrl" style="flex:1;min-width:0"></code><button class="small" id="btnCopyRm">Copy</button></div>
-        <div class="row" style="margin-top:6px"><button class="small" id="btnQr">Show QR code</button><button class="small" id="btnNewRoom" title="Use if someone else got your link">New link</button></div>
-        <div id="qr"></div>
-        <label class="chk" style="margin-top:8px"><input type="checkbox" id="chkRemote"> Link this page, the TV and the phone</label>
-        <p class="help" style="margin-top:6px">Linking uses a free message service on the internet (ntfy.sh). Only your setup and button presses are sent — never photos or sound files.</p>
+        <div id="lkOff">
+          <p class="help">Want to fire jump scares from your phone, and have the TV update by itself when you change things here? Connect your own free Google <b>Firebase</b> database. It's yours, in your own Google account — DigiDoughnut never sees it.</p>
+          <p class="help" style="margin-top:6px">Skip this if you like. Everything else works without it, and the TV remote's <b>OK</b> button still fires a jump scare.</p>
+          <div id="lkFile" class="note" style="display:none">Put this app on a website first (like GitHub). Then open it from its web address and connect from there.</div>
+          <div id="lkHave" class="note" style="display:none">You've already set up Firebase for another DigiDoughnut program on this address. Just tap <b>Connect</b>.</div>
+          <details id="lkSteps" style="margin-top:8px"><summary>How to set it up (about 10 minutes, once)</summary>
+            <ol class="steps">
+              <li><b>Make a free project.</b> Open <a href="https://console.firebase.google.com/" target="_blank" rel="noopener">Firebase</a>, sign in with Google and make a new project. Name it anything. You can switch off Gemini and Google Analytics. It says <b>Spark plan</b>: that's the free one.</li>
+              <li><b>Let the app sign in.</b> On the left, click <b>Authentication</b> (tap <b>Get started</b> the first time) → <b>Sign-in method</b> → <b>Anonymous</b> → switch on <b>Enable</b> → <b>Save</b>.</li>
+              <li><b>Make the database.</b> On the left, open <b>Realtime Database</b> (not Firestore) → <b>Create Database</b>. Pick <b>United States</b> (Canada/US) or <b>Belgium</b> (UK/Europe) → <b>Start in locked mode</b> → <b>Enable</b>. If it offers App Check, close it.</li>
+              <li><b>Paste the rules.</b> On the database's <b>Rules</b> tab, delete everything, paste these, then tap <b>Publish</b>:
+                <pre id="lkRules"></pre><button class="small" id="btnCopyRules">Copy the rules</button></li>
+              <li><b>Copy your setup code.</b> Click the ⚙️ <b>Settings</b> → <b>General</b>. Under <b>Your apps</b>, click <b>&lt;/&gt;</b>, type a nickname, leave Hosting unticked, tap <b>Register app</b>. Copy the big box with <i>firebaseConfig</i> in it.</li>
+              <li><b>Paste it below</b> and tap <b>Connect</b>.</li>
+            </ol>
+          </details>
+          <textarea id="lkCfg" rows="3" placeholder="Paste your Firebase setup code here (const firebaseConfig = { … })" autocomplete="off" autocapitalize="off" spellcheck="false" style="margin-top:8px"></textarea>
+          <div class="row" style="margin-top:6px"><button class="primary small" id="btnLkConnect">Connect</button></div>
+          <p class="help" id="lkMsg" style="margin-top:6px"></p>
+        </div>
+        <div id="lkOn">
+          <p class="help"><span id="rmDot"></span><span id="rmState">Connecting…</span></p>
+          <p class="help" style="margin-top:6px">Open this on your phone to scare people from anywhere:</p>
+          <div class="row" style="margin-top:6px;flex-wrap:nowrap"><code id="rmUrl" style="flex:1;min-width:0"></code><button class="small" id="btnCopyRm">Copy</button></div>
+          <div class="row" style="margin-top:6px"><button class="small" id="btnQr">Show QR code</button><button class="small" id="btnNewRoom" title="Use if someone else got your link">New secret link</button><button class="small danger" id="btnLkOff">Disconnect</button></div>
+          <div id="qr"></div>
+          <p class="help" style="margin-top:6px">Only your setup and button presses go to your database. Photos and sound files stay on this computer.</p>
+        </div>
       </div>
     </div>
     <div>
@@ -1204,8 +1239,8 @@ function matrixFor(dst){const A=[],b=[];
   return 'matrix3d('+[h[0],h[3],0,h[6],h[1],h[4],0,h[7],0,0,1,0,h[2],h[5],0,1].join(',')+')';}
 
 /* =================== state =================== */
-let S={faces:[],sel:0,part:0,align:false,grid:false,mirror:false,soft:true,borders:false,nextId:1,ambOn:false,scareSnd:'scream',scareLook:'eyes',autoScare:false,autoEvery:'1-3',sceneSnd:true,vol:{amb:55,scare:85},
-  favs:[],shuffleSecs:90,remoteOn:true,room:''};
+let S={faces:[],sel:0,part:0,align:false,grid:false,soft:true,borders:false,nextId:1,ambOn:false,scareSnd:'scream',scareLook:'eyes',autoScare:false,autoEvery:'1-3',sceneSnd:true,vol:{amb:55,scare:85},
+  favs:[],shuffleSecs:90};
 let booLook='eyes';
 let photos=[];
 let corner=0,drag=null,out=null,booT=-99,DARK=false;
@@ -1263,7 +1298,7 @@ const FR_ORDER=['none','gold','wood','bone','vines'];
 const qv=v=>Math.round((clamp(v,-0.3,1.3)+0.3)/1.6*4095),uq=q=>clamp(+q||0,0,4095)/4095*1.6-0.3;
 const qpts=pts=>pts.flat().map(qv),upts=a=>[0,1,2,3].map(i=>[uq(a[i*2]),uq(a[i*2+1])]);
 function encodeSetup(){
-  const o={v:2,b:(S.soft?1:0)|(S.ambOn?2:0)|(S.sceneSnd?4:0)|(S.autoScare?8:0)|(S.mirror?16:0),e:ix(EVERY_ORDER,S.autoEvery),l:ix(LOOK_ORDER,S.scareLook),
+  const o={v:2,b:(S.soft?1:0)|(S.ambOn?2:0)|(S.sceneSnd?4:0)|(S.autoScare?8:0)|0,e:ix(EVERY_ORDER,S.autoEvery),l:ix(LOOK_ORDER,S.scareLook),
     s:ix(SND_ORDER,S.scareSnd),a:S.vol.amb,k:S.vol.scare,h:S.shuffleSecs,fv:S.favs.map(k=>ix(SC2,k)),
     f:S.faces.map(f=>{const r={c:ix(SC2,f.scene)};
       if(f.combo)r.P=f.parts.map(p=>[p.cut?1:0,...qpts(p.pts)]);else r.p=qpts(f.pts);
@@ -1274,7 +1309,8 @@ function encodeSetup(){
       return r;})};
   return '2'+tb64(JSON.stringify(o));
 }
-function decodeSetup(code){
+function decodeSetup(code){return unmirror(decodeSetupAny(code));}
+function decodeSetupAny(code){
   if(code&&code[0]==='2'){try{const o=JSON.parse(fb64(code.slice(1)));
     const st={soft:!!(o.b&1),ambOn:!!(o.b&2),sceneSnd:!!(o.b&4),autoScare:!!(o.b&8),mirror:!!(o.b&16),autoEvery:EVERY_ORDER[o.e]||'1-3',scareLook:LOOK_ORDER[o.l]||'eyes',
       scareSnd:SND_ORDER[o.s]||'scream',vol:{amb:clamp(+o.a||0,0,100),scare:clamp(+o.k||0,0,100)},shuffleSecs:clamp(+o.h||90,10,3600),
@@ -1289,7 +1325,7 @@ function decodeSetup(code){
   return decodeSetupV1(code);
 }
 function encodeSetupV1(){
-  let o='1'+c6((S.soft?1:0)|(S.ambOn?2:0)|(S.sceneSnd?4:0)|(S.autoScare?8:0)|(S.mirror?16:0))+c6(ix(EVERY_ORDER,S.autoEvery)*4+ix(LOOK_ORDER,S.scareLook))
+  let o='1'+c6((S.soft?1:0)|(S.ambOn?2:0)|(S.sceneSnd?4:0)|(S.autoScare?8:0)|0)+c6(ix(EVERY_ORDER,S.autoEvery)*4+ix(LOOK_ORDER,S.scareLook))
     +c6(ix(SND_ORDER,S.scareSnd))+c6(Math.round(S.vol.amb/100*63))+c6(Math.round(S.vol.scare/100*63));
   return o+S.faces.map(f=>{let s=c6(ix(SC_ORDER,f.scene));const op=f.opt;
     f.pts.forEach(p=>p.forEach(v=>{const q=Math.round((clamp(v,-0.3,1.3)+0.3)/1.6*4095);s+=c6(q>>6)+c6(q);}));
@@ -1333,25 +1369,29 @@ function decodeSetupV1(code){
 }
 let tvTimer=null;
 function appDir(){return location.href.split('#')[0].split('?')[0].replace(/[^/]*$/,'');}
-function tvAddress(){const code=encodeSetup()+(S.remoteOn?'!'+S.room:'');
+function tvAddress(){const tk=linkToken(),code=tk?'!'+tk:encodeSetup();   // linked: the TV gets its setup from the database, so the address stays short
   if(/^https?:$/.test(location.protocol))return{url:appDir()+'display/#'+code,hosted:true};
   return{url:'<your website>/display/#'+code,hosted:false};}
-function remoteAddress(){const h=/^https?:$/.test(location.protocol);return{url:(h?appDir():'<your website>/')+'remote/#'+S.room,hosted:h};}
+function remoteAddress(){const h=/^https?:$/.test(location.protocol);return{url:(h?appDir():'<your website>/')+'remote/#'+linkToken(),hosted:h};}
 function updateTvUrl(){if(DISPLAY)return;clearTimeout(tvTimer);tvTimer=setTimeout(()=>{const el=$('tvUrl');if(!el)return;const a=tvAddress();
   el.textContent=a.url;el.title=a.hosted?'':'Put this app on a website (for example GitHub Pages) to get a real TV address.';},150);}
 function load(){
   try{const d=JSON.parse(localStorage.getItem('hp_layout')||'null');if(d&&d.faces&&d.faces.length)S=Object.assign(S,d);}catch(e){}
   try{photos=JSON.parse(localStorage.getItem('hp_photos')||'[]')||[];}catch(e){photos=[];}
   if(!S.faces.length)S.faces.push(newFace(0,'eyes',[[.2,.15],[.8,.15],[.8,.85],[.2,.85]]));
-  S.faces.forEach(normFace);
+  S.faces.forEach(normFace);unmirror(S);
   S.sel=clamp(S.sel|0,0,S.faces.length-1);S.part=S.part|0;
   S.vol=Object.assign({amb:55,scare:85},S.vol||{});
   S.favs=(Array.isArray(S.favs)?S.favs:[]).filter(k=>SCENES[k]);
   S.shuffleSecs=clamp(+S.shuffleSecs||90,10,3600);
-  if(S.remoteOn==null)S.remoteOn=true;
-  if(!/^[a-z0-9]{8,16}$/.test(S.room||''))S.room=newRoom();
+  delete S.remoteOn;delete S.room;
 }
-function newRoom(){const a='abcdefghijkmnpqrstuvwxyz23456789',b=new Uint8Array(10);crypto.getRandomValues(b);return[...b].map(x=>a[x%a.length]).join('');}
+/* The old whole-picture Mirror is gone. A setup that used it gets the same picture back:
+   every shape moves to its mirrored spot and its content is mirrored. */
+function unmirror(st){if(!st||!st.mirror)return st;delete st.mirror;
+  (st.faces||[]).forEach(f=>{const fl=a=>a.map(p=>[1-p[0],p[1]]);const sw=a=>[a[1],a[0],a[3],a[2]];
+    if(f.combo)f.parts.forEach(pc=>{pc.pts=sw(fl(pc.pts));});else f.pts=sw(fl(f.pts));f.flipX=!f.flipX;});return st;}
+
 const cur=()=>S.faces[S.sel];
 
 /* =================== views =================== */
@@ -1382,7 +1422,7 @@ function syncView(v){if(!v)return;const W=v.root.clientWidth,H=v.root.clientHeig
     if(Math.abs(cw-r.cv.width)/r.cv.width>0.06||Math.abs(ch-r.cv.height)/r.cv.height>0.06){r.cv.width=cw;r.cv.height=ch;}
   });
   v.grid.classList.toggle('on',S.grid);if(S.grid)drawGrid(v,W,H);
-  if(!v.preview)v.root.style.transform=S.mirror?'scaleX(-1)':'';}
+  }
 function softEdges(c,W,H){const e=Math.min(W,H)*0.07;c.save();c.globalCompositeOperation='destination-out';
   const sides=[[0,0,e,0,0,0,e,H],[W,0,W-e,0,W-e,0,e,H],[0,0,0,e,0,0,W,e],[0,H,0,H-e,0,H-e,W,e]];
   sides.forEach(([x0,y0,x1,y1,rx,ry,rw,rh])=>{const g=c.createLinearGradient(x0,y0,x1,y1);g.addColorStop(0,'rgba(0,0,0,1)');g.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=g;c.fillRect(rx,ry,rw,rh);});
@@ -1470,7 +1510,7 @@ function openOutput(){
   d.addEventListener('dblclick',e=>{if(e.target.closest&&e.target.closest('#hint'))return;if(!d.fullscreenElement)d.documentElement.requestFullscreen?.().catch(()=>{});else d.exitFullscreen();});
   let hintHidden=false,wasFs=false,toastT=null;
   d.getElementById('hintX').onclick=()=>{hintHidden=true;d.getElementById('hint').style.display='none';};
-  d.addEventListener('keydown',e=>{if(e.key==='b'||e.key==='B')booAll();if(e.key==='e'||e.key==='E')toggleBorders();if(e.key==='m'||e.key==='M')toggleMirror();if(e.key==='n'||e.key==='N')nextAll();});
+  d.addEventListener('keydown',e=>{if(e.key==='b'||e.key==='B')booAll();if(e.key==='e'||e.key==='E')toggleBorders();if(e.key==='n'||e.key==='N')nextAll();});
   const onResize=()=>{stage.style.setProperty('--ar',(w.innerWidth/Math.max(1,w.innerHeight)).toFixed(4));fitStage();
     const fs=!!d.fullscreenElement||(w.innerHeight>=w.screen.height-2&&w.innerWidth>=w.screen.width-2);
     d.getElementById('hint').style.display=fs||hintHidden?'none':'';d.body.classList.toggle('fs',fs);
@@ -1795,7 +1835,7 @@ function renderOverlay(){const W=stage.clientWidth,H=stage.clientHeight;overlay.
   if(REMOTE)return;
   S.faces.forEach((f,i)=>polysOf(f).forEach((pc,j)=>{const on=i===S.sel&&(!f.combo||j===S.part);
     const pg=svgEl('polygon',{points:pc.pts.map(p=>`${p[0]*W},${p[1]*H}`).join(' '),class:(on?'sel':'')+(pc.cut?' cut':'')});
-    pg.addEventListener('pointerdown',e=>{const changed=S.sel!==i||(f.combo&&S.part!==j);S.sel=i;if(f.combo)S.part=j;if(changed){corner=0;renderPanel();}
+    pg.addEventListener('pointerdown',e=>{const changed=S.sel!==i||(f.combo&&S.part!==j);S.sel=i;if(f.combo)S.part=j;if(changed){corner=0;renderPanel();}openSection('shape');
       startDrag(e,f.combo&&e.shiftKey?'moveAll':'move',-1);});
     overlay.appendChild(pg);}));
   const pts=editPts();if(!pts)return;
@@ -1821,7 +1861,6 @@ window.addEventListener('pointerup',()=>{if(drag){drag=null;save();}});
 window.addEventListener('keydown',e=>{if(DISPLAY||REMOTE)return;const ae=document.activeElement;if(ae.tagName==='TEXTAREA'||ae.tagName==='SELECT'||(ae.tagName==='INPUT'&&ae.type==='text'))return;
   if(e.key==='b'||e.key==='B'){booAll();return;}
   if(e.key==='e'||e.key==='E'){toggleBorders();return;}
-  if(e.key==='m'||e.key==='M'){toggleMirror();return;}
   if(e.key==='n'||e.key==='N'){nextAll();return;}
   if(!e.key.startsWith('Arrow'))return;e.preventDefault();
   const sx=(e.shiftKey?10:1)/stage.clientWidth,sy=(e.shiftKey?10:1)/stage.clientHeight,p=editPts()[corner];
@@ -1869,7 +1908,7 @@ function renderList(){const f=cur(),box=$('plist');box.innerHTML='';
     r.append(sel,sec,up,x);box.appendChild(r);});}
 function renderPanel(){const fl=$('faceList');fl.innerHTML='';
   S.faces.forEach((f,i)=>{const b=document.createElement('button');b.textContent=(f.combo?'⧉ ':'')+(f.name||('Shape '+(i+1)));
-    b.className=i===S.sel?'sel':'';b.onclick=()=>{S.sel=i;S.part=0;corner=0;renderAll();};fl.appendChild(b);});
+    b.className=i===S.sel?'sel':'';b.onclick=()=>{S.sel=i;S.part=0;corner=0;renderAll();openSection('shape');};fl.appendChild(b);});
   const f=cur();$('inName').value=f.name;
   sceneOptions($('selScene'),true);$('selScene').value=f.scene;
   const fav=S.favs.includes(f.scene);$('btnFav').textContent=fav?'♥':'♡';$('btnFav').classList.toggle('on',fav);$('btnFav').title=fav?'Remove from favorites':'Add to favorites';
@@ -1895,11 +1934,10 @@ function renderPanel(){const fl=$('faceList');fl.innerHTML='';
   $('btnFull').style.display=f.combo?'none':'';
   $('btnDel').disabled=S.faces.length<2;disarmDel();if(!f.combo){const full=isFull(f);$('btnFull').textContent=full?'↙ Exit fill screen':'⤢ Fill screen';$('btnFull').classList.toggle('on',full);}
   $('chkGrid').checked=S.grid;$('chkAlign').checked=S.align;$('chkSoft').checked=S.soft;$('chkBorders').checked=S.borders;
-  $('chkMirror').checked=S.mirror;$('btnMirror').textContent=S.mirror?'⇋ Mirror: On':'⇋ Mirror: Off';$('btnMirror').classList.toggle('on',S.mirror);
-  $('mirrorBadge').classList.toggle('on',S.mirror);$('gridTip').classList.toggle('on',S.grid);
+  $('gridTip').classList.toggle('on',S.grid);
   $('selShuffle').value=String(S.shuffleSecs);
   $('favSummary').textContent=nf?'Favorites: '+S.favs.map(k=>SCENES[k].label).join(', '):'No favorites yet. Tap ♡ next to a scene to add one.';
-  renderOptions();renderRemote();}
+  renderOptions();renderRemote();peeks();}
 function renderThumbs(){const box=$('thumbs');box.innerHTML='';
   photos.forEach((p,i)=>{const d=document.createElement('div'),im=document.createElement('img'),x=document.createElement('button');
     im.src=p.src;x.textContent='×';x.title='Remove';x.onclick=()=>{photos.splice(i,1);savePhotos();renderThumbs();};d.append(im,x);box.appendChild(d);});}
@@ -1913,10 +1951,7 @@ $('chkAlign').onchange=e=>{S.align=e.target.checked;renderAll();};
 $('chkSoft').onchange=e=>{S.soft=e.target.checked;renderAll();};
 $('chkBorders').onchange=e=>{S.borders=e.target.checked;renderAll();};
 function toggleBorders(){S.borders=!S.borders;renderAll();}
-function toggleMirror(){S.mirror=!S.mirror;renderAll();}
-$('btnMirror').onclick=toggleMirror;
-$('chkMirror').onchange=e=>{S.mirror=e.target.checked;renderAll();};
-$('btnAdd').onclick=()=>{S.faces.push(newFace(S.faces.length,'ghosts'));S.sel=S.faces.length-1;corner=0;renderAll();};
+$('btnAdd').onclick=()=>{S.faces.push(newFace(S.faces.length,'ghosts'));S.sel=S.faces.length-1;corner=0;renderAll();openSection('shape');};
 $('btnCube').onclick=()=>{const a=stage.clientWidth/stage.clientHeight,u=0.17,cx=0.5,cy=0.55;
   const P=(x,y)=>[cx+x*u/a,cy+y*u];
   const T=P(0,-1),UL=P(-0.866,-0.5),UR=P(0.866,-0.5),C=P(0,0),LL=P(-0.866,0.5),LR=P(0.866,0.5),B=P(0,1);
@@ -2005,62 +2040,146 @@ $('btnCopyTv').onclick=async()=>{const a=tvAddress(),b=$('btnCopyTv');
   b.textContent='Copied ✓';setTimeout(()=>b.textContent='Copy',1500);};
 
 /* =================== link: this page <-> TV <-> phone =================== */
-/* Uses ntfy.sh, a free public message relay. Each setup gets its own random "room".
-   Messages are tiny: the setup code, or a button press. Photos and sound files are never sent. */
-const RELAY='https://ntfy.sh/';
-const SID=Math.random().toString(36).slice(2,10);
-const LINK={es:null,room:'',ok:false,lastSeen:{},sentCode:'',timer:null,retry:null};
-function topic(room){return'ddhp-'+room;}
-function linkSend(msg){if(!LINK.room)return;
-  fetch(RELAY+topic(LINK.room),{method:'POST',body:JSON.stringify(Object.assign({from:SID,who:DISPLAY?'tv':REMOTE?'phone':'laptop'},msg))}).catch(()=>{});}
-function linkOpen(room){linkClose();if(!room||!window.EventSource)return;LINK.room=room;
-  const es=new EventSource(RELAY+topic(room)+'/sse');LINK.es=es;
-  es.onopen=()=>{LINK.ok=true;linkStatus();linkSend({t:'hello'});};
-  es.onerror=()=>{LINK.ok=false;linkStatus();};
-  es.onmessage=e=>{let d;try{d=JSON.parse(e.data);}catch(x){return;}if(d.event!=='message')return;
-    let m;try{m=JSON.parse(d.message);}catch(x){return;}if(!m||m.from===SID)return;
-    LINK.lastSeen[m.who||'?']=Date.now();linkStatus();onLink(m);};}
-function linkClose(){if(LINK.es){LINK.es.close();LINK.es=null;}LINK.ok=false;LINK.room='';linkStatus();}
+/* Goes through the buyer's OWN free Firebase Realtime Database, the same way DigiDoughnut's live
+   sync does: the same setup code (shared by every DigiDoughnut program on this web address),
+   Anonymous sign-in, and the same rules (/sync/<program>/<32-character secret>). No other
+   service is used, and nothing is sent anywhere until the buyer connects their own database.
+   What's stored at sync/hauntedprojector/<secret>:
+     setup  {code, at}            the latest setup code, from the laptop
+     cmd    {t, on, n, from}      the latest button press (boo / next / dark / auto)
+     state  {dark, auto}          so the phone shows the right buttons
+     seen/<laptop|tv|phone>       when each one last checked in (Firebase's clock) */
+const FB_VER='12.19.0',FB_BASE='https://www.gstatic.com/firebasejs/'+FB_VER+'/';
+const CFG_KEY='dd_firebase_config_v1',LEDGER_KEY='hp_link_ledger_v1',PROG='hauntedprojector';
+const FB_RULES=JSON.stringify({rules:{sync:{'$program':{'$ledger':{'.read':'auth != null && $ledger.length == 32','.write':'auth != null && $ledger.length == 32'}}}}},null,2);
+const SID=Math.random().toString(36).slice(2,10),WHO=DISPLAY?'tv':REMOTE?'phone':'laptop';
+const LINK={fb:null,app:null,db:null,base:null,ok:false,state:'off',err:'',seen:{},off:0,lastCmd:null,sentCode:'',timer:null,beat:null,unsub:[],cfg:null,ledger:''};
+const FIELDS=['apiKey','authDomain','databaseURL','projectId','storageBucket','messagingSenderId','appId'];
+function parseConfig(text){const t=String(text||'');let cfg=null;try{const j=JSON.parse(t);if(j&&typeof j==='object')cfg=j;}catch(e){}
+  if(!cfg){cfg={};const re=/(["']?)(apiKey|authDomain|databaseURL|projectId|storageBucket|messagingSenderId|appId|measurementId)\1\s*:\s*["'`]([^"'`]+)["'`]/g;let m;while((m=re.exec(t)))cfg[m[2]]=m[3].trim();}
+  const out={};FIELDS.forEach(f=>{if(typeof cfg[f]==='string'&&cfg[f].trim())out[f]=cfg[f].trim();});
+  if(!out.apiKey||!out.projectId)return null;
+  if(!out.databaseURL)out.databaseURL='https://'+out.projectId+'-default-rtdb.firebaseio.com';
+  if(!/^https:\/\/[a-z0-9.-]+\/?$/i.test(out.databaseURL))return null;
+  if(!out.authDomain)out.authDomain=out.projectId+'.firebaseapp.com';return out;}
+function savedConfig(){try{const c=JSON.parse(localStorage.getItem(CFG_KEY)||'null');return c&&c.apiKey&&c.databaseURL?c:null;}catch(e){return null;}}
+function newLedger(){const b=new Uint8Array(16);crypto.getRandomValues(b);return[...b].map(x=>(x<16?'0':'')+x.toString(16)).join('');}
+function laptopLedger(){try{const v=localStorage.getItem(LEDGER_KEY);return/^[0-9a-f]{32}$/.test(v||'')?v:'';}catch(e){return'';}}
+// the short "token" the TV and phone links carry: which database + the secret
+const b64u=s=>tb64(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''),ub64u=s=>fb64(s.replace(/-/g,'+').replace(/_/g,'/'));
+function makeToken(cfg,led){const def='https://'+cfg.projectId+'-default-rtdb.firebaseio.com';
+  return b64u(JSON.stringify([cfg.projectId,cfg.apiKey,led,cfg.databaseURL.replace(/\/$/,'')===def?0:cfg.databaseURL]));}
+function readToken(tk){try{const[p,k,l,u]=JSON.parse(ub64u(tk||''));if(!p||!k||!/^[0-9a-f]{32}$/.test(l))return null;
+  return{cfg:{projectId:p,apiKey:k,authDomain:p+'.firebaseapp.com',databaseURL:u||'https://'+p+'-default-rtdb.firebaseio.com'},ledger:l};}catch(e){return null;}}
+function linkToken(){if(DISPLAY||REMOTE)return'';const c=savedConfig(),l=laptopLedger();return c&&l&&LINK.state!=='off'?makeToken(c,l):'';}
+function friendlyFb(e){const t=String((e&&(e.code||''))+' '+(e&&e.message||e||''));
+  if(/admin-restricted|operation-not-allowed|configuration-not-found|ADMIN_ONLY/i.test(t))return'Firebase didn\'t let the app sign in. In Firebase, open Authentication → Sign-in method, and switch on Anonymous.';
+  if(/api-key|API_KEY|invalid-api-key|not.*found|app-not-authorized/i.test(t))return'That Firebase setup code didn\'t work. Copy the whole firebaseConfig box again and paste it in.';
+  if(/permission|PERMISSION_DENIED/i.test(t))return'Your Firebase database said no. Paste the rules again (step 4) and tap Publish.';
+  if(/network|Failed to fetch|offline|timeout|import|module/i.test(t))return'Can\'t reach your Firebase database right now. Check your internet and try again.';
+  return'Something went wrong connecting. Try again in a moment.';}
+function withTimeout(p,ms){return new Promise((res,rej)=>{const t=setTimeout(()=>rej(new Error('timeout')),ms);p.then(v=>{clearTimeout(t);res(v);},e=>{clearTimeout(t);rej(e);});});}
+async function loadFb(){if(LINK.fb)return LINK.fb;const m=await Promise.all([import(FB_BASE+'firebase-app.js'),import(FB_BASE+'firebase-auth.js'),import(FB_BASE+'firebase-database.js')]);
+  return LINK.fb={A:m[0],U:m[1],D:m[2]};}
+async function linkOpen(cfg,ledger){linkClose(true);LINK.cfg=cfg;LINK.ledger=ledger;LINK.state='connecting';LINK.err='';linkStatus();
+  try{const fb=await withTimeout(loadFb(),20000);const{A,U,D}=fb;
+    const old=A.getApps().find(a=>a.name==='hp');if(old)await A.deleteApp(old);
+    LINK.app=A.initializeApp({apiKey:cfg.apiKey,authDomain:cfg.authDomain,databaseURL:cfg.databaseURL,projectId:cfg.projectId,appId:cfg.appId},'hp');
+    const auth=U.getAuth(LINK.app);if(auth.authStateReady)await auth.authStateReady();
+    if(!auth.currentUser)await withTimeout(U.signInAnonymously(auth),20000);
+    LINK.db=D.getDatabase(LINK.app);LINK.base='sync/'+PROG+'/'+ledger+'/';
+    // a test write: proves the rules are in and the database answers
+    await withTimeout(D.set(D.ref(LINK.db,LINK.base+'seen/'+WHO),D.serverTimestamp()),20000);
+    LINK.state='on';LINK.ok=true;
+    const on=(path,fn)=>LINK.unsub.push(D.onValue(D.ref(LINK.db,path),sn=>fn(sn.val()),e=>{LINK.ok=false;LINK.err=friendlyFb(e);LINK.state='problem';linkStatus();}));
+    on('.info/serverTimeOffset',v=>{LINK.off=+v||0;});
+    on('.info/connected',v=>{LINK.ok=!!v;linkStatus();});
+    on(LINK.base+'seen',v=>{LINK.seen=v||{};linkStatus();});
+    let firstCmd=true;
+    on(LINK.base+'cmd',v=>{if(firstCmd){firstCmd=false;LINK.lastCmd=v&&v.n;return;}   // ignore whatever was pressed before this page opened
+      if(!v||v.n===LINK.lastCmd)return;LINK.lastCmd=v.n;if(v.from===SID)return;onLink(v);});
+    if(DISPLAY)on(LINK.base+'setup',v=>{if(v&&v.code&&v.from!==SID)applyRemoteSetup(v.code);});
+    if(REMOTE||!DISPLAY)on(LINK.base+'state',v=>{if(REMOTE&&v)remoteState(v);});
+    if(!DISPLAY&&!REMOTE){pushSetup(true);pushState();}
+    LINK.beat=setInterval(()=>{if(LINK.db)D.set(D.ref(LINK.db,LINK.base+'seen/'+WHO),D.serverTimestamp()).catch(()=>{});},60000);
+    linkStatus();return{ok:true};
+  }catch(e){console.warn('link',e);LINK.state='problem';LINK.ok=false;LINK.err=friendlyFb(e);linkStatus();return{ok:false,msg:LINK.err};}}
+function linkClose(keepState){LINK.unsub.forEach(u=>{try{u();}catch(e){}});LINK.unsub=[];clearInterval(LINK.beat);LINK.db=null;LINK.ok=false;
+  if(!keepState){LINK.state='off';LINK.err='';}linkStatus();}
+function dbSet(path,val){if(!LINK.db||!LINK.fb)return;const D=LINK.fb.D;D.set(D.ref(LINK.db,LINK.base+path),val).catch(e=>{LINK.err=friendlyFb(e);linkStatus();});}
+function linkSend(m){if(!LINK.db)return;dbSet('cmd',Object.assign({from:SID,who:WHO,n:Date.now()+'-'+SID,on:false},m));}
+function pushState(){if(!LINK.db||REMOTE)return;dbSet('state',{dark:DARK,auto:!!S.autoScare});}
 // things a press can do, on whichever screen is showing the show
 function booAll(){boo();linkSend({t:'boo'});}
 function nextAll(){nextNow();linkSend({t:'next'});}
-function setDark(on,send){DARK=!!on;if(send)linkSend({t:'dark',on:DARK});linkStatus();if(!DISPLAY&&!REMOTE)renderRemote();}
+function setDark(on,send){DARK=!!on;if(send)linkSend({t:'dark',on:DARK});linkStatus();}
 function showsHere(){return DISPLAY||outOpen();}   // the laptop only reacts when its projector window is open
-function onLink(m){
-  if(m.t==='hello'&&!DISPLAY&&!REMOTE){pushSetup(true);linkSend({t:'state',dark:DARK,auto:S.autoScare});return;}
-  if(m.t==='hello'&&DISPLAY){linkSend({t:'state',dark:DARK,auto:S.autoScare});return;}
-  if(m.t==='setup'&&DISPLAY){applyRemoteSetup(m.code);return;}
-  if(m.t==='state'&&REMOTE){remoteState(m);return;}
-  if(REMOTE)return;
+function onLink(m){if(REMOTE)return;
   if(m.t==='boo'&&showsHere())boo();
   if(m.t==='next')nextNow();
-  if(m.t==='dark')setDark(m.on,false);
-  if(m.t==='auto'){S.autoScare=!!m.on;scheduleAuto();if(!DISPLAY){save();renderSound();}}
-}
-function pushSetup(force){if(DISPLAY||REMOTE||!S.remoteOn||!LINK.room)return;const code=encodeSetup();
-  if(!force&&code===LINK.sentCode)return;LINK.sentCode=code;linkSend({t:'setup',code});}
-function remoteChanged(){if(DISPLAY||REMOTE)return;clearTimeout(LINK.timer);LINK.timer=setTimeout(()=>pushSetup(false),1500);}
+  if(m.t==='dark'){setDark(m.on,false);if(!DISPLAY)pushState();}
+  if(m.t==='auto'){S.autoScare=!!m.on;scheduleAuto();if(!DISPLAY){save();renderSound();pushState();}}}
+function pushSetup(force){if(DISPLAY||REMOTE||!LINK.db)return;const code=encodeSetup();
+  if(!force&&code===LINK.sentCode)return;LINK.sentCode=code;dbSet('setup',{code,from:SID,at:LINK.fb.D.serverTimestamp()});}
+function remoteChanged(){if(DISPLAY||REMOTE)return;clearTimeout(LINK.timer);LINK.timer=setTimeout(()=>{pushSetup(false);pushState();},1200);}
+function recently(who){const t=+LINK.seen[who]||0;return t&&Date.now()+LINK.off-t<150000;}
 function linkStatus(){
-  if(DISPLAY||REMOTE){const el=document.getElementById('rmSt');if(el)el.textContent=!LINK.room?'Not linked':LINK.ok?(Date.now()-(LINK.lastSeen.laptop||LINK.lastSeen.tv||0)<600000?'Linked ✓':'Linked — waiting for the TV or laptop'):'Connecting…';return;}
+  if(DISPLAY||REMOTE){const el=document.getElementById('rmSt');if(!el)return;
+    el.textContent=LINK.state==='problem'?LINK.err:LINK.state!=='on'?'Connecting…':!LINK.ok?'Reconnecting…':recently('laptop')||recently('tv')?'Connected ✓':'Connected — waiting for the TV or laptop';return;}
   const dot=$('rmDot'),st=$('rmState');if(!dot)return;
-  const tv=Date.now()-(LINK.lastSeen.tv||0)<600000,ph=Date.now()-(LINK.lastSeen.phone||0)<600000;
-  dot.classList.toggle('on',LINK.ok);
-  st.textContent=!S.remoteOn?'Linking is off':!LINK.ok?'Connecting…':'Linked'+(tv||ph?' — '+[tv?'TV':null,ph?'phone':null].filter(Boolean).join(' and ')+' connected':'. Waiting for the TV or phone.')+(DARK?' · Lights out':'');}
-function renderRemote(){if(DISPLAY||REMOTE)return;const a=remoteAddress();$('rmUrl').textContent=S.remoteOn?a.url:'(turn on linking below)';$('chkRemote').checked=S.remoteOn;
-  $('btnCopyRm').disabled=$('btnQr').disabled=!S.remoteOn;if(!S.remoteOn)$('qr').classList.remove('on');linkStatus();}
+  dot.classList.toggle('on',LINK.state==='on'&&LINK.ok);if(typeof peeks==='function'&&document.querySelector('.panel>.sec'))peeks();
+  st.textContent=LINK.state==='problem'?LINK.err:LINK.state==='connecting'?'Connecting…':!LINK.ok?'Reconnecting…':
+    'Connected'+(recently('tv')||recently('phone')?' — '+[recently('tv')?'TV':null,recently('phone')?'phone':null].filter(Boolean).join(' and ')+' connected':'. Waiting for the TV or phone.')+(DARK?' · Lights out':'');}
+function renderRemote(){if(DISPLAY||REMOTE)return;const on=LINK.state!=='off';
+  $('lkOff').style.display=on?'none':'';$('lkOn').style.display=on?'':'none';
+  const file=!/^https?:$/.test(location.protocol);$('lkFile').style.display=file?'':'none';$('btnLkConnect').disabled=file;
+  const have=savedConfig();$('lkHave').style.display=have&&!file?'':'none';$('lkCfg').style.display=have?'none':'';$('lkSteps').style.display=have?'none':'';
+  if(on){$('rmUrl').textContent=remoteAddress().url;}else $('qr').classList.remove('on');
+  linkStatus();}
 function showQr(){const box=$('qr');if(box.classList.contains('on')){box.classList.remove('on');$('btnQr').textContent='Show QR code';return;}
-  const a=remoteAddress();if(!a.hosted){alert('The phone remote needs this app to be on a website first.');return;}
+  const a=remoteAddress();if(!a.hosted)return;
   try{const q=qrcode(0,'M');q.addData(a.url);q.make();box.innerHTML=q.createImgTag(4,8);}catch(e){box.textContent='Could not make a QR code.';}
   box.classList.add('on');$('btnQr').textContent='Hide QR code';}
+async function connectLaptop(){const msg=$('lkMsg'),btn=$('btnLkConnect');
+  let cfg=savedConfig();if(!cfg){cfg=parseConfig($('lkCfg').value);if(!cfg){msg.textContent=$('lkCfg').value.trim()?'That setup code didn\'t work. Copy the whole firebaseConfig box again.':'Paste your setup code in the box first.';return;}}
+  btn.disabled=true;btn.textContent='Connecting…';msg.textContent='Signing in to your database. This can take up to 20 seconds.';
+  let led=laptopLedger();if(!led){led=newLedger();try{localStorage.setItem(LEDGER_KEY,led);}catch(e){}}
+  const r=await linkOpen(cfg,led);btn.disabled=false;btn.textContent='Connect';
+  if(r.ok){try{localStorage.setItem(CFG_KEY,JSON.stringify(cfg));localStorage.setItem('hp_link_on','1');}catch(e){}msg.textContent='';$('lkCfg').value='';}
+  else{LINK.state='off';msg.textContent=r.msg;}
+  renderRemote();updateTvUrl();}
+/* ---- side panel: folding sections ---- */
+const SEC_IDS={'Setup':'setup','Shapes':'shapes','Selected shape':'shape','Shuffle':'shuffle','Phone remote & TV link':'remote','Sound':'sound','Jump scares':'scares','Saved setups':'saved','Costume photos':'photos'};
+function buildSections(){document.querySelectorAll('.panel>div').forEach(d=>{const h=d.querySelector(':scope>h2');if(!h)return;
+  const id=SEC_IDS[h.textContent.trim()]||h.textContent.trim().toLowerCase();d.classList.add('sec');d.dataset.sec=id;
+  const body=document.createElement('div');body.className='secBody';while(h.nextSibling)body.appendChild(h.nextSibling);d.appendChild(body);
+  const pk=document.createElement('span');pk.className='peek';h.appendChild(pk);
+  h.tabIndex=0;h.setAttribute('role','button');
+  h.onclick=()=>openSection(d.classList.contains('open')?null:id);h.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();h.click();}};});
+  openSection('shape');}
+function openSection(id){document.querySelectorAll('.panel>.sec').forEach(d=>{const on=d.dataset.sec===id;d.classList.toggle('open',on);d.querySelector(':scope>h2').setAttribute('aria-expanded',on);});
+  const d=id&&document.querySelector(`.panel>.sec[data-sec="${id}"]`);if(d)requestAnimationFrame(()=>{const p=d.parentElement;if(d.offsetTop<p.scrollTop||d.offsetTop>p.scrollTop+p.clientHeight-60)p.scrollTop=d.offsetTop-6;});
+  peeks();}
+// a short hint on each closed header, so the panel tells you what's set without opening everything
+function peeks(){const set=(id,t)=>{const el=document.querySelector(`.panel>.sec[data-sec="${id}"] .peek`);if(el)el.textContent=t;};const f=cur();if(!f)return;
+  set('shapes',S.faces.length+' shape'+(S.faces.length>1?'s':''));
+  set('shape',(f.name||'Shape')+' · '+(f.mode==='one'?SCENES[f.scene].label.replace(/^\S+\s/,''):f.mode==='shuffle'?'Shuffle':'Playlist'));
+  const so=$('selShuffle').selectedOptions[0];set('shuffle',(so?'Every '+so.text:'')+(S.favs.length?' · ♥ '+S.favs.length:''));
+  set('remote',LINK.state==='on'?'Connected':'Off');
+  set('scares',S.autoScare?'Auto on':'');}
 function setupRemoteUI(){
-  $('chkRemote').onchange=e=>{S.remoteOn=e.target.checked;save();S.remoteOn?linkOpen(S.room):linkClose();renderRemote();updateTvUrl();};
-  $('btnNewRoom').onclick=()=>{if(!confirm('Make a new link? Your phone and TV will need the new address.'))return;S.room=newRoom();save();if(S.remoteOn)linkOpen(S.room);
-    $('qr').classList.remove('on');$('btnQr').textContent='Show QR code';renderRemote();updateTvUrl();};
+  $('lkRules').textContent=FB_RULES;
+  $('btnCopyRules').onclick=async()=>{try{await navigator.clipboard.writeText(FB_RULES);$('btnCopyRules').textContent='Copied ✓';}catch(e){const r=document.createRange();r.selectNodeContents($('lkRules'));const sl=getSelection();sl.removeAllRanges();sl.addRange(r);}};
+  $('btnLkConnect').onclick=connectLaptop;
+  $('btnLkOff').onclick=()=>{linkClose();try{localStorage.removeItem('hp_link_on');}catch(e){}renderRemote();updateTvUrl();};
+  $('btnNewRoom').onclick=async()=>{if(!confirm('Make a new secret link? Your phone and TV will need the new address.'))return;
+    const led=newLedger();try{localStorage.setItem(LEDGER_KEY,led);}catch(e){}$('qr').classList.remove('on');$('btnQr').textContent='Show QR code';
+    await linkOpen(savedConfig(),led);renderRemote();updateTvUrl();};
   $('btnQr').onclick=showQr;
-  $('btnCopyRm').onclick=async()=>{const a=remoteAddress(),b=$('btnCopyRm');if(!a.hosted){alert('The phone remote needs this app to be on a website first.');return;}
-    try{await navigator.clipboard.writeText(a.url);}catch(e){}b.textContent='Copied ✓';setTimeout(()=>b.textContent='Copy',1500);};
-  if(S.remoteOn)linkOpen(S.room);
-  setInterval(linkStatus,15000);}
+  $('btnCopyRm').onclick=async()=>{const b=$('btnCopyRm');try{await navigator.clipboard.writeText(remoteAddress().url);}catch(e){}b.textContent='Copied ✓';setTimeout(()=>b.textContent='Copy',1500);};
+  let wasOn=false;try{wasOn=localStorage.getItem('hp_link_on')==='1';}catch(e){}
+  if(wasOn&&savedConfig()&&laptopLedger()&&/^https?:$/.test(location.protocol))linkOpen(savedConfig(),laptopLedger()).then(()=>{renderRemote();updateTvUrl();});
+  renderRemote();setInterval(linkStatus,15000);}
 
 /* ---- fit the stage so it never needs scrolling ---- */
 function fitStage(){if(DISPLAY||REMOTE)return;const sec=stage.parentElement;
@@ -2074,7 +2193,7 @@ function remoteState(m){const b=$('rmDark');if(b){b.textContent=m.dark?'💡 Lig
   const a=$('rmAuto');if(a){a.textContent=m.auto?'⏱ Auto scares: On':'⏱ Auto scares: Off';a.dataset.on=m.auto?'1':'';}}
 function bootRemote(){
   document.body.classList.add('remote');document.title='Haunted Projector – Remote';
-  const room=(location.hash.slice(1)||'').replace(/[^a-z0-9]/g,'');
+  const tok=readToken(location.hash.slice(1));
   const ui=document.createElement('div');ui.id='remoteUI';
   ui.innerHTML=`<h1>🎃 Haunted Remote</h1><p class="st" id="rmSt">Connecting…</p>
     <button class="big" id="rmBoo">BOO!</button>
@@ -2082,13 +2201,13 @@ function bootRemote(){
     <div class="row2"><button id="rmAuto" style="grid-column:1/3">⏱ Auto scares</button></div>
     <p class="st">Keep this page open. Works on the same Wi-Fi or anywhere with internet.</p>`;
   document.body.appendChild(ui);
-  if(!room){$('rmSt').textContent='This link is missing its code. Copy the phone link from the laptop again.';return;}
+  if(!tok){$('rmSt').textContent='This link is missing its code. Copy the phone link from the laptop again.';return;}
   const buzz=()=>{try{navigator.vibrate&&navigator.vibrate(60);}catch(e){}};
   $('rmBoo').onclick=()=>{buzz();linkSend({t:'boo'});};
   $('rmNext').onclick=()=>{buzz();linkSend({t:'next'});};
   $('rmDark').onclick=()=>{buzz();const on=!$('rmDark').dataset.on;linkSend({t:'dark',on});remoteState({dark:on,auto:!!$('rmAuto').dataset.on});};
   $('rmAuto').onclick=()=>{buzz();const on=!$('rmAuto').dataset.on;linkSend({t:'auto',on});remoteState({dark:!!$('rmDark').dataset.on,auto:on});};
-  linkOpen(room);setInterval(linkStatus,10000);
+  linkOpen(tok.cfg,tok.ledger);setInterval(linkStatus,10000);
 }
 
 /* ---- TV / stick display mode: plays the show full screen, no controls ---- */
@@ -2107,12 +2226,13 @@ function startShow(){
 function bootDisplay(){
   document.body.classList.add('display');
   showCard=document.createElement('div');showCard.id='dispCard';document.body.appendChild(showCard);
-  let raw=decodeURIComponent(location.hash.slice(1)||''),[code,room]=raw.split('!');
-  try{if(room)localStorage.setItem('hp_display_room',room);else room=localStorage.getItem('hp_display_room')||'';}catch(e){}
+  let raw=decodeURIComponent(location.hash.slice(1)||''),[code,tk]=raw.split('!');
+  try{if(tk)localStorage.setItem('hp_display_link',tk);else if(!code)tk=localStorage.getItem('hp_display_link')||'';}catch(e){}
+  const tok=readToken(tk);
   if(!decodeSetup(code)){try{code=localStorage.getItem('hp_display_code')||'';}catch(e){}}
   const st=decodeSetup(code);
-  if(room)linkOpen(room);
-  if(!st){showCard.innerHTML=room?'<h2>👻 Haunted Projector</h2><p>Waiting for your laptop…</p><small>Open the Haunted Projector page on your laptop. The show appears here by itself.</small>'
+  if(tok)linkOpen(tok.cfg,tok.ledger);
+  if(!st){showCard.innerHTML=tok?'<h2>👻 Haunted Projector</h2><p>Waiting for your laptop…</p><small>Open the Haunted Projector page on your laptop. The show appears here by itself.</small>'
       :'<h2>👻 Haunted Projector</h2><p>No setup found yet.</p><small>On your laptop, open the app and type the TV address shown at the top into this browser.</small>';}
   else{try{localStorage.setItem('hp_display_code',code);}catch(e){}applySetup(st);startShow();}
   const go=()=>{if(!out)return;if(!dispStarted){dispStarted=true;showCard.classList.add('hide');
@@ -2126,7 +2246,7 @@ function bootDisplay(){
 }
 if(DISPLAY)bootDisplay();
 else if(REMOTE)bootRemote();
-else{load();renderAll(false);renderThumbs();updateStatus();startLoop();renderSound();loadOwn();scheduleAuto();renderSetups();updateTvUrl();setupRemoteUI();
+else{load();buildSections();renderAll(false);renderThumbs();updateStatus();startLoop();renderSound();loadOwn();scheduleAuto();renderSetups();updateTvUrl();setupRemoteUI();
   requestAnimationFrame(fitStage);new ResizeObserver(fitStage).observe(stage.parentElement);}
 </script>
 </body>
