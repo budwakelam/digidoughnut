@@ -77,6 +77,11 @@
   Smooth motion: blurred glow drawn once in a still layer, the moving light as plain strokes, breathing glows as
   opacity-only gradients, the picture as an object URL, the visual layer kept across redraws and paused off screen.
   Hydration on the map looks back 3 days (recent drinks count most) instead of resetting at midnight.
+  0.5.7 (Oran, 2026-10-16 pm): (1) The bot never changes or removes an existing entry without asking: it names the entry and
+  when it was logged, and asks; log_water always makes a new entry. (2) The bot can now do everything the screens do (cooking,
+  eating style, display, fasting/average days, quick adds, delete own foods, open screens). (3) Fuel map follows the Look colours.
+  (4) Today: food list right under the fuel map (newest first), nutrients lower, hydration folded, 💧 one-tap 250 mL beside Add.
+  Footer squeezed (the tiiny.host banner space is gone).
   0.5.6 (Oran, 2026-10-16): How I like to eat → Low-carb, whole foods. Carbs and sugars become maximums (carbs 50, 75
   or 100 g, sugars 25 g), protein 1.6 g per kg, fat does the rest of the fuelling. The balance chart shows carbs in its
   limits row instead of the shape, the fuel map stops counting carbs as a need, and food ideas skip grains, bread, pasta,
@@ -188,9 +193,9 @@ body{margin:0;font-family:var(--dd-font);background:var(--dd-bg);color:var(--dd-
           padding:10px 16px;border-radius:12px;font-size:.92rem;z-index:60;box-shadow:0 8px 24px rgba(0,0,0,.2);max-width:calc(100vw - 32px)}
 
 /* footer: brand line + version; triple-click opens the support diagnostic */
-.dd-footer{margin:44px 0 0;color:var(--dd-muted);font-size:.75rem;user-select:none;-webkit-user-select:none}
-.dd-foot-body{background:var(--dd-brand-soft);padding:0 0 calc(129px + var(--dd-host-bottom,0px) + env(safe-area-inset-bottom));border-top:8px solid var(--dd-brand);box-shadow:0 -8px 28px var(--dd-brand-soft-d)}
-.dd-foot-grid{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px 16px;padding:22px 16px 0}
+.dd-footer{margin:24px 0 0;color:var(--dd-muted);font-size:.75rem;user-select:none;-webkit-user-select:none}
+.dd-foot-body{background:var(--dd-brand-soft);padding:0 0 calc(10px + env(safe-area-inset-bottom));border-top:8px solid var(--dd-brand);box-shadow:0 -8px 28px var(--dd-brand-soft-d)}
+.dd-foot-grid{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px 16px;padding:14px 16px 0}
 .dd-foot-left{justify-self:start;color:var(--dd-ink);font-weight:600;white-space:nowrap}
 .dd-foot-left .dd-foot-ver{font-weight:400;color:var(--dd-muted)}
 .dd-foot-mid{justify-self:center;line-height:0}
@@ -711,6 +716,14 @@ select.ik-input{padding-right:30px}
 .ik-view{display:none}
 .ik-view.on{display:block}
 .ik-head{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin:6px 0 14px}
+.ik-head.ik-head1{flex-wrap:nowrap;align-items:center;gap:8px;margin:0 0 8px}
+.ik-titleline{flex:1 1 auto;min-width:0;display:flex;align-items:baseline;gap:8px;white-space:nowrap;overflow:hidden}
+.ik .ik-head1 h1.ik-h1{margin:0;font-size:24px;line-height:1.1;flex:none}
+.ik .ik-head1 h1.ik-h1.sm{font-size:15px;font-weight:700}
+.ik-head1 .ik-eyebrow{font-size:11.5px;letter-spacing:.03em;flex:0 1 auto;min-width:0}
+.ik-head1 .ik-daynav{flex:none;gap:3px}
+.ik-head1 .ik-daynav button{width:34px;height:34px;font-size:16px}
+.ik-head1 .ik-daynav .ik-backtoday{width:auto;padding:0 11px;font-size:13px;margin-right:2px}
 /* Oran's iPhone, 2026-10-13: the date and title were squeezed beside the Day/Week/Month/Year control
    (letters stacked, title hidden behind it). The title block now never gets narrower than 200 px, and on
    phones the control drops to its own full-width row under the title. */
@@ -933,17 +946,47 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-srcs{margin:0;padding-left:18px;font-size:13.5px;line-height:1.45}
 .ik-srcs li{margin:0 0 6px}
 .ik-srcs a{color:#0060c0}
-.ik-fm-switch{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px}
-.ik-fm-views{display:flex;gap:6px;flex-wrap:wrap}
-.ik-fm-views button{border:1px solid #d2d2d7;background:#fff;color:var(--ik-ink);font:inherit;font-size:13.5px;font-weight:600;padding:8px 13px;border-radius:99px;min-height:38px;cursor:pointer}
+.ik-fm-switch{display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:6px;margin:0 0 8px}
+.ik-fm-views{display:flex;gap:5px;flex-wrap:nowrap;min-width:0}
+.ik-fm-views button{border:1px solid #d2d2d7;background:#fff;color:var(--ik-ink);font:inherit;font-size:12.5px;font-weight:600;padding:6px 10px;border-radius:99px;min-height:34px;cursor:pointer;white-space:nowrap}
 .ik-fm-views button[aria-selected="true"]{background:var(--ik-ink);border-color:var(--ik-ink);color:#fff;font-weight:700}
+.ik-fm-addgrp{display:inline-flex;align-items:center;gap:6px;flex:none}
+.ik-fm-switch .ik-glass{width:36px;height:34px;min-height:34px}
+.ik-fm-switch .ik-fm-add{font-size:12.5px;padding:6px 12px;min-height:34px;white-space:nowrap}
+.ik-glass{flex:none;display:inline-flex;align-items:center;justify-content:center;width:40px;min-height:38px;height:38px;padding:0;border-radius:99px;border:1px solid var(--ik-water,#2aa6d8);background:#fff;color:var(--ik-water,#1d8fc2);cursor:pointer}
+.ik-glass:active{transform:scale(.94)}
+.ik-glass{touch-action:manipulation;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
+.ik-cupfly{position:fixed;z-index:9000;display:flex;gap:10px;padding:8px 10px;border-radius:99px;background:var(--dd-card,#fff);box-shadow:0 10px 30px rgba(0,0,0,.28);border:1px solid var(--ik-line,#e5e5ea)}
+.ik-cupfly-b{display:flex;flex-direction:column;align-items:center;justify-content:center;width:54px;height:54px;border-radius:50%;border:1.5px solid var(--ik-water,#2aa6d8);background:#fff;color:var(--ik-water,#1d8fc2);font:inherit;cursor:pointer;line-height:1.05;animation:ikFlyIn .22s ease both}
+.ik-cupfly-b b{font-size:16px;font-weight:800}.ik-cupfly-b span{font-size:10.5px;font-weight:700}
+@keyframes ikFlyIn{from{opacity:0;transform:translateY(-10px) scale(.6)}to{opacity:1;transform:none}}
+.ik-glass.sm{height:40px}
 .ik-fm-add{flex:none;border:0;font:inherit;font-size:13.5px;font-weight:700;padding:8px 15px;border-radius:99px;min-height:38px;cursor:pointer;background:linear-gradient(135deg,#ff2d55,#af52de);color:#fff;box-shadow:0 6px 16px rgba(255,45,85,.3)}
 .ik-fm-intro{display:flex;align-items:center;gap:8px;font-size:13.5px;line-height:1.4;color:var(--ik-ink2);margin:-2px 0 10px;padding:0 2px}
 .ik-fm-intro span{flex:1}
 .ik-fm-intro .ik-x{width:30px;height:30px;font-size:15px;flex:none}
 /* the panel takes a deep shade of the app's own colours (🎨 Look); the status lights stay fixed so they always mean the same thing */
-.ik-fm-card{background:#060d15;background:radial-gradient(120% 70% at 50% 28%,color-mix(in srgb,var(--dd-accent2) 24%,#07111b) 0%,color-mix(in srgb,var(--dd-brand) 12%,#050b12) 58%,#03070c 100%);border-radius:30px;padding:0 0 12px;overflow:hidden;box-shadow:0 14px 34px rgba(4,13,22,.3);color:#e9f4fa}
-.ik-fm-stage{position:relative;width:100%;max-width:400px;margin:0 auto;aspect-ratio:730/930;container-type:inline-size;cursor:default;-webkit-tap-highlight-color:transparent}
+.ik-fm-card{--fmbg:color-mix(in srgb,var(--dd-brand) 42%,#04090f);background:var(--fmbg);border-radius:30px;padding:0 0 12px;overflow:hidden;box-shadow:0 14px 34px rgba(4,13,22,.3);color:#e9f4fa}
+.ik-fm-card{padding-bottom:0!important}
+.ik-fm-foot{background:#f5f5f7;color:#1d1d1f;padding:12px 0 12px;margin-top:0}
+.ik-fm-foot .ik-fm-fuel{margin-top:0;background:#fff;border-color:#e0e0e6}
+.ik-fm-foot .ik-fm-fuel.on{background:#fff;border-color:var(--c);box-shadow:0 0 0 1px color-mix(in srgb,var(--c) 35%,transparent)}
+.ik-fm-foot .ik-fm-orb{box-shadow:none}
+.ik-fm-foot .ik-fm-k{color:#6e6e73}
+.ik-fm-foot .ik-fm-title{color:color-mix(in srgb,var(--c) 55%,#1d1d1f);text-shadow:none}
+.ik-fm-foot .ik-fm-since b{color:#1d1d1f}
+.ik-fm-foot .ik-fm-since small{color:#6e6e73}
+.ik-fm-foot .ik-fm-chev{border-color:#d2d2d7;background:#fff}
+.ik-fm-foot .ik-fm-chev svg{stroke:#3a3a3c}
+.ik-fm-foot .ik-fm-drawer{background:#22252a;border:0;border-radius:16px;margin:8px 12px 0}
+.ik-fm-foot .ik-fm-key{color:#6e6e73}
+.ik-fm-foot .ik-fm-key b{color:#1d1d1f}
+.ik-fm-foot .ik-fm-key i{box-shadow:none!important}
+.ik-fm-foot .ik-fm-legal{color:#6e6e73}
+.ik-fm-foot .ik-fm-legal.first{background:#fff;color:#48484a}
+.ik-fm-foot .ik-fm-link{color:#0a58b8}
+.ik-fm-foot .ik-fm-ok{background:#fff;border-color:#d2d2d7;color:#1d1d1f}
+.ik-fm-stage{background:radial-gradient(75% 55% at 50% 38%,color-mix(in srgb,var(--dd-accent2) 38%,var(--fmbg)) 0%,transparent 100%);position:relative;width:100%;max-width:400px;margin:0 auto;aspect-ratio:730/930;container-type:inline-size;cursor:default;-webkit-tap-highlight-color:transparent}
 .ik-fm-stage img{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:.95;mix-blend-mode:screen;user-select:none;-webkit-user-drag:none}
 .ik-fm-stage{contain:layout paint}
 .ik-fm-vis{position:absolute;inset:0;pointer-events:none}
@@ -1036,7 +1079,7 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
   .ik-fm-cols{display:grid;grid-template-columns:minmax(0,430px) minmax(0,1fr);gap:20px;align-items:start}
   .ik-fm-below,.ik-fm-below[data-closed]{display:block;margin-top:0}
   .ik-fm-stage{max-width:none}
-  .ik-fm-add{display:none}
+  .ik-fm-switch .ik-fm-addgrp{display:none}
 }
 
 /* V5.4: desktop Today — a full-width banner (V5.5: replaced by the fuel map; kept for reference) */
@@ -1108,10 +1151,12 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
   .ik-tabbar{display:none}
   .ik-topnav{display:flex}
   .ik h1.ik-h1{font-size:40px}
+  .ik .ik-head1 h1.ik-h1{font-size:28px}
+  .ik .ik-head1 h1.ik-h1.sm{font-size:17px}
   .ik-todaygrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 16px;align-items:start}
 }
-@media (max-width:899px){ .dd-foot-body{padding-bottom:calc(90px + var(--dd-host-bottom,0px) + env(safe-area-inset-bottom))} }
-@media (max-width:420px){ .ik-rings svg{width:132px;height:132px} .ik-ringlegend .ik-v{font-size:19px} .ik h1.ik-h1{font-size:30px} .ik-rings{gap:12px} }
+@media (max-width:899px){ .dd-foot-body{padding-bottom:calc(76px + env(safe-area-inset-bottom))} }
+@media (max-width:420px){ .ik-rings svg{width:132px;height:132px} .ik-ringlegend .ik-v{font-size:19px} .ik h1.ik-h1{font-size:30px} .ik .ik-head1 h1.ik-h1{font-size:24px} .ik .ik-head1 h1.ik-h1.sm{font-size:15px} .ik-rings{gap:12px} }
 
 /* sheets the app opens */
 .dd-sheet.ik-sheet{max-width:560px;background:var(--ik-grey);padding:18px}
@@ -1280,14 +1325,17 @@ input[type=time].ik-input::-webkit-date-and-time-value,input[type=date].ik-input
 .ik-cup span{font-size:11.5px;color:var(--ik-ink2);text-align:center;line-height:1.2}
 
 /* medications and vitamins */
-.ik-doses{padding:12px 16px 6px}
+.ik-doses{padding:8px 14px 2px}
 .ik-meds{border-left:5px solid var(--ik-protein)}
 .ik-doseshead{gap:8px;margin:0 0 4px}
-.ik-doseshead b{font-size:16px}
-.ik-doseico{font-size:20px}
-.ik-dose{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;border-top:1px solid var(--ik-line);padding:10px 0;font:inherit;color:inherit;text-align:left;cursor:pointer;min-height:56px}
-.ik-dosechk{flex:none;width:30px;height:30px;border-radius:50%;border:2px solid #c7c7cc;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:15px}
-.ik-dosestate{font-size:12.5px;font-weight:700;color:var(--ik-ink2);white-space:nowrap}
+.ik-doseshead b{font-size:14px}
+.ik-doseico{font-size:16px}
+.ik-dose{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;border-top:1px solid var(--ik-line);padding:4px 0;font:inherit;font-size:13.5px;color:inherit;text-align:left;cursor:pointer;min-height:32px;gap:10px}
+.ik-dose br{display:none}
+.ik-dose .ik-small{font-size:12px}
+.ik-dose .ik-grow{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ik-dosechk{flex:none;width:24px;height:24px;border-radius:50%;border:2px solid #c7c7cc;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:13px}
+.ik-dosestate{font-size:12px;font-weight:700;color:var(--ik-ink2);white-space:nowrap}
 .ik-dose.due .ik-dosechk{border-color:var(--ik-amber)}
 .ik-dose.due .ik-dosestate{color:var(--ik-amber)}
 .ik-dose.taken{opacity:.5}
@@ -1301,7 +1349,6 @@ input[type=time].ik-input::-webkit-date-and-time-value,input[type=date].ik-input
 @media (prefers-reduced-motion:reduce){.ik-radarshape.ik-anim{animation:none}}
 
 </style>
-<meta name="robots" content="noindex,nofollow">
 </head>
 <body>
 <noscript><p style="padding:20px;font-family:sans-serif">Intake needs JavaScript turned on in your browser to work.</p></noscript>
@@ -1323,12 +1370,13 @@ input[type=time].ik-input::-webkit-date-and-time-value,input[type=date].ik-input
   </div>
   <nav class="ik-topnav" aria-label="Views">
     <div class="ik-seg" role="tablist" aria-label="Views">
-      <button role="tab" data-go="today" aria-selected="true">Today</button>
+      <button role="tab" data-go="today" aria-selected="true">Now</button>
       <button role="tab" data-go="trends" aria-selected="false">Trends</button>
       <button role="tab" data-go="advice" aria-selected="false">Advice</button>
     </div>
     <span class="ik-grow"></span>
     <button class="ik-btn" data-act="photo">📷 Snap my food</button>
+    <button class="ik-glass" data-act="water1" aria-label="Log a glass of water, 250 mL" title="Log a glass of water (250 mL)"><svg width="20" height="22" viewBox="0 0 20 22" aria-hidden="true"><path d="M3 2h14l-1.6 16.2a2 2 0 0 1-2 1.8H6.6a2 2 0 0 1-2-1.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M4.3 9h11.4l-.9 9.1a1.2 1.2 0 0 1-1.2 1H6.4a1.2 1.2 0 0 1-1.2-1z" fill="currentColor" opacity=".35"/></svg></button>
     <button class="ik-btn ghost" data-act="add">＋ Add food</button>
     <button class="ik-btn ghost" data-act="helper" data-dd-helper-toggle>💬 <span data-helper-name>DigiBot</span></button>
   </nav>
@@ -1339,7 +1387,7 @@ input[type=time].ik-input::-webkit-date-and-time-value,input[type=date].ik-input
 
   <nav class="ik-tabbar" data-dd-appbar aria-label="Main">
     <button class="ik-tab" data-go="today" aria-current="page">
-      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="8"/></svg>Today</button>
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="8"/></svg>Now</button>
     <button class="ik-tab" data-go="trends">
       <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 20V10M10 20V4M15 20v-7M20 20v-11"/></svg>Trends</button>
     <button class="ik-cam" data-act="photo" aria-label="Snap my food (press and hold for more ways to add)">
@@ -8345,6 +8393,34 @@ function ikCupSvg(ml, maxMl) {
   return '<svg viewBox="0 0 40 46" width="34" height="40" aria-hidden="true"><path d="M' + (20 - w / 2) + "," + top + " L" + (20 + w / 2) + "," + top + " L" + (20 + w / 2 - inset) + ",44 L" + (20 - w / 2 + inset) + ',44 Z" fill="var(--ik-water-soft)" stroke="var(--ik-water)" stroke-width="2" stroke-linejoin="round"/>' +
     '<path d="M' + (20 - w / 2 + inset * 0.4) + "," + (top + h * 0.35) + " L" + (20 + w / 2 - inset * 0.4) + "," + (top + h * 0.35) + " L" + (20 + w / 2 - inset) + ",44 L" + (20 - w / 2 + inset) + ',44 Z" fill="var(--ik-water)" opacity=".75"/></svg>';
 }
+/* 0.5.7 (Oran, 2026-10-16): a small water glass beside Add. One tap logs 250 mL, no cards to open. */
+function ikGlassBtn(cls) {
+  return '<button class="ik-glass ' + (cls || "") + '" data-act="water1" aria-label="Log a glass of water, 250 mL" title="Log a glass of water (250 mL)">' +
+    '<svg width="20" height="22" viewBox="0 0 20 22" aria-hidden="true"><path d="M3 2h14l-1.6 16.2a2 2 0 0 1-2 1.8H6.6a2 2 0 0 1-2-1.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>' +
+    '<path d="M4.3 9h11.4l-.9 9.1a1.2 1.2 0 0 1-1.2 1H6.4a1.2 1.2 0 0 1-1.2-1z" fill="currentColor" opacity=".35"/></svg></button>';
+}
+/* 0.5.7: press and hold the water glass → three cups fly out beneath it, each showing its mL. Tap one to log it. */
+function ikCupFly(btn) {
+  ikCupFlyClose();
+  var cups = ikCups(dd.getData()), r = btn.getBoundingClientRect(), fly = document.createElement("div");
+  fly.id = "ikCupFly"; fly.className = "ik-cupfly"; fly.setAttribute("role", "menu");
+  fly.innerHTML = cups.map(function (c, i) {
+    return '<button class="ik-cupfly-b" role="menuitem" data-flycup="' + i + '" style="animation-delay:' + (i * 45) + 'ms" aria-label="Add ' + c.ml + ' mL (' + ikEsc(c.name) + ')"><b>' + c.ml + '</b><span>mL</span></button>';
+  }).join("");
+  document.body.appendChild(fly);
+  var w = fly.offsetWidth, left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+  fly.style.left = left + "px"; fly.style.top = (r.bottom + 8) + "px";
+  fly.addEventListener("click", function (e) { var b = e.target.closest("[data-flycup]"); if (!b) return; e.stopPropagation(); var i = +b.getAttribute("data-flycup"); ikCupFlyClose(); ikCupAdd(i); });
+  setTimeout(function () { document.addEventListener("pointerdown", ikCupFlyOutside, true); }, 0);
+}
+function ikCupFlyOutside(e) { var f = document.getElementById("ikCupFly"); if (f && !f.contains(e.target)) ikCupFlyClose(); }
+function ikCupFlyClose() { var f = document.getElementById("ikCupFly"); if (f) f.remove(); document.removeEventListener("pointerdown", ikCupFlyOutside, true); }
+var IK_GLASS_LP = false;
+function ikWater250() {
+  var day = IK_UI.day || ikToday();
+  IK_UI.lastWater = { day: day, ml: 250, at: Date.now() };
+  ikAddWater(250);
+}
 function ikHydrationCard(d, t, week, day) {
   var tg = ikTarget(d, "drinks") || 2200, ml = t.drinksMl || 0, cups = ikCups(d), maxMl = Math.max.apply(null, cups.map(function (c) { return c.ml; }));
   var imp = d.settings && d.settings.units === "imperial";
@@ -8459,7 +8535,7 @@ function ikDoseCard(d, day, kind) {
       var state = x.dose ? "Taken " + ikNiceTime(x.dose.at) : due ? "Due" : missed ? "Not marked" : ikNiceTime(x.info.time);
       return '<button class="ik-dose' + (x.dose ? " taken" : due ? " due" : "") + '" data-dose="' + ikEsc(x.r.id) + "|" + ikEsc(x.slot) + '" aria-pressed="' + !!x.dose + '" aria-label="' + ikEsc(x.r.name + ", " + x.info.label + ", " + state + (x.dose ? ". Tap to mark as not taken." : ". Tap when taken.")) + '">' +
         '<span class="ik-dosechk" aria-hidden="true">' + (x.dose ? "✓" : "") + '</span><span class="ik-grow"><b>' + ikEsc(x.r.name) + "</b>" + (x.r.dose ? '<span class="ik-small"> · ' + ikEsc(x.r.dose) + "</span>" : "") +
-        '<br><span class="ik-small">' + x.info.icon + " " + ikEsc(x.info.label) + "</span></span>" + '<span class="ik-dosestate">' + ikEsc(state) + "</span></button>";
+        '<span class="ik-small"> · ' + x.info.icon + " " + ikEsc(x.info.label) + "</span></span>" + '<span class="ik-dosestate">' + ikEsc(state) + "</span></button>";
     }).join("") + "</section>";
 }
 function ikRegSetupCard() {
@@ -9454,20 +9530,25 @@ function ikRenderToday(ctx) {
   var es = ikEntriesOn(d, day).slice().sort(function (a, b) { return String(a.time).localeCompare(String(b.time)); });
   var t = ikTotals(es, d), name = dd.helper ? dd.helper.name() : "DigiBot", hide = ikHideKcal(d);
   var p = d.settings.profile || {};
-  var h = '<div class="ik-head"><div class="ik-grow"><div class="ik-eyebrow">' + ikEsc(ikLongDate(day)) + '</div><h1 class="ik-h1">' + ikEsc(ikDayName(day).replace(/^(\w+), .*/, "$1")) + "</h1></div>" +
-    '<div class="ik-daynav">' + (isToday ? "" : '<button class="ik-backtoday" data-today aria-label="Back to today">Today</button>') + '<button data-day="-1" aria-label="Day before">‹</button><button data-day="1" aria-label="Next day"' + (isToday ? " disabled" : "") + ">›</button></div></div>";
+  var isNow = isToday;   // 0.5.7: opening the app shows NOW; ‹ goes to Today (the whole day), then yesterday and before
+  /* 0.5.7: one slim line: title + date on the left, Now chip and arrows on the right. Never wraps. */
+  var isYest = day === ikAddDays(ikToday(), -1), plainTitle = isNow ? "Now" : isYest ? "Yesterday" : ikParseDay(day).toLocaleDateString("en-CA", { weekday: "long" });
+  var subDate = (isNow || isYest ? ikParseDay(day).toLocaleDateString("en-CA", { weekday: "short" }) + ", " : "") + ikShortDate(day);
+  var h = '<div class="ik-head ik-head1"><div class="ik-titleline"><h1 class="ik-h1' + (isNow ? "" : " sm") + '">' + ikEsc(plainTitle) + '</h1><span class="ik-eyebrow">' + ikEsc(subDate) + "</span></div>" +
+    '<div class="ik-daynav">' + (isNow ? "" : '<button class="ik-backtoday" data-today aria-label="Back to now">Now</button>') + '<button data-day="-1" aria-label="Day before">‹</button><button data-day="1" aria-label="Next day"' + (isNow ? " disabled" : "") + ">›</button></div></div>";
   h += ikFuelMap(d, t, ikDaySeries(d, ikDaysBack(day, 7)), day, es);   // V5.5: the fuel map, top and centre
-  if (ikShow(d, "meds")) h += ikDoseCard(d, day, "med");   // V5: medications next
+  var pre = "";   // 0.5.7: these cards now come after the food list
+  if (ikShow(d, "meds")) pre += ikDoseCard(d, day, "med");   // V5: medications next
   if (!ikProfileReady(p)) {
-    h += '<div class="ik-card ik-setup"><b>Make the targets yours</b><p class="ik-small" style="margin:4px 0 10px">Right now your targets are Canada\'s Daily Values. Add your age, height, weight and how active you are for amounts made for you. About a minute.</p>' +
+    pre += '<div class="ik-card ik-setup"><b>Make the targets yours</b><p class="ik-small" style="margin:4px 0 10px">Right now your targets are Canada\'s Daily Values. Add your age, height, weight and how active you are for amounts made for you. About a minute.</p>' +
       '<button class="ik-btn" data-act="profile">Set my targets</button></div>';
   } else if (!ikCook(d).set) {   // V4
-    h += '<div class="ik-card ik-setup"><b>How do you cook?</b><p class="ik-small" style="margin:4px 0 10px">Food tables count home cooking with no salt and no oil. Tell Intake how much you salt and what oil you use, and your sodium and fat numbers get closer to real. About 30 seconds.</p>' +
+    pre += '<div class="ik-card ik-setup"><b>How do you cook?</b><p class="ik-small" style="margin:4px 0 10px">Food tables count home cooking with no salt and no oil. Tell Intake how much you salt and what oil you use, and your sodium and fat numbers get closer to real. About 30 seconds.</p>' +
       '<div class="ik-quick" style="margin:0"><button class="ik-btn" data-act="cooking">Set how I cook</button><button class="ik-btn ghost" data-act="cookdefault">Light salt, a little oil</button></div></div>';
   }
   if (!isToday && !es.length && ikFirstDay(d) && day >= ikFirstDay(d)) {   // V4: a past day with nothing logged
     var fk = ikFillMap(d)[day], av = ikAvgDay(d);
-    h += fk ? '<div class="ik-card ik-setup"><b>' + (fk === "fast" ? "Marked as a fasting day" : "Filled with your average day") + '</b><p class="ik-small" style="margin:4px 0 10px">' +
+    pre += fk ? '<div class="ik-card ik-setup"><b>' + (fk === "fast" ? "Marked as a fasting day" : "Filled with your average day") + '</b><p class="ik-small" style="margin:4px 0 10px">' +
         (fk === "fast" ? "It counts as zero in your trends, and toward fasting." : "Trends count it as your usual day" + (av ? ", from the " + av.avgOf + " days you logged recently" : "") + ".") + " Snap or add food here and the real food counts instead.</p>" +
         '<button class="ik-btn ghost" data-fill="clear" data-scope="day">Undo</button></div>'
       : '<div class="ik-card ik-setup"><b>Nothing logged this day</b><p class="ik-small" style="margin:4px 0 10px">Left blank, it\'s skipped in your averages. Did you fast, or eat about like usual?</p>' +
@@ -9480,31 +9561,33 @@ function ikRenderToday(ctx) {
   var week = ikDaySeries(d, ikDaysBack(day, 7));
   /* V5.4 (Oran, 2026-10-16): on computers the top of Today is one full-width banner: the balance chart and the
      nutrient rows side by side. On phones it's the same order as before (the rows stay further down). */
-  h += '<div class="ik-todaygrid"><div>';
+  var rest = "";   // everything below the food list
   /* V3 (2026-10-13): the instrument cluster. Warnings first, then gauges for the health settings the person
      turned on, then the everyday body gauges, the macros, drinks and vitamins. Any of them can be hidden. */
   /* V5 (Oran, 2026-10-15): medications first, then the nutrient balance chart, vitamins, warnings, one grouped
      card of body & health gauges, hydration, nutrient rows and small bars. */
-  if (ikShow(d, "supps")) h += ikRegItems(d).length ? ikDoseCard(d, day, "supp") : ikRegSetupCard();
-  if (ikShow(d, "alerts")) h += ikAlertsCard(d, es);
+  if (ikShow(d, "supps")) rest += ikRegItems(d).length ? ikDoseCard(d, day, "supp") : ikRegSetupCard();
+  if (ikShow(d, "alerts")) rest += ikAlertsCard(d, es);
   var tiles = ikHealthCluster(d, t, week, day, es).concat(ikBodyCluster(d, t, day, isToday));
-  if (tiles.length) h += '<div class="ik-sechead">Body &amp; health</div><section class="ik-cluster">' + tiles.join("") + "</section>";
+  if (tiles.length) rest += '<div class="ik-sechead">Body &amp; health</div><section class="ik-cluster">' + tiles.join("") + "</section>";
   // V5.4: hydration, then caffeine and alcohol (only when there is some), then the nutrient rows. On computers they sit in the banner.
-  h += (ikShow(d, "drinks") ? ikHydrationCard(d, t, week, day) : "") + ikExtrasCard(d, t, day) + ikDetailList(d, t, week, day);
-  if (ikShow(d, "vitmin")) h += ikMinisHtml(d, t);
+  rest += ikExtrasCard(d, t, day) + ikDetailList(d, t, week, day);
+  if (ikShow(d, "vitmin")) rest += ikMinisHtml(d, t);
   if (ikShow(d, "tip")) {
     var tip = ikTopTip(d, day);
-    h += '<section class="ik-tip"><svg class="ik-tipring" width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12" fill="none" stroke="var(--ik-vit)" stroke-width="7"/></svg>' +
+    rest += '<section class="ik-tip"><svg class="ik-tipring" width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12" fill="none" stroke="var(--ik-vit)" stroke-width="7"/></svg>' +
       '<div class="ik-tiptext"><b>' + ikEsc(name) + ":</b> " + ikEsc(tip.text) + (tip.k ? '<br><button class="ik-link" data-ask="tip" data-k="' + ikEsc(tip.k) + '">Ask ' + ikEsc(name) + " about this</button>" : "") + "</div></section>";
   }
-  h += '<div class="ik-row" style="justify-content:center;flex-wrap:wrap;gap:4px 14px;margin:0 0 14px"><button class="ik-link" data-act="charts">📊 Choose my charts</button><button class="ik-link" data-act="gauges">🎛️ Health &amp; other gauges</button></div>';
-  h += "</div><div>";
+  rest += '<div class="ik-row" style="justify-content:center;flex-wrap:wrap;gap:4px 14px;margin:0 0 14px"><button class="ik-link" data-act="charts">📊 Choose my charts</button><button class="ik-link" data-act="gauges">🎛️ Health &amp; other gauges</button></div>';
   // the food list, grouped by part of day; drinks and supplements together at the end
+  h += '<div class="ik-todaygrid"><div>';
   var groups = { morning: [], afternoon: [], evening: [], other: [] };
   es.forEach(function (e) { (e.kind === "drink" || e.kind === "supplement" ? groups.other : groups[e.part] || groups.afternoon).push(e); });
   var listHtml = "";
-  ["morning", "afternoon", "evening", "other"].forEach(function (g) {
+  // 0.5.7: newest first, so the latest food is right under the fuel map
+  ["evening", "afternoon", "morning", "other"].forEach(function (g) {
     if (!groups[g].length) return;
+    groups[g].reverse();
     listHtml += '<div class="ik-group">' + (g === "other" ? "Drinks &amp; supplements" : IK_PARTS[g]) + "</div>";
     groups[g].forEach(function (e) {
       var et = ikTotals([e], d), icon = e.kind === "drink" ? "drink" : e.kind === "supplement" ? "supplement" : e.part;
@@ -9515,12 +9598,14 @@ function ikRenderToday(ctx) {
         (e.note ? '<br><span class="ik-enote">' + ikEsc(e.note) + "</span>" : "") + ikEntryBadges(e, d) + '</span>' + (ikEntryBars(e, et, d) || '<span class="ik-ekcal">' + right + "</span>") + "</button>";
     });
   });
-  h += '<div class="ik-foodhead"><h2 class="ik-h2">Food</h2><button class="ik-btn" data-act="add">＋ Add food</button></div>' + (es.length ? '<p class="ik-small" style="margin:-6px 2px 8px">Each bar is how much of your day\'s target that meal gave you.</p>' : "");
+  h += '<div class="ik-foodhead"><h2 class="ik-h2">Food</h2><span class="ik-fm-addgrp">' + ikGlassBtn("sm") + '<button class="ik-btn" data-act="add">＋ Add food</button></span></div>' + (es.length ? '<p class="ik-small" style="margin:-6px 2px 8px">Each bar is how much of your day\'s target that meal gave you.</p>' : "");
   h += '<section class="ik-list">' + (listHtml || '<div class="ik-empty">Nothing logged ' + (isToday ? "yet today" : "on this day") + '.<br>Tap the camera to snap your food, or ＋ Add food.</div>') + "</section>";
   h += '<div class="ik-quick"><button class="ik-btn" data-act="photo">📷 Snap my food</button><button class="ik-btn ghost" data-act="add">＋ Add food</button></div>';
-  h += "</div></div>";
+  // 0.5.7: food first (right under the fuel map), then the other cards; hydration is a folded section near the bottom
+  var hyd = ikShow(d, "drinks") ? '<details class="ik-card ik-more" id="ikHyd"' + (IK_UI.openHyd ? " open" : "") + '><summary>💧 Hydration and cup sizes</summary>' + ikHydrationCard(d, t, week, day).replace('class="ik-card ik-hyd"', 'class="ik-hyd"') + '<p class="ik-small" style="margin:10px 0 0">Note: press and hold the 💧 water glass at the top of your screen to pick a different glass size.</p></details>' : "";
+  h += "</div><div>" + pre + rest + hyd + "</div></div>";
   // every nutrient, folded away
-  h += '<details class="ik-card ik-more" id="ikAllN"' + (IK_UI.openAll ? " open" : "") + '><summary>Every nutrient ' + (isToday ? "today" : "this day") + "</summary>" + ikNutrientList(d, t, 1, day) + "</details>";
+  h += '<details class="ik-card ik-more" id="ikAllN"' + (IK_UI.openAll === false ? "" : " open") + '><summary>Every nutrient ' + (isToday ? "today" : "this day") + "</summary>" + ikNutrientList(d, t, 1, day) + "</details>";
   var host = ctx.ui.$("ikToday"), oldVis = host.querySelector(".ik-fm-vis");
   host.innerHTML = h;
   var newVis = host.querySelector(".ik-fm-vis");   // V5.5c: same picture and light? keep the running one, so nothing restarts
@@ -10022,7 +10107,7 @@ function ikFuelMap(d, t, week, day, es) {
   var h = '<section class="ik-fm' + (U.open ? " open" : "") + '">';
   h += '<div class="ik-fm-switch"><div class="ik-fm-views" role="tablist" aria-label="Top of Today">' +
     '<button role="tab" data-fm="view:map" aria-selected="' + (view === "map") + '">Fuel map</button><button role="tab" data-fm="view:chart" aria-selected="' + (view === "chart") + '">Balance chart</button></div>' +
-    '<button class="ik-fm-add" data-act="add" aria-label="Add food or a drink">＋ Add</button></div>';
+    '<span class="ik-fm-addgrp">' + ikGlassBtn() + '<button class="ik-fm-add" data-act="add" aria-label="Add food or a drink">＋ Add</button></span></div>';
   if (!set.fmIntro && view === "map") h += '<div class="ik-fm-intro"><span>Where your food is going. Each system lights up as it gets what it needs. Tap one to see what feeds it.</span><button class="ik-x" data-fm="intro" aria-label="Close this note">✕</button></div>';
   h += '<div class="ik-fm-cols"><div class="ik-fm-left">';
   if (view === "chart") h += ikRadarCard(d, t, week, day);
@@ -10079,6 +10164,7 @@ function ikFuelMap(d, t, week, day, es) {
     h += "</div>";   // stage
     // Fuel in
     var fon = U.open && U.pick === "fuel";
+    h += '<div class="ik-fm-foot">';   // 0.5.7: a neutral light panel, so the colours never fight the person's theme
     h += '<div class="ik-fm-fuel' + (fon ? " on" : "") + '" style="--c:' + ST.c + '">' +
       '<button class="ik-fm-fuelbtn" data-fm="pick:fuel" aria-pressed="' + fon + '" aria-label="Fuel in: ' + ikEsc(ST.title) + '"><span class="ik-fm-orb"><svg viewBox="0 0 24 24" fill="none" stroke="#0b1520" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span>' +
         '<span class="ik-grow"><span class="ik-fm-k">' + (F.past ? "Fuel in" : "Fuel in · running on") + '</span><span class="ik-fm-title">' + ikEsc(ST.title) + "</span></span>" +
@@ -10089,7 +10175,7 @@ function ikFuelMap(d, t, week, day, es) {
       '<div class="ik-fm-key"><b>%</b> = ' + (N.days ? "nourished, last " + N.days + " day" + (N.days === 1 ? "" : "s") : "fed so far today") + ':<span><i style="background:#a8f6ff;box-shadow:0 0 8px #6fe7ff"></i>thriving</span><span><i style="background:#3f8cff"></i>steady</span><span><i style="background:#ffb340"></i>low</span></div>';
     h += set.fmAck ? '<p class="ik-fm-legal">Estimates to help you understand your food, not medical advice. <button class="ik-fm-link" data-fm="sources">How it works &amp; sources</button></p>'
       : '<div class="ik-fm-legal first"><span>The fuel map is an estimate built from published nutrition research, not medical advice or a test. It\'s here to give you a better picture than no tool at all. <button class="ik-fm-link" data-fm="sources">How it works &amp; sources</button></span><button class="ik-fm-ok" data-fm="ack">Got it</button></div>';
-    h += "</div>";   // card
+    h += "</div></div>";   // foot, card
   }
   h += '</div><div class="ik-fm-right">';
   // the panel: folded away on phones until something is tapped; always shown beside the map on computers
@@ -10413,7 +10499,7 @@ function ikRender(ctx) {
   if (dd.helper && dd.helper.paintNames) dd.helper.paintNames();
 }
 function ikGo(view) {
-  if (view === "today" && IK_UI.view === "today") IK_UI.day = ikToday();   // V5.6c: tapping Today again jumps back to today
+  if (view === "today" && IK_UI.view === "today") { IK_UI.day = ikToday(); IK_UI.dayview = false; }   // V5.6c: tapping Today again jumps back to today
   IK_UI.view = view; ikRender(ikCtx());
   try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) { window.scrollTo(0, 0); }
 }
@@ -11425,9 +11511,9 @@ function ikOpenSupps() {
     dd.ui.closeSheet(); dd.ui.toast("Added " + r.label + ".");
   }); });
 }
-function ikAddWater(ml) {
+function ikAddWater(ml, opts) {
   var day = IK_UI.day || ikToday(), d = dd.getData();
-  var w = ikEntriesOn(d, day).filter(function (e) { return e.kind === "drink" && e.items.length === 1 && e.items[0].ref === "t:water"; })[0];
+  var w = (opts && opts.newEntry) ? null : ikEntriesOn(d, day).filter(function (e) { return e.kind === "drink" && e.items.length === 1 && e.items[0].ref === "t:water"; })[0];
   dd.update(function (dt) {
     if (w) dt.entries.forEach(function (e) { if (e.id === w.id) { e.items[0].g = (Number(e.items[0].g) || 0) + ml; e.time = day === ikToday() ? ikNowTime() : e.time; } });
     else { var t = day === ikToday() ? ikNowTime() : "12:00"; dt.entries.push({ id: dd.ui.uid("e"), day: day, time: t, part: ikPartOf(t), kind: "drink", name: "Water", items: [{ ref: "t:water", g: ml, name: "Water" }], src: "typed" }); }
@@ -11802,7 +11888,7 @@ const DD_PROGRAM = {
   id: "intake",          // working name: may change until the first sale, never after (it names the saved data)
   name: "Intake",
   
-  version: "0.5.6",
+  version: "0.5.7",
   barTagline: false,
   iconImg: "data:image/webp;base64,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",   // V5.1: Oran's app icon (shown in the top bar and menu)     // V5 (Oran, 2026-10-15): no tagline line in the top bar
   schemaVersion: 1,
@@ -11870,10 +11956,12 @@ const DD_PROGRAM = {
   suggestions: ["I forgot to add lunch", "How much protein should I have?", "What have I been low on this week?", "I had two eggs and a slice of rye toast"],
 
   knowledge: "Intake is a food tracker. The person snaps photos of food (the photo screen sends the photo to the AI once, then code works out every nutrient from the food table) or tells {name} what they ate. " +
-    "Screens: Today (a medications checklist, a nutrient balance chart: a radar where each spoke is a nutrient as % of target with a 7-day average shape behind it, plus sugar, saturated fat and sodium limit bars; a vitamins & supplements checklist; a Body & health card of gauges; Hydration with three cup buttons; nutrient rows; small bars; the food list grouped Morning, Afternoon, Evening, then Drinks & supplements; a tip), " +
+    "Screens: Today (a medications checklist, a nutrient balance chart: a radar where each spoke is a nutrient as % of target with a 7-day average shape behind it, plus sugar, saturated fat and sodium limit bars; a vitamins & supplements checklist; a Body & health card of gauges; the fuel map or balance chart at the top with a small 💧 button next to Add that logs 250 mL in one tap; then the food list grouped Morning, Afternoon, Evening, then Drinks & supplements; then medications, vitamins, the Body & health gauges, a collapsed Hydration section with the cup buttons, nutrient rows, small bars and a tip), " +
     "MEDICATIONS & VITAMINS (V5): the person sets a daily checklist (menu → My medications & vitamins): name, dose, times (morning, noon, evening, bedtime or a set time), days, and what's in each dose (any nutrient the app tracks, e.g. 27 g protein in a scoop of protein powder, or sodium in a medicine). Tapping one marks it taken (it greys out; tap again to undo). A vitamin linked to nutrients logs a supplement entry. YOU CAN SET IT UP: when they ask to add, change or remove a checklist item (a vitamin, protein powder, medication), do it with save_checklist_item / remove_checklist_item, including what each dose contains (any tracked nutrient). Never tell them to do it themselves through the menu. Use list_checklist to see it. PHOTOS OF BOTTLES: when they don't know what's in a dose, tell them to send a photo of the bottle, box, Supplement Facts panel or barcode with the + button in this chat (then pick 💊 Vitamin or medicine), or tap 📷 Snap a bottle or label in My medications & vitamins: the app reads it and fills in the item for them to check and save. If a photo comes with their message, read it and use save_checklist_item with the amounts printed for one dose. Use mark_dose when they say they took something on the list. Cup sizes on the Hydration card: set_cups. Water: log_water. Never give dosing advice: that is for their doctor or pharmacist. " +
     "Trends (day, week, month or year: charts for energy, protein/carbs/fat, kinds of fat, vitamins and minerals; what's running low) and Advice (weekly check-in, running low, upper limits, 'How much should I have?'). " +
     "The menu (the app's name, top left) has Snap my food, Add by typing, Snap a Nutrition Facts label, My medications & vitamins (with 📷 Snap a bottle or label), My cups, My profile & targets, My recipes & foods, About the numbers. " +
+    "NEVER CHANGE AN OLD ENTRY WITHOUT ASKING (highest priority rule): logging is ALWAYS a new entry. When the person says they ate or drank something, call log_food or log_water, even if a similar meal exists on an earlier day or earlier today. Never use change_entry or remove_entry unless the person plainly asked to change or remove a specific old entry. If you think they might mean an existing entry, do not guess: name the exact entry (what it is and when it was logged) and ask 'Do you want me to change this one, or add a new entry?'. Touch the old entry only after they say to. This applies to food, drinks and everything else. The program also asks them to confirm every change or removal. " +
+    "EVERYTHING THE PERSON CAN DO BY TAPPING, YOU CAN DO BY REQUEST: log or change food and water, quick adds (save_quick_add, remove_quick_add), cups, targets, profile, how they cook (set_cooking), how they like to eat (set_eating), display settings: units, hiding calories, fuel map or balance chart, body shown (set_display), marking days as fasting or average (mark_days), their recipes and foods (save_recipe, save_my_food, remove_my_food), the checklist, health tracking, the look (colours), opening Trends, Advice or the export screen (open_screen). Never tell them to do it themselves. " +
     "RULES: Numbers come from the program's code, never from you. To know amounts or totals, call get_nutrients or get_patterns and quote their numbers. Never calculate nutrients yourself. " +
     "To log food the person describes, call log_food with ids from the FOOD LIST below and your best gram estimate (use the measures: 1 cup = 250 mL). For something not in the list, pass its name with your per-100 g estimates: it's saved and marked 'estimated'. " +
     "FORGOTTEN OR EARLIER MEALS: when the person tells you about food they had earlier, or says they forgot to log something, and hasn't said when, first ask ONE short question: 'About what time did you have it?' (and which day if it might not be today). " +
@@ -11956,6 +12044,15 @@ const DD_PROGRAM = {
 };
 
 /* Find an entry by id, or by words (never guess between two). */
+/* 0.5.7 (Oran, 2026-10-16, HIGH PRIORITY): the bot never changes or removes an existing entry without asking.
+   The question names the exact entry and when it was logged. The only time it skips the question is when the
+   person themselves opened that entry and tapped "Ask DigiBot to change this" (IK_UI.focusEntry). */
+function ikEntryWhen(e) { return (e.day === ikToday() ? "today" : ikDayName(e.day)) + " at " + ikNiceTime(e.time); }
+function ikAskBeforeTouch(args, ctx, verb) {
+  var r = ikPickEntry(ctx.data, args.entry); if (!r.entry) return null;   // a problem: run() explains it, nothing to confirm
+  if (IK_UI.focusEntry && IK_UI.focusEntry === r.entry.id) return null;
+  return "Do you want me to " + verb + " \u201c" + ikEntryName(r.entry, ctx.data) + "\u201d, logged " + ikEntryWhen(r.entry) + "? Yes changes this one. No leaves it alone and I'll add a new entry instead.";
+}
 function ikPickEntry(d, w) {
   w = String(w == null ? "" : w).trim(); if (!w) return { problem: "Say which entry." };
   var byId = d.entries.filter(function (e) { return e.id === w; }); if (byId.length) return { entry: byId[0] };
@@ -12030,7 +12127,8 @@ DD_PROGRAM.tools = [
       var t = ikTotals([e], dd.getData());
       return { ok: true, message: "Added to " + ikDayName(day) + " " + e.time + ": " + said.join(", ") + ". That's " + ikNum(t.v.kcal, 0) + " kcal and " + ikNum(t.v.protein, 0) + " g protein (worked out by the program)." + ikFlagsForAI(e, dd.getData()) };
     } },
-  { name: "change_entry", description: "Change an entry: the grams of one of its foods, its time, its part of day, add a food to it, or take a food out of it.",
+  { name: "change_entry", description: "Change an EXISTING entry: the grams of one of its foods, its time, its part of day, add a food to it, or take a food out of it. Only for when the person clearly asked to change a specific old entry. The program asks them to confirm first. For anything new, use log_food or log_water instead.",
+    confirm: function (args, ctx) { return ikAskBeforeTouch(args, ctx, "change"); }, yesLabel: "Yes, change that one",
     params: { entry: { type: "string", description: "The entry's id (best) or its name" }, food: { type: "string", description: "Which food in it to change (name)", optional: true },
       rename: { type: "string", description: "A new name for the whole meal, as the person says it", optional: true },
       grams: { type: "number", optional: true }, time: { type: "string", description: "24-hour time", optional: true }, part: { type: "string", enum: ["morning", "afternoon", "evening"], optional: true },
@@ -12064,7 +12162,8 @@ DD_PROGRAM.tools = [
       });
       return { ok: true, message: said.length ? "Changed " + ikEntryName(r.entry, ctx.data) + ": " + said.join(", ") + "." : "Nothing to change." };
     } },
-  { name: "remove_entry", description: "Remove one entry from the food list.",
+  { name: "remove_entry", description: "Remove one EXISTING entry from the food list. The program asks the person to confirm first.",
+    confirm: function (args, ctx) { return ikAskBeforeTouch(args, ctx, "remove"); }, yesLabel: "Yes, remove it",
     params: { entry: { type: "string", description: "The entry's id (best) or its name" } },
     run: function (args, ctx) {
       var r = ikPickEntry(ctx.data, args.entry); if (!r.entry) return { ok: false, message: r.problem };
@@ -12077,9 +12176,9 @@ DD_PROGRAM.tools = [
     confirm: function (args, ctx) { var day = ikDayArg(args.day), n = ikEntriesOn(ctx.data, day).length; return n ? "Remove all " + n + " entries from " + ikDayName(day).toLowerCase() + "?" : null; },
     yesLabel: "Yes, clear the day",
     run: function (args, ctx) { var day = ikDayArg(args.day); ctx.update(function (dt) { dt.entries = dt.entries.filter(function (e) { return e.day !== day; }); }); return { ok: true, message: ikDayName(day) + " is empty now." }; } },
-  { name: "log_water", description: "Add water the person drank, in mL (a glass is about 250 mL).",
+  { name: "log_water", description: "Log water the person drank, in mL (a glass is about 250 mL). Always adds a NEW water entry; it never changes an older one.",
     params: { ml: { type: "number", description: "Millilitres" } },
-    run: function (args) { var ml = Math.max(25, Math.min(3000, Number(args.ml) || 250)); ikAddWater(ml); return { ok: true, message: "Added " + ml + " mL of water." }; } },
+    run: function (args) { var ml = Math.max(25, Math.min(3000, Number(args.ml) || 250)); ikAddWater(ml, { newEntry: true }); return { ok: true, message: "Added a new entry: " + ml + " mL of water." }; } },
   { name: "get_nutrients", description: "Get the exact nutrient totals (worked out by the program) for a day, or daily averages for a week, month or year, against the person's targets. Use it for any question about amounts.",
     params: { period: { type: "string", enum: ["day", "week", "month", "year"] }, day: { type: "string", description: "The last day of the period, YYYY-MM-DD or 'today'", optional: true } },
     run: function (args, ctx) { return { ok: true, message: ikSpanReport(ctx.data, args.period || "day", args.day) }; } },
@@ -12273,12 +12372,112 @@ DD_PROGRAM.tools = [
     run: function (args, ctx) {
       var hits = ikSearch(args.query, ctx.data, 8);
       return { ok: true, message: hits.length ? hits.map(function (h) { var r = ikResolve(h.ref, ctx.data); return h.ref + " = " + h.label + (r && r.food && r.food.m[0] ? " (" + ikMeasureLabel(r.food.m[0][0]) + " = " + Math.round(r.food.m[0][1]) + " g)" : ""); }).join("\n") : "Nothing matches '" + args.query + "'." };
-    } }
+    } },
+  /* 0.5.7: parity with the screens — everything the person can tap, DigiBot can do. */
+  { name: "set_cooking", description: "Set how the person cooks (menu → How I cook): how much salt they use for each kind of food, and the cooking oil and how much.",
+    params: { salt_level: { type: "string", enum: ["heavy", "light", "low"], description: "Salt for all kinds of food, if they say one level for everything", optional: true },
+      oil: { type: "string", enum: ["olive", "canola", "butter", "coconut", "none"], optional: true }, oil_amount: { type: "string", enum: ["light", "heavy"], optional: true } },
+    run: function (args, ctx) {
+      var said = [];
+      ctx.update(function (dt) {
+        dt.settings = Object.assign({}, dt.settings); var ck = Object.assign({}, dt.settings.cooking || {}); ck.salt = Object.assign({}, ck.salt || {});
+        if (IK_SALT_LEVELS.some(function (l) { return l.k === args.salt_level; })) { IK_SALT_GROUPS.forEach(function (g) { ck.salt[g.k] = args.salt_level; }); said.push("salt " + args.salt_level); }
+        if (IK_OILS.some(function (o) { return o.k === args.oil; })) { ck.oil = args.oil; said.push(args.oil === "none" ? "no cooking oil" : args.oil + " oil"); }
+        if (IK_OIL_AMTS.some(function (o) { return o.k === args.oil_amount; })) { ck.oilAmt = args.oil_amount; said.push(args.oil_amount + " amount"); }
+        ck.set = true; dt.settings.cooking = ck;
+      });
+      return { ok: true, message: said.length ? "Cooking set: " + said.join(", ") + "." : "Marked how they cook as set; nothing else changed." };
+    } },
+  { name: "set_eating", description: "Set how the person likes to eat (menu → How I like to eat): the style, the daily carb maximum for low-carb, and their own notes.",
+    params: { style: { type: "string", enum: ["whole", "lowsugar", "plant", "lowcarb"], optional: true }, carb_max: { type: "number", description: "50, 75 or 100 g (low-carb only)", optional: true },
+      notes: { type: "string", description: "Their own words (replaces the old notes; empty clears)", optional: true } },
+    run: function (args, ctx) {
+      var said = [];
+      ctx.update(function (dt) {
+        dt.settings = Object.assign({}, dt.settings); var e = Object.assign({}, dt.settings.eating || {});
+        if (IK_STYLES.some(function (x) { return x.k === args.style; })) { e.style = args.style; said.push(args.style); }
+        if (IK_CARBMAX.indexOf(Number(args.carb_max)) >= 0) { e.carbMax = Number(args.carb_max); said.push("carb max " + args.carb_max + " g"); }
+        if (typeof args.notes === "string") { e.notes = args.notes.trim().slice(0, 400); said.push("notes saved"); }
+        dt.settings.eating = e;
+      });
+      IK_IDEAS_CACHE = {};
+      return { ok: true, message: said.length ? "How they like to eat: " + said.join(", ") + "." : "Nothing to change." };
+    } },
+  { name: "set_display", description: "Change how the app shows things: metric or imperial units, hiding calories, the top of Today (fuel map or balance chart), and which body the fuel map shows.",
+    params: { units: { type: "string", enum: ["metric", "imperial"], optional: true }, hide_calories: { type: "boolean", optional: true },
+      top_view: { type: "string", enum: ["fuel_map", "balance_chart"], optional: true }, body: { type: "string", enum: ["female", "male", "auto"], optional: true } },
+    run: function (args, ctx) {
+      var said = [];
+      ctx.update(function (dt) {
+        dt.settings = Object.assign({}, dt.settings);
+        if (args.units === "metric" || args.units === "imperial") { dt.settings.units = args.units; said.push(args.units + " units"); }
+        if (typeof args.hide_calories === "boolean") { dt.settings.hideCalories = args.hide_calories; said.push(args.hide_calories ? "calories hidden" : "calories shown"); }
+        if (args.top_view) { dt.settings.fmView = args.top_view === "balance_chart" ? "chart" : null; said.push(args.top_view.replace("_", " ") + " on top"); }
+        if (args.body) { dt.settings.fmBody = args.body === "female" ? "f" : args.body === "male" ? "m" : null; said.push("body: " + args.body); }
+      });
+      return { ok: true, message: said.length ? "Done: " + said.join(", ") + "." : "Nothing to change." };
+    } },
+  { name: "mark_days", description: "For days with nothing logged: mark them as a fasting day, fill them with the person's average day, or clear that mark.",
+    params: { days: { type: "array", items: { type: "string" }, description: "Days as YYYY-MM-DD, or 'today' / 'yesterday'" }, kind: { type: "string", enum: ["fast", "avg", "clear"] } },
+    run: function (args, ctx) {
+      var list = (args.days || []).map(ikDayArg).filter(function (x, i, a) { return a.indexOf(x) === i; });
+      if (!list.length) return { ok: false, message: "Which days?" };
+      if (args.kind === "avg" && !ikAvgDay(ctx.data)) return { ok: false, message: "Needs 3 logged days before an average day can be filled in." };
+      var busy = list.filter(function (x) { return ikEntriesOn(ctx.data, x).length; });
+      if (args.kind !== "clear" && busy.length) return { ok: false, message: "Food is already logged on " + busy.join(", ") + ". Nothing was changed." };
+      ikFillDays(list, args.kind === "clear" ? null : args.kind);
+      return { ok: true, message: list.length + " day(s) " + (args.kind === "clear" ? "cleared" : args.kind === "fast" ? "marked as fasting" : "filled with the average day") + "." };
+    } },
+  { name: "save_quick_add", description: "Add a one-tap quick add chip (a food or drink they have often) to Today, or change one with the same name.",
+    params: { name: { type: "string" }, food: { type: "string", description: "Food id from the FOOD LIST or r:/c: id, or words to search" }, grams: { type: "number", description: "Usual amount in grams (mL for drinks)", optional: true } },
+    run: function (args, ctx) {
+      var d = ctx.data, ref = ikRefFor(args.food, d); if (!ref) { var sh = ikSearch(args.food, d, 1)[0]; if (sh) ref = sh.ref; }
+      var r = ref ? ikResolve(ref, d) : null; if (!r) return { ok: false, message: "Couldn't find '" + args.food + "'." };
+      var nm = String(args.name || r.label).trim().slice(0, 40), g = args.grams > 0 ? Math.round(args.grams) : (r.food && r.food.m && r.food.m[0] ? Math.round(r.food.m[0][1]) : 100);
+      var old = ikQuickList(d).filter(function (o) { return o.name.toLowerCase() === nm.toLowerCase(); })[0];
+      var kind = r.kind === "drink" ? "drink" : "food";
+      ikQuickSave({ id: old ? old.id : ctx.ui.uid("q"), name: nm, icon: ikQuickIcon(nm, kind), kind: kind, items: [{ ref: ref, g: g, name: r.label }] });
+      return { ok: true, message: (old ? "Changed" : "Added") + " the quick add '" + nm + "' (" + g + " g)." };
+    } },
+  { name: "remove_quick_add", description: "Take a quick add chip off Today (by name). The person is asked to confirm.",
+    params: { name: { type: "string" } },
+    confirm: function (args, ctx) { var q = ikQuickList(ctx.data).filter(function (o) { return o.name.toLowerCase() === String(args.name || "").toLowerCase(); })[0]; return q ? "Take the quick add \u201c" + q.name + "\u201d off Today?" : null; },
+    yesLabel: "Yes, take it off",
+    run: function (args, ctx) {
+      var q = ikQuickList(ctx.data).filter(function (o) { return o.name.toLowerCase() === String(args.name || "").toLowerCase(); })[0];
+      if (!q) return { ok: false, message: "No quick add is called '" + args.name + "'." };
+      ikQuickRemove(q.id); return { ok: true, message: "Took '" + q.name + "' off the quick adds." };
+    } },
+  { name: "remove_my_food", description: "Delete one of the person's own foods or recipes (by name). Days that used it keep the numbers they had. The person is asked to confirm.",
+    params: { name: { type: "string" } },
+    confirm: function (args, ctx) { var d = ctx.data, lw = String(args.name || "").toLowerCase(); var x = (d.recipes || []).concat(d.customFoods || []).filter(function (o) { return o.name.toLowerCase() === lw; })[0]; return x ? "Delete \u201c" + x.name + "\u201d from your foods and recipes?" : null; },
+    yesLabel: "Yes, delete it",
+    run: function (args, ctx) {
+      var lw = String(args.name || "").toLowerCase(), d = ctx.data, rc = (d.recipes || []).filter(function (o) { return o.name.toLowerCase() === lw; })[0], cf = (d.customFoods || []).filter(function (o) { return o.name.toLowerCase() === lw; })[0];
+      if (!rc && !cf) return { ok: false, message: "None of their foods or recipes is called '" + args.name + "'." };
+      ctx.update(function (dt) { if (rc) dt.recipes = dt.recipes.filter(function (x) { return x.id !== rc.id; }); else dt.customFoods = dt.customFoods.filter(function (x) { return x.id !== cf.id; }); });
+      return { ok: true, message: "Deleted " + (rc || cf).name + "." };
+    } },
+  { name: "open_screen", description: "Take the person to a screen: today, trends, advice, or open the export (download my data) screen.",
+    params: { screen: { type: "string", enum: ["today", "trends", "advice", "export"] } },
+    run: function (args) { if (args.screen === "export") ikOpenExport(); else if (["today", "trends", "advice"].indexOf(args.screen) >= 0) ikGo(args.screen); else return { ok: false, message: "Unknown screen." }; return { ok: true, message: "Opened " + args.screen + "." }; } }
 ];
 
 /* ---------- wiring (once) ---------- */
 function ikMount(ctx) {
   var app = ctx.ui.$("ikApp");
+  app.addEventListener("toggle", function (e) { if (e.target && e.target.id === "ikHyd") IK_UI.openHyd = e.target.open; if (e.target && e.target.id === "ikAllN") IK_UI.openAll = e.target.open; }, true);
+  (function () {   // long-press on the water glass
+    var timer = null;
+    function clear() { if (timer) { clearTimeout(timer); timer = null; } }
+    app.addEventListener("pointerdown", function (e) {
+      var g = e.target.closest(".ik-glass"); if (!g || !app.contains(g)) return;
+      clear(); IK_GLASS_LP = false;
+      timer = setTimeout(function () { timer = null; IK_GLASS_LP = true; try { if (navigator.vibrate) navigator.vibrate(15); } catch (x) {} ikCupFly(g); }, 450);
+    });
+    ["pointerup", "pointercancel", "scroll"].forEach(function (n) { app.addEventListener(n, clear, true); });
+    app.addEventListener("contextmenu", function (e) { if (e.target.closest(".ik-glass")) e.preventDefault(); });
+  })();
   app.addEventListener("click", function (e) {
     var fmb = e.target.closest("[data-fm]"); if (fmb && app.contains(fmb)) { ikFmAct(fmb.getAttribute("data-fm")); return; }   // V5.5
     var src = e.target.closest("[data-src]"); if (src && app.contains(src)) { ikOpenSources(src.getAttribute("data-src"), IK_UI.day || ikToday()); return; }
@@ -12290,6 +12489,7 @@ function ikMount(ctx) {
     else if (act === "export") ikOpenExport();
     else if (act === "supp") ikOpenSupps();
     else if (act === "water") ikCupAdd(0);
+    else if (act === "water1") { if (IK_GLASS_LP) { IK_GLASS_LP = false; return; } ikWater250(); }
     else if (act === "cups") ikOpenCups();
     else if (act === "waterundo") ikWaterUndo();
     else if (act === "regimen") ikOpenRegimen();
@@ -12318,8 +12518,9 @@ function ikMount(ctx) {
       dd.ui.toast(fill === "clear" ? "Cleared." : (list.length === 1 ? "Done: " : list.length + " days ") + (fill === "fast" ? "marked as fasting." : "filled with your average day."), 3000);
       return;
     }
-    if (b.hasAttribute("data-today")) { IK_UI.day = ikToday(); ikRender(ikCtx()); return; }   // V5.6c: back to today in one tap
-    var dm = b.getAttribute("data-day"); if (dm) { var nd = ikAddDays(IK_UI.day || ikToday(), +dm); if (nd <= ikToday()) { IK_UI.day = nd; ikRender(ikCtx()); } return; }
+    if (b.hasAttribute("data-today")) { IK_UI.day = ikToday(); IK_UI.dayview = false; ikRender(ikCtx()); return; }   // V5.6c: back to today in one tap
+    var dm = b.getAttribute("data-day"); if (dm) { var cur = IK_UI.day || ikToday(), nd = ikAddDays(cur, +dm);
+      if (nd <= ikToday()) { IK_UI.day = nd; ikRender(ikCtx()); } return; }   // Now ‹ Yesterday ‹ the day before (today and now show the same numbers, so there is no separate "Today" step)
     var sp = b.getAttribute("data-span"); if (sp) { IK_UI.span = sp; ikRender(ikCtx()); return; }
     var sm = b.getAttribute("data-spanmove"); if (sm) {
       var step = { day: 1, week: 7, month: 30, year: 365 }[IK_UI.span], ne = ikAddDays(IK_UI.spanEnd || ikToday(), step * +sm);
