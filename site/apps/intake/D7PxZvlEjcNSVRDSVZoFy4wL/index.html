@@ -2310,7 +2310,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     var trio = [settingsRow].concat(end);
     var top = app.concat(trio);
     var sh = dd.ui.sheet(menu.headHtml() +
-      (app.length ? '<div class="dd-menu-list" role="menu">' + (function(){ var out="", last="\u0000"; app.forEach(function(it){ var s=it.section||""; if(s!==last){ last=s; if(s) out+='<div class="dd-menu-sec" role="presentation">'+esc(s)+'</div>'; } out+=rowHtml(it); }); return out; })() + '</div><div class="dd-menu-sep" role="separator"></div>' : "") +
+      (app.length ? '<div class="dd-menu-list" role="menu">' + (function(){ var out="", last="\u0000"; app.forEach(function(it){ var s=it.section||""; if(s!==last){ if(s){ out+='<div class="dd-menu-sec" role="presentation">'+esc(s)+'</div>'; } else if(last!=="\u0000"){ out+='<div class="dd-menu-sep" role="separator"></div>'; } last=s; } out+=rowHtml(it); }); return out; })() + '</div><div class="dd-menu-sep" role="separator"></div>' : "") +
       '<div class="dd-menu-trio" role="menu">' + trio.map(trioHtml).join("") + '</div>' +
       '<div class="dd-btnrow"><button class="dd-btn ghost" data-close>Close</button></div>', { sticky: true });
     sh.querySelector("[data-close]").addEventListener("click", dd.ui.closeSheet);
