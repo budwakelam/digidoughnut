@@ -519,6 +519,8 @@ img.dd-digibot-face{width:96px;height:96px}
 .dd-menu-dot{position:absolute;top:4px;left:20px;width:9px;height:9px;border-radius:50%;background:#ef4444;border:2px solid #fff}
 .dd-menu-dot[hidden]{display:none}
 .dd-menu-list{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.dd-menu-sec{font-size:.72rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--dd-muted);padding:10px 4px 0}
+.dd-menu-sec:first-child{padding-top:2px}
 .dd-menu-item{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#fff;border:1px solid var(--dd-line);
   border-radius:12px;padding:10px 12px;font:inherit;color:inherit;cursor:pointer;min-height:52px}
 .dd-menu-item:hover,.dd-menu-item:focus-visible{background:var(--dd-brand-soft);border-color:var(--dd-brand-soft-d)}
@@ -2308,7 +2310,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     var trio = [settingsRow].concat(end);
     var top = app.concat(trio);
     var sh = dd.ui.sheet(menu.headHtml() +
-      (app.length ? '<div class="dd-menu-list" role="menu">' + app.map(rowHtml).join("") + '</div><div class="dd-menu-sep" role="separator"></div>' : "") +
+      (app.length ? '<div class="dd-menu-list" role="menu">' + (function(){ var out="", last="\u0000"; app.forEach(function(it){ var s=it.section||""; if(s!==last){ last=s; if(s) out+='<div class="dd-menu-sec" role="presentation">'+esc(s)+'</div>'; } out+=rowHtml(it); }); return out; })() + '</div><div class="dd-menu-sep" role="separator"></div>' : "") +
       '<div class="dd-menu-trio" role="menu">' + trio.map(trioHtml).join("") + '</div>' +
       '<div class="dd-btnrow"><button class="dd-btn ghost" data-close>Close</button></div>', { sticky: true });
     sh.querySelector("[data-close]").addEventListener("click", dd.ui.closeSheet);
@@ -2332,7 +2334,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
   menu.fromProgram = function (program) {
     (program.menu || []).forEach(function (it, i) {
       if (!it || !it.id || !it.label || typeof it.run !== "function") return;
-      menu.add({ id: "app-" + it.id, icon: it.icon || "•", label: it.label, group: "app", order: i,
+      menu.add({ id: "app-" + it.id, icon: it.icon || "•", label: it.label, group: "app", order: i, section: it.section,
                  note: typeof it.note === "function" ? it.note : it.note ? function () { return it.note; } : null,
                  show: it.show, run: it.run });
     });
@@ -11899,22 +11901,7 @@ const DD_PROGRAM = {
   dataLabel: "food log",
   exampleNotice: "You're looking at two weeks of example meals so you can try everything. Snap or add your own food and the examples clear away.",
 
-  menu: [
-    { id: "photo", icon: "📷", label: "Snap my food", note: "Photo → foods, amounts and nutrients", run: function () { ikPickPhoto(); } },
-    { id: "add", icon: "＋", label: "Add food", note: "Search, quick adds, recent and every other way to add", run: function () { ikOpenAdd(); } },
-    { id: "regimen", icon: "💊", label: "My medications & vitamins", note: "A daily checklist: tap each one when you take it", run: function () { ikOpenRegimen(); } },
-    { id: "cups", icon: "💧", label: "My cups", note: "The three cup sizes on the Hydration card", run: function () { ikOpenCups(); } },
-    { id: "label", icon: "🏷️", label: "Snap a Nutrition Facts label", note: "Exact numbers for packaged foods", run: function () { ikPickPhoto({ label: true }); } },
-    { id: "profile", icon: "🎯", label: "My profile & targets", note: function () { return ikProfileReady((dd.getData().settings || {}).profile) ? "Recommended amounts, or your own" : "Not set yet: tap to make targets yours"; }, run: function () { ikOpenProfile(); } },
-    { id: "quick", icon: "⚡", label: "My quick adds", note: "One-tap foods and drinks, in the amounts you have them", run: function () { ikOpenQuickAdds(); } },
-    { id: "cooking", icon: "🧂", label: "How I cook", note: "Salt and cooking oil, for closer sodium and fat numbers", run: function () { ikOpenCooking(); } },
-    { id: "eating", icon: "🥗", label: "How I like to eat", note: "Whole foods, low sugar or plant-based: steers food ideas", run: function () { ikOpenEating(); } },
-    { id: "charts", icon: "📊", label: "My home screen charts", note: "Pick the main ring, charts and small bars on Today", run: function () { ikOpenCharts(); } },
-    { id: "gauges", icon: "🎛️", label: "Home screen & health", note: "Gauges, fasting, health conditions, medicines", run: function () { ikOpenGauges(); } },
-    { id: "recipes", icon: "🍲", label: "My recipes & foods", note: "Saved sauces, dishes and labels", run: function () { ikOpenRecipes(); } },
-    { id: "export", icon: "📤", label: "Export my data", note: "A readable report, a spreadsheet or the raw data", run: function () { ikOpenExport(); } },
-    { id: "about", icon: "📖", label: "About the numbers", note: "Where they come from · not medical advice", run: function () { ikOpenAbout(); } }
-  ],
+  menu: [{ id: "photo", section: "Log it", icon: "📷", label: "Snap my food", note: "Photo → foods, amounts and nutrients", run: function () { ikPickPhoto(); } }, { id: "add", section: "Log it", icon: "＋", label: "Add food", note: "Search, quick adds, recent and every other way to add", run: function () { ikOpenAdd(); } }, { id: "label", section: "Log it", icon: "🏷️", label: "Snap a Nutrition Facts label", note: "Exact numbers for packaged foods", run: function () { ikPickPhoto({ label: true }); } }, { id: "quick", section: "Log it", icon: "⚡", label: "My quick adds", note: "One-tap foods and drinks, in the amounts you have them", run: function () { ikOpenQuickAdds(); } }, { id: "profile", section: "About me", icon: "🎯", label: "My profile & targets", note: function () { return ikProfileReady((dd.getData().settings || {}).profile) ? "Recommended amounts, or your own" : "Not set yet: tap to make targets yours"; }, run: function () { ikOpenProfile(); } }, { id: "cooking", section: "About me", icon: "🧂", label: "How I cook", note: "Salt and cooking oil, for closer sodium and fat numbers", run: function () { ikOpenCooking(); } }, { id: "eating", section: "About me", icon: "🥗", label: "How I like to eat", note: "Whole foods, low sugar or plant-based: steers food ideas", run: function () { ikOpenEating(); } }, { id: "regimen", section: "About me", icon: "💊", label: "My medications & vitamins", note: "A daily checklist: tap each one when you take it", run: function () { ikOpenRegimen(); } }, { id: "cups", section: "About me", icon: "💧", label: "My cups", note: "The three cup sizes on the Hydration card", run: function () { ikOpenCups(); } }, { id: "charts", section: "Home screen", icon: "📊", label: "My home screen charts", note: "Pick the main ring, charts and small bars on Today", run: function () { ikOpenCharts(); } }, { id: "gauges", section: "Home screen", icon: "🎛️", label: "Home screen & health", note: "Gauges, fasting, health conditions, medicines", run: function () { ikOpenGauges(); } }, { id: "recipes", section: "My data", icon: "🍲", label: "My recipes & foods", note: "Saved sauces, dishes and labels", run: function () { ikOpenRecipes(); } }, { id: "export", section: "My data", icon: "📤", label: "Export my data", note: "A readable report, a spreadsheet or the raw data", run: function () { ikOpenExport(); } }, { id: "about", icon: "📖", label: "About the numbers", note: "Where they come from · not medical advice", run: function () { ikOpenAbout(); } }],
 
   emptyData: function () { return { settings: { profile: {}, units: "metric", hideCalories: false, plateCm: 26 }, targets: {}, entries: [], recipes: [], customFoods: [], dayFills: [], regimen: [], doses: [] }; },
   exampleData: function () { return ikExample(); },

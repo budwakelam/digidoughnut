@@ -50,6 +50,9 @@ h1 span{display:inline-block;animation:pop .7s cubic-bezier(.2,1.6,.4,1) both;an
 .phone{position:absolute;right:0;bottom:0;width:23cqw;aspect-ratio:9/18.5;background:var(--device);border-radius:3.6cqw;padding:1.1cqw;box-shadow:0 2cqw 5cqw rgba(15,23,42,.25)}
 .phone .screen{aspect-ratio:auto;height:100%;border-radius:2.6cqw}
 .notch{position:absolute;top:1.6cqw;left:50%;transform:translateX(-50%);width:6cqw;height:1.5cqw;border-radius:99px;background:var(--device);z-index:3}
+/* ground shadows: the laptop and phone sit on the page */
+.laptop::after{content:"";position:absolute;left:6%;right:6%;bottom:-1.6cqw;height:3.6cqw;background:radial-gradient(ellipse 50% 50% at 50% 50%,rgba(0,0,0,.42),rgba(0,0,0,0) 70%);filter:blur(.5cqw);pointer-events:none}
+.phone::after{content:"";position:absolute;left:4%;right:4%;bottom:-1.1cqw;height:2.6cqw;background:radial-gradient(ellipse 50% 50% at 50% 50%,rgba(0,0,0,.45),rgba(0,0,0,0) 70%);filter:blur(.4cqw);pointer-events:none}
 .screen img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
 
 /* the pictured program */
