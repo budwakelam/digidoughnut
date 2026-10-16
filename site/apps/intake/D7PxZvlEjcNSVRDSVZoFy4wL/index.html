@@ -525,9 +525,9 @@ img.dd-digibot-face{width:96px;height:96px}
   border-radius:10px;padding:6px 10px;font:inherit;color:inherit;cursor:pointer;min-height:42px}
 .dd-menu-item:hover,.dd-menu-item:focus-visible{background:var(--dd-brand-soft);border-color:var(--dd-brand-soft-d)}
 .dd-menu-item-ico{font-size:1.25rem;width:28px;text-align:center;flex:none}
-.dd-menu-item-text{flex:1;min-width:0;display:flex;flex-direction:column}
-.dd-menu-item-text b{font-size:.9rem}
-.dd-menu-item-text span{font-size:.76rem;color:var(--dd-muted)}
+.dd-menu-item-text{flex:1;min-width:0;display:flex;flex-direction:row;align-items:baseline;gap:8px;overflow:hidden}
+.dd-menu-item-text b{font-size:.9rem;flex:none;white-space:nowrap}
+.dd-menu-item-text span{font-size:.7rem;color:var(--dd-muted);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dd-menu-item-go{color:var(--dd-muted);font-size:1.05rem}
 .dd-menu-new{font-style:normal;font-size:.7rem;background:#ef4444;color:#fff;border-radius:999px;padding:1px 7px;margin-left:4px;vertical-align:middle}
 /* menu sheet header: program colours (user-picked or the program's own), no hardcoded colours */
