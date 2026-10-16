@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DigiDoughnut — apps with an AI helper</title>
+<meta name="description" content="DigiDoughnut makes friendly little programs with a built-in AI helper. First up: Intake, your food log.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#f6f7fb; --ink:#151a2a; --muted:#5a6377; --line:#e1e5ee; --card:#ffffff;
+  --hero:#eaf0ff; --accent:#2563eb; --accent-d:#1d4ed8;
+  --display:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --body:"Figtree",-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){ :root{ --bg:#0f1320; --ink:#eef1f8; --muted:#a3abbd; --line:#273047; --card:#171d2e; --hero:#16203d; color-scheme:dark } }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55;margin:0;padding:0 16px}
+.wrap{max-width:860px;margin:0 auto;padding:32px 0 64px;display:flex;flex-direction:column;gap:32px}
+.hero{background:var(--hero);border-radius:28px;padding:40px 24px;text-align:center;display:flex;flex-direction:column;gap:14px;align-items:center}
+.logo{width:min(70%,300px);height:auto;filter:drop-shadow(0 6px 10px rgba(60,30,10,.18))}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(2rem,7vw,3.2rem);line-height:1.02;margin:0;letter-spacing:-.02em;text-wrap:balance}
+.lede{margin:0;max-width:44ch;color:var(--muted);font-size:1.1rem;text-wrap:balance}
+.section-h{font-family:var(--display);font-weight:600;font-size:1.4rem;margin:0;text-align:center}
+.apps{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+.app{background:var(--card);border:1px solid var(--line);border-radius:22px;overflow:hidden;display:flex;flex-direction:column}
+.app img.shot{width:100%;aspect-ratio:16/9;object-fit:cover;object-position:top;display:block;border-bottom:1px solid var(--line);background:#eef2ff}
+.app-body{padding:20px;display:flex;flex-direction:column;gap:10px;flex:1}
+.app-body h2{font-family:var(--display);font-weight:700;font-size:1.5rem;margin:0}
+.tag{display:inline-block;align-self:flex-start;font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);
+  background:color-mix(in srgb,var(--accent) 10%,transparent);border-radius:99px;padding:4px 12px}
+.app-body p{margin:0;color:var(--muted);font-size:.97rem;flex:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;font-weight:700;border-radius:14px;
+  background:var(--accent);color:#fff;font-size:1.05rem;padding:14px 22px;min-height:56px;transition:transform .15s,background .15s}
+.btn:hover{background:var(--accent-d);transform:translateY(-2px)}
+.soon{background:var(--card);border:1px dashed var(--line);border-radius:22px;padding:24px;text-align:center;color:var(--muted)}
+.soon b{color:var(--ink)}
+.how{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;counter-reset:s}
+@media (max-width:640px){.how{grid-template-columns:1fr}}
+.how li{counter-increment:s;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:6px}
+.how li::before{content:counter(s);font-family:var(--display);font-weight:800;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;
+  background:color-mix(in srgb,var(--accent) 12%,var(--card));color:var(--accent)}
+.how b{font-size:1.02rem}.how span{color:var(--muted);font-size:.92rem}
+footer{text-align:center;color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <section class="hero">
+    <img class="logo" src="/assets/logo.webp" alt="DigiDoughnut">
+    <h1>Little programs with an AI helper</h1>
+    <p class="lede">DigiDoughnut makes friendly programs that run in your browser and come with their own AI helper built in. Buy one, open it, make it yours.</p>
+  </section>
+
+  <h2 class="section-h">Our apps</h2>
+  <div class="apps">
+    <article class="app">
+      <img class="shot" src="/assets/intake-laptop.webp" alt="Intake food log on a computer">
+      <div class="app-body">
+        <span class="tag">First app</span>
+        <h2>Intake</h2>
+        <p>Your food log. Log meals in seconds, see your day at a glance, and ask DigiBot — the built-in AI helper — to add things, answer questions, or make sense of your week.</p>
+        <a class="btn" href="https://www.etsy.com/shop/DigiDoughnut">Get it on Etsy</a>
+      </div>
+    </article>
+  </div>
+
+  <div class="soon"><b>More on the way.</b><br>Intake is the first DigiDoughnut program. New helpers are baking now.</div>
+
+  <h2 class="section-h">How it works</h2>
+  <ol class="how">
+    <li><b>Buy on Etsy</b><span>Grab the program from our Etsy shop. You'll get your own thank-you page with everything in one place.</span></li>
+    <li><b>Open it</b><span>Your program runs in the browser on any device. No account, no install — it works straight away.</span></li>
+    <li><b>Make it yours</b><span>Your helper walks you through setup in a couple of minutes. Everything you enter stays yours.</span></li>
+  </ol>
+
+  <footer>DigiDoughnut · made with care<br><a href="https://www.etsy.com/shop/DigiDoughnut" style="color:inherit">Etsy shop</a></footer>
+
+</div>
+</body>
+</html>
