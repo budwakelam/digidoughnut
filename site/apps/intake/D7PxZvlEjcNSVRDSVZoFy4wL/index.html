@@ -119,6 +119,11 @@
   (6) Fuel in has no backdrop blur (it re-blurred the moving light every frame); its panel is a touch more solid.
   Rules that keep it smooth: animate only transform and opacity; never animate anything under a blur filter, a
   backdrop-filter or a box-shadow; for a pulsing glow, fade a glow layer (see ikGlowIn / ikGlowOut).
+  0.5.8o (Oran, 2026-10-17): the orbs on the fuel map move about twice as fast. The main stream's orbs are bigger and
+  the Fuel in colour all the way through (they're the source); the small orbs out to a system come in greater numbers
+  the bigger its boost (about one per 6 points, up to 5). Tap the legend for "How to read the fuel map" (what each
+  colour means, and why each part burns a different fuel), and tap "N of 9" for what the score means and which parts
+  are and aren't counted.
   PLATFORM CHANGE (2026-10-17 perf): dd.menu.mount uses program.iconHtml when the program gives one.
   To make a new app, change only the parts marked PROGRAM-SPECIFIC (styles, markup, script)
   and the app name in the <head>.
@@ -1054,6 +1059,24 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-pill small{font-size:clamp(8px,2.6cqw,10.5px);font-weight:600;color:#9fb4c4;margin-top:.6cqw;white-space:nowrap}
 .ik-fm-fed{position:absolute;right:1.1%;top:3%;   /* 0.5.8 (Oran, 2026-10-17): dropped down for headroom */display:flex;align-items:center;gap:1.5cqw;padding:1cqw 2.4cqw;border-radius:99px;background:rgba(6,18,28,.62);border:1px solid rgba(160,220,255,.18);font-size:clamp(8px,2.8cqw,11px);font-weight:700;color:#dff6ff;white-space:nowrap;pointer-events:none}
 .ik-fm-fed i{width:7px;height:7px;border-radius:50%;background:#6fe7ff;box-shadow:0 0 8px #6fe7ff}
+/* 0.5.8o: the "N of 9" pill and the legend open their explanations */
+button.ik-fm-fed{pointer-events:auto;cursor:pointer;font-family:inherit;line-height:1.2}
+button.ik-fm-fed svg{width:1.1em;height:1.1em;margin-left:-.2em;opacity:.8;transition:transform .2s}
+button.ik-fm-fed.on{border-color:#6fe7ff;box-shadow:0 0 12px rgba(111,231,255,.35)}
+.ik-fm-legbtn{display:flex;flex-wrap:wrap;justify-content:center;gap:3px 12px;width:100%;padding:0;margin:0;border:0;background:none;font:inherit;color:inherit;cursor:pointer}
+.ik-fm-leghint{color:#a8d8f0;text-decoration:underline;text-underline-offset:2px}
+.ik-fm-leghint svg{width:12px;height:12px;transition:transform .2s}
+.ik-fm-explain .ik-small b{color:#e9f4fa}
+.ik-fm-lrow{display:flex;gap:10px;align-items:flex-start;margin:0 0 8px;font-size:13.5px;line-height:1.4;color:#dbe6ee}
+.ik-fm-lrow b{color:#fff}
+.ik-fm-ldot{flex:none;width:10px;height:10px;border-radius:50%;margin-top:4px}
+.ik-fm-ldot.big{width:16px;height:16px;margin-top:2px}
+.ik-fm-g{color:#7cf2c7!important;background:rgba(25,197,140,.16);border-radius:5px;padding:0 4px;font-size:12px}
+.ik-fm-fedrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;width:100%;margin:0 0 6px;padding:8px 10px;border:1px solid rgba(160,220,255,.1);border-radius:12px;background:rgba(255,255,255,.03);font:inherit;color:#e9f4fa;text-align:left;cursor:pointer}
+.ik-fm-fedrow b{font-size:14px}
+.ik-fm-fedrow small{display:block;font-size:12px;line-height:1.35;color:#ffcf8a;margin-top:2px}
+.ik-fm-fedrow>i{grid-column:1/-1;height:4px;border-radius:2px;background:rgba(255,255,255,.08);overflow:hidden;display:block}
+.ik-fm-fedrow>i em{display:block;height:4px;border-radius:2px}
 .ik-fm-fuel{margin:6px 12px 0;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 10px;border-radius:20px;background:rgba(255,255,255,.04);border:1px solid rgba(160,220,255,.14)}
 .ik-fm-fuel.on{background:rgba(255,255,255,.07);border-color:color-mix(in srgb,var(--c) 55%,transparent);box-shadow:0 0 18px color-mix(in srgb,var(--c) 20%,transparent)}
 .ik-fm-fuelbtn{flex:1;min-width:0;display:flex;align-items:center;gap:10px;font:inherit;text-align:left;cursor:pointer;padding:2px 0;border:0;background:none;color:inherit}
@@ -10483,6 +10506,58 @@ function ikFmSystemPanel(d, S, F, N, tToday) {
     '<p class="ik-small" style="margin:10px 0 0">The light is the fuel it\'s running on right now. The % is how well it\'s been nourished: how close your average day over the last week came to the target for each nutrient that supports it (each capped at 100%)' + (N && N.live ? ", blended with the last 24 hours as your food is absorbed (about half in the first hour, most by 3 to 4 hours), so it climbs after a meal" : "") + '. An estimate of what your food supplies, not a medical reading.</p></div>';
 }
 
+/* 0.5.8o (Oran, 2026-10-17: "I don't understand the colours of the orbs, or how sugar and fat go to different parts
+   of the body"). Tap the legend: how to read the map, and what each system is burning right now and why. */
+function ikFmLegendPanel(sys, F, LV, FAT) {
+  var dot = function (c, big) { return '<i class="ik-fm-ldot' + (big ? " big" : "") + '" style="background:' + c + ";box-shadow:0 0 8px " + c + '"></i>'; };
+  var live = F && !F.none && !F.past, ST = IK_FM_ST[live ? F.state : "none"];
+  var h = '<div class="ik-card ik-fm-panel ik-fm-explain"><div style="font-size:19px;font-weight:800">How to read the fuel map</div>' +
+    '<p class="ik-small" style="margin:4px 0 0">Two different things are drawn on the body: the <b>light</b> is the fuel being burned right now, and the <b>%</b> is how well each part has been nourished with vitamins, minerals and protein.</p>';
+  h += '<div class="ik-fm-h">The main stream: fuel coming in</div>' +
+    '<div class="ik-fm-lrow">' + dot(live ? ST.c : "#8ea3b3", 1) + '<span>The thick stream runs from <b>Fuel in</b> up to your stomach. Its colour and the big orbs riding it are the same colour as Fuel in: what your body is mostly running on right now' + (live ? " (<b>" + ikEsc(ST.title.toLowerCase()) + "</b>)" : "") + '. While a meal is being absorbed the orbs get bigger and come faster.</span></div>' +
+    '<div class="ik-fm-lrow">' + dot(IK_FM_FUELC.glucose) + '<span><b>Pink: sugar.</b> Glucose from carbs you just ate, or sugar your liver releases from its stores.</span></div>' +
+    '<div class="ik-fm-lrow">' + dot(IK_FM_FUELC.mixed) + '<span><b>Light pink: a mix.</b> Stored sugar and fat together, the usual state between meals.</span></div>' +
+    '<div class="ik-fm-lrow">' + dot(IK_FM_FUELC.fat) + '<span><b>Gold: fat.</b> Insulin is low, so fat from your stores is the main fuel.</span></div>' +
+    '<div class="ik-fm-lrow">' + dot(IK_FM_FUELC.ketones) + '<span><b>Violet: ketones.</b> After a long gap (or very low carb), your liver turns fat into ketones, a fuel the brain can use.</span></div>' +
+    '<div class="ik-fm-lrow">' + dot(IK_FM_FUELC.alc) + '<span><b>Blue-violet: alcohol.</b> Your body clears alcohol first, so fat burning waits.</span></div>';
+  h += '<div class="ik-fm-h">The lines out to each part: what it burns</div>' +
+    '<p class="ik-small" style="margin:0 0 8px">Your blood carries sugar, fat and ketones to every part of you at the same time, and each part takes the fuel it\'s built to use. That\'s why the lines can be different colours: red blood cells can only use sugar, your brain runs on sugar (and ketones when there are enough) but can\'t burn fat directly, your heart prefers fat, and muscles switch between sugar and fat depending on whether you\'ve just eaten carbs.' + (live ? " Right now:" : "") + "</p>";
+  if (live) h += sys.map(function (S) { var fu = ikFmSysFuel(S.s.id, F); return '<div class="ik-fm-lrow">' + dot(fu.c) + "<span><b>" + ikEsc(S.s.short) + ":</b> " + ikEsc(fu.label) + "</span></div>"; }).join("");
+  h += '<div class="ik-fm-h">Small orbs on a line: a boost on the way</div>' +
+    '<div class="ik-fm-lrow">' + dot("#fff") + '<span>When something you ate in the last 2 hours is still being absorbed and it feeds a part of the body, small orbs travel out to that part along a dotted line, and its % shows <b class="ik-fm-g">▲+N</b>. <b>More orbs means a bigger boost</b> (about one orb for every 6 points it\'s gaining). The orbs take the colour of that part\'s fuel.</span></div>';
+  if (FAT) h += '<div class="ik-fm-h">The gold line low on the left: your fat stores</div>' +
+    '<div class="ik-fm-lrow">' + dot("#ffc247") + '<span>Gold light flowing <b>into</b> the fat store means meal fat is being stored; flowing <b>out</b> into the stream means stored fat is being burned. A faint dotted line means it\'s roughly steady.</span></div>';
+  h += '<div class="ik-fm-h">The % and the dots: how well nourished</div>' +
+    '<div class="ik-fm-lrow">' + dot("#6fe7ff") + '<span><b>Thriving, 80% or more.</b></span></div>' +
+    '<div class="ik-fm-lrow">' + dot("#3f8cff") + '<span><b>Steady, 50 to 79%.</b></span></div>' +
+    '<div class="ik-fm-lrow">' + dot("#ffb340") + '<span><b>Running low, under 50%.</b></span></div>' +
+    '<p class="ik-small" style="margin:6px 0 0">Each % is the average of the nutrients that support that part (each capped at 100% of your target), over your recent days plus what\'s being absorbed now. A part can be well powered and still low on nourishment, or the other way round. Tap any part on the map for its details. Estimates, not medical advice.</p></div>';
+  return h;
+}
+/* 0.5.8o (Oran: "tap the number out of 9 for what it means and why you've got that rating") */
+function ikFmFedPanel(sys, waterPct, HY, N, fed) {
+  var all = sys.map(function (S) { return { id: S.s.id, name: S.s.name, pct: S.pct, st: S.st, tip: S.tip, gain: S.boost ? S.gain : 0 }; });
+  var wst = ikFmStatus(waterPct);
+  all.push({ id: "water", name: "Hydration", pct: waterPct, st: wst, tip: HY.none ? "Log a drink and this fills in." : HY.behind >= 50 ? "About " + HY.behind + " mL behind. A glass or two of water catches you up." : "", gain: 0 });
+  var low = all.filter(function (x) { return x.st === "low"; }).sort(function (a, b) { return a.pct - b.pct; });
+  var label = N.days ? "Well nourished" : "Fed well today", col = fed >= 8 ? IK_FM_COL.thrive : fed >= 5 ? IK_FM_COL.steady : IK_FM_COL.low;
+  var verdict = fed === 9 ? "Every part of the body is steady or thriving. Nicely done." : fed >= 7 ? "Nearly everything is covered; just " + low.length + " running low." : fed >= 4 ? "About half covered. A couple of the lowest below would lift it the most." : "Most parts are running low so far" + (N.days ? "" : ", which is normal early in the day") + ".";
+  var win = N.live ? (N.days ? "your average day over the last " + N.days + " day" + (N.days === 1 ? "" : "s") + ", blended with the last 24 hours as your food is absorbed" : "the last 24 hours, as your food is absorbed") : N.days ? "your average day over the last " + N.days + " day" + (N.days === 1 ? "" : "s") : "today so far";
+  var h = '<div class="ik-card ik-fm-panel ik-fm-explain"><div class="ik-row" style="gap:12px"><div class="ik-fm-badge" style="box-shadow:inset 0 0 0 2px ' + col + ",0 0 14px " + col + '55">' + fed + '<small style="font-size:12px;opacity:.7">/9</small></div><div class="ik-grow"><div style="font-size:20px;font-weight:800">' + label + ": " + fed + " of 9</div>" +
+    '<div class="ik-small">' + ikEsc(verdict) + "</div></div></div>" +
+    '<p class="ik-small" style="margin:10px 0 0">The 9 are the eight parts of the body on the map plus hydration. One counts when it\'s at <b>50% or more</b> (steady or thriving). Each part\'s % is the average of the nutrients that support it, measured against your targets, based on ' + ikEsc(win) + ".</p>";
+  var row = function (x) {
+    var c = x.st === "thrive" ? "#0e8fa3" : x.st === "steady" ? "#2a72d4" : "#c56a00", tag = x.st === "thrive" ? "Thriving" : x.st === "steady" ? "Steady" : "Low";
+    return '<button class="ik-fm-fedrow" data-fm="pick:' + x.id + '"><span class="ik-grow"><b>' + ikEsc(x.name) + "</b>" + (x.gain ? ' <em class="ik-fm-rowgain">▲+' + x.gain + "</em>" : "") +
+      (x.st === "low" && x.tip ? "<small>" + ikEsc(x.tip) + "</small>" : "") + '</span><span class="ik-fm-chip ' + x.st + '">' + tag + " " + x.pct + '%</span><i><em style="width:' + Math.max(3, Math.min(100, x.pct)) + "%;background:" + c + '"></em></i></button>';
+  };
+  if (low.length) h += '<div class="ik-fm-h">Not counted yet (' + low.length + ")</div>" + low.map(row).join("");
+  var ok = all.filter(function (x) { return x.st !== "low"; }).sort(function (a, b) { return a.pct - b.pct; });
+  if (ok.length) h += '<div class="ik-fm-h">Counted (' + ok.length + ")</div>" + ok.map(row).join("");
+  h += '<p class="ik-small" style="margin:10px 0 0">Tap any row to see what feeds it. An estimate of what your food supplies, not a medical reading.</p></div>';
+  return h;
+}
+
 /* 0.5.8 (Oran, 2026-10-17): the Hydration card moved in here. A flowing line of how hydrated the body has been
    over the last 8 hours (the same running water balance as the light on the map), drops where drinks were
    logged, today's total and a link to change the cup sizes. The one-tap water glass sits beside Add. */
@@ -10635,11 +10710,14 @@ function ikFmColor(c, a) {   // any CSS colour with a new alpha (for the clear e
   if (s.charAt(0) === "#") return "rgba(" + parseInt(s.slice(1, 3), 16) + "," + parseInt(s.slice(3, 5), 16) + "," + parseInt(s.slice(5, 7), 16) + "," + a + ")";
   var m = s.match(/[\d.]+/g) || [0, 0, 0]; return "rgba(" + m[0] + "," + m[1] + "," + m[2] + "," + a + ")";
 }
-function ikFmOrbSprite(S, c, rpx) {   // a glowing ball: white middle, the colour at 35%, clear at the edge
-  var key = c + "|" + rpx.toFixed(1); if (S.sprites[key]) return S.sprites[key];
+function ikFmOrbSprite(S, c, rpx, rich) {   // a glowing ball: white middle, the colour at 35%, clear at the edge
+  var key = c + "|" + rpx.toFixed(1) + (rich ? "r" : ""); if (S.sprites[key]) return S.sprites[key];
   var n = Math.max(2, Math.ceil(rpx * 2) + 2), cv = document.createElement("canvas"); cv.width = cv.height = n;
   var x = cv.getContext("2d"), g = x.createRadialGradient(n / 2, n / 2, 0, n / 2, n / 2, rpx);
-  g.addColorStop(0, "#fff"); g.addColorStop(0.35, c); g.addColorStop(1, ikFmColor(c, 0));
+  /* 0.5.8o (Oran: "the ones from the nourishment should match the colour of the fuel"): a rich orb is the fuel's
+     colour all the way through, with only a small white glint, so it reads as pink sugar / gold fat / violet ketones */
+  if (rich) { g.addColorStop(0, "#fff"); g.addColorStop(0.12, c); g.addColorStop(0.5, ikFmColor(c, 0.9)); g.addColorStop(1, ikFmColor(c, 0)); }
+  else { g.addColorStop(0, "#fff"); g.addColorStop(0.35, c); g.addColorStop(1, ikFmColor(c, 0)); }
   x.fillStyle = g; x.beginPath(); x.arc(n / 2, n / 2, rpx, 0, Math.PI * 2); x.fill();
   return (S.sprites[key] = cv);
 }
@@ -10700,7 +10778,7 @@ function ikFmDraw(S, now) {
     op = S.ops[i]; if (op.t !== "orb") continue;
     var u = IK_EASE_ORB(((t + op.at) % op.dur) / op.dur) * op.g.N, j = Math.min(op.g.N - 1, u | 0), f = u - j, P = op.g.pts;
     var px = (P[j * 2] + (P[j * 2 + 2] - P[j * 2]) * f) * sx, py = (P[j * 2 + 1] + (P[j * 2 + 3] - P[j * 2 + 1]) * f) * sy;
-    var spr = ikFmOrbSprite(S, op.c, op.r * sx); c.drawImage(spr, px - spr.width / 2, py - spr.height / 2);
+    var spr = ikFmOrbSprite(S, op.c, op.r * sx, op.rich); c.drawImage(spr, px - spr.width / 2, py - spr.height / 2);
   }
 }
 function ikFmCanvas(host) {
@@ -10837,14 +10915,16 @@ function ikFuelMap(d, t, week, day, es) {
        run:  a soft pulse travelling along a path (len = % of the path, like stroke-dasharray with pathLength 100)
        dash: the dotted "boost" line (3 on, 13 off), creeping toward the system
        orb:  a glowing ball riding along a path (like animateMotion with keySplines .4 0 .6 1) */
-    var ops = [], orb = function (path, c, r, dur, n) {   // 0.5.8: glowing orbs that travel along a path
-      for (var oi = 0; oi < n; oi++) ops.push({ t: "orb", d: path, c: c, r: r, dur: dur, at: +(dur * oi / n).toFixed(2) });
+    var ops = [], orb = function (path, c, r, dur, n, rich, off) {   // 0.5.8: glowing orbs that travel along a path
+      for (var oi = 0; oi < n; oi++) ops.push({ t: "orb", d: path, c: c, r: r, dur: dur, at: +((dur * oi / n) + (off || 0)).toFixed(2), rich: rich ? 1 : 0 });
     };
     /* 0.5.8b (Oran: "it looks like a white sausage"): the pulse is a soft blurred glow with a faint core, not a hard capsule */
     ops.push({ t: "run", d: trunk, c: trunkC, w: 58, o: 0.55, blur: 16, len: 30, dur: 6, at: 0 },
       { t: "run", d: trunk, c: "#ffe6f0", w: 18, o: 0.7, blur: 6, len: 30, dur: 6, at: 0 },
       { t: "run", d: trunk, c: "#fff", w: 3, o: 0.5, blur: 0, len: 30, dur: 6, at: 0 });
-    if (!(F.past || F.none)) orb(trunk, trunkC, eating ? 15 : 11, eating ? 6.8 : 9.6, eating ? 3 : 2);
+    /* 0.5.8o (Oran, 2026-10-17: "speed up the light circles", "the source should be larger and the fuel's colour"):
+       the main stream carries the biggest orbs, in the Fuel in colour, about twice as fast as 0.5.8n */
+    if (!(F.past || F.none)) orb(trunk, trunkC, eating ? 20 : 16, eating ? 3.4 : 4.6, eating ? 4 : 3, true);
     var halo = function (x, y, r, c, cls) { return '<i class="ik-fm-halo' + (cls || "") + '" style="left:' + (x / 7.3).toFixed(2) + "%;top:" + (y / 9.3).toFixed(2) + "%;width:" + (r * 2 / 7.3).toFixed(2) + "%;--c:" + c + '"></i>'; };
     halos += halo(374, 334, absorbing ? 46 : 30, "#ff3d7f", absorbing ? "" : " dim");
     var sysW = [], sysM = [], sysC = [], sysO = [], sysN = 0;
@@ -10865,11 +10945,12 @@ function ikFuelMap(d, t, week, day, es) {
       }
       if (S.boost) {   // 0.5.8: this system is getting something from the meal you just had
         sysM.push({ t: "dash", d: s.d, c: "#fff", w: 3.5, o: 0.9, blur: 3.5, dur: 3.2 });
-        sysO.push([s.d, c]);
+        sysO.push([s.d, c, S.gain]);
       }
       halos += halo(s.x, s.y, st === "thrive" ? 40 : st === "steady" ? 31 : 22, nc, st === "low" ? " dim" : "");
     });
-    sysO.forEach(function (x) { orb(x[0], x[1], 10, 6.4, 1); });
+    /* 0.5.8o: smaller than the source orbs, faster, and more of them the bigger the boost (1 orb per ~6 points, up to 5) */
+    sysO.forEach(function (x, i) { orb(x[0], x[1], 7, 3.2, Math.max(1, Math.min(5, Math.ceil(x[2] / 6))), false, i * 0.37); });
     /* 0.5.8 (Oran: "show if we're taking from our fat stores or adding to them"): a fat store beside the stream.
        Storing: gold light peels off the fuel stream into it. Burning: gold light flows out of it into the stream. */
     var FAT = null;
@@ -10880,7 +10961,7 @@ function ikFuelMap(d, t, week, day, es) {
       if (FAT.mode !== "hold") {
         ops.push({ t: "run", d: fpath, c: "#ffc247", w: 26, o: 0.6, blur: 9, len: 22, dur: 8, at: 0 },
           { t: "run", d: fpath, c: "#fff3d1", w: 3, o: 0.6, blur: 0, len: 22, dur: 8, at: 0 });
-        orb(fpath, "#ffc247", FAT.g >= 6 ? 12 : 9, 8, FAT.g >= 6 ? 2 : 1);
+        orb(fpath, "#ffc247", FAT.g >= 6 ? 12 : 9, 5, FAT.g >= 6 ? 3 : 2, true);
       }
       stillSharp += '<path d="M441 698 C400 698 320 690 236 690" stroke="#ffc247" stroke-width="' + (FAT.mode === "hold" ? 2 : 3) + '" opacity="' + (FAT.mode === "hold" ? 0.25 : 0.5) + '" fill="none" stroke-linecap="round" stroke-dasharray="' + (FAT.mode === "hold" ? "3 6" : "none") + '"/>';
     }
@@ -10908,7 +10989,8 @@ function ikFuelMap(d, t, week, day, es) {
     h += '<button class="ik-fm-pill wide' + (won ? " on" : "") + (wsoak ? " boost" : "") + '" data-fm="pick:water" style="right:1.1%;top:57%;--c:' + wcol + '" aria-pressed="' + won + '" aria-label="Hydration, ' + waterPct + '%">' +
       '<b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.2 4.2 6 7.5 6 10.8a6 6 0 0 1-12 0C6 10.5 8.8 7.2 12 3z"/></svg>Hydration</b><span>' + waterPct + "%" + wtr + '</span>' +
       '<i><em style="width:' + Math.min(100, waterPct) + '%"></em></i><small>' + (HY.none ? "Log a drink" : wsoak ? "+" + HY.soaking + " mL coming" : HY.behind >= 50 ? HY.behind + " mL behind" : "Topped up") + "</small></button>";
-    h += '<span class="ik-fm-fed"><i></i>' + (N.days ? "Well nourished: " : "Fed well today: ") + fed + " of 9</span>";
+    var fedOn = U.open && U.pick === "fed";   // 0.5.8o (Oran): tap it for what it means and why
+    h += '<button class="ik-fm-fed' + (fedOn ? " on" : "") + '" data-fm="pick:fed" aria-pressed="' + fedOn + '" aria-expanded="' + fedOn + '" aria-label="' + (N.days ? "Well nourished: " : "Fed well today: ") + fed + ' of 9. Tap for what this means"><i></i>' + (N.days ? "Well nourished: " : "Fed well today: ") + fed + ' of 9<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"' + (fedOn ? ' style="transform:rotate(180deg)"' : "") + '><path d="M6 9l6 6 6-6"/></svg></button>';
     // Fuel in: 0.5.8 (Oran, 2026-10-17) docked on the map itself, so the stream of fuel visibly comes out of it
     var fon = U.open && U.pick === "fuel", AB = LV && LV.abs && LV.abs.frac < 0.98 ? LV.abs : null;
     var fk = F.past ? "Fuel in" : AB ? (AB.mins < 30 ? "Eating · " : "Absorbing · ") + ikEntryName(AB.e, d) : "Fuel in · running on";
@@ -10932,17 +11014,22 @@ function ikFuelMap(d, t, week, day, es) {
     /* 0.5.8 (Oran, 2026-10-17): tapping a system (Muscles...) or Hydration expands down on the dark ground, just like the fuel details */
     var pick = U.pick || "fuel", cardPanel = "", belowPanel = "";
     if (pick === "water") cardPanel = ikFmWaterPanel(d, t, waterPct, HY);
+    else if (pick === "fed") cardPanel = ikFmFedPanel(sys, waterPct, HY, N, fed);
+    else if (pick === "legend") cardPanel = "";
     else if (pick !== "fuel") { var S = sys.filter(function (x) { return x.s.id === pick; })[0]; if (S) cardPanel = ikFmSystemPanel(d, S, F, N, t); }
     else if (view === "map") belowPanel = ikRadarCard(d, t, week, day);
     if (cardPanel && !(fon && U.details && !F.past)) h += '<div class="ik-fm-darkdrawer">' + cardPanel + "</div>";
     /* 0.5.8 (Oran: "the legend is way too large"): one small, compact legend, on the dark ground */
     var dot = function (c, glow) { return '<i style="background:' + c + (glow ? ";box-shadow:0 0 5px " + c : "") + '"></i>'; };
-    h += '<div class="ik-fm-legend">' +
+    var legOn = U.open && U.pick === "legend";
+    h += '<div class="ik-fm-legend' + (legOn ? " on" : "") + '"><button class="ik-fm-legbtn" data-fm="pick:legend" aria-expanded="' + legOn + '" aria-label="' + (legOn ? "Hide" : "Show") + ' how to read the fuel map">' +
       "<span><b>Light</b>" + dot(IK_FM_FUELC.glucose) + "sugar" + dot(IK_FM_FUELC.fat) + "fat" + dot(IK_FM_FUELC.ketones) + "ketones</span>" +
       "<span><b>%</b>" + dot("#6fe7ff", 1) + "thriving" + dot("#3f8cff") + "steady" + dot("#ffb340") + "low</span>" +
       (LV ? '<span><b class="g">▲+N</b>still filling (last 2 h)</span>' : "") +
+      '<span class="ik-fm-leghint">' + (legOn ? "Hide" : "What do the colours mean?") + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"' + (legOn ? ' style="transform:rotate(180deg)"' : "") + '><path d="M6 9l6 6 6-6"/></svg></span></button>' +
       '<span class="w">' + (N.live ? "% = last " + (N.days ? N.days + " days + " : "") + "24 h as absorbed" : N.days ? "% = average day, last " + N.days + " days" : "% = today so far") +
       ' · estimates, not medical advice · <button class="ik-fm-link" data-fm="sources">How it works</button></span></div>';
+    if (legOn) h += '<div class="ik-fm-darkdrawer">' + ikFmLegendPanel(sys, F, LV, FAT) + "</div>";
     // 0.5.8 (Oran, 2026-10-17): no empty foot — it showed as a white strip once the legal notice was acknowledged
     if (!set.fmAck) h += '<div class="ik-fm-foot"><div class="ik-fm-legal first"><span>The fuel map is an estimate built from published nutrition research, not medical advice or a test.</span><button class="ik-fm-ok" data-fm="ack">Got it</button></div></div>';
     h += "</div>";   // card
