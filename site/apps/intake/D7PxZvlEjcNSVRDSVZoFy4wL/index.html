@@ -9830,7 +9830,6 @@ function ikRenderToday(ctx) {
   h += ikFuelMap(d, t, ikDaySeries(d, ikDaysBack(day, 7)), day, es);   // V5.5: the fuel map, top and centre
   var pre = "";   // 0.5.7: these cards now come after the food list
   if (ikShow(d, "meds")) pre += ikDoseCard(d, day, "med");   // V5: medications next
-  if (ikShow(d, "supps")) pre += ikRegItems(d).length ? ikDoseCard(d, day, "supp") : ikRegSetupCard();   // 0.5.8 (Oran, 2026-10-17): vitamins & supplements sit right under medications, above the food list
   if (!ikProfileReady(p)) {
     pre += '<div class="ik-card ik-setup"><b>Make the targets yours</b><p class="ik-small" style="margin:4px 0 10px">Right now your targets are Canada\'s Daily Values. Add your age, height, weight and how active you are for amounts made for you. About a minute.</p>' +
       '<button class="ik-btn" data-act="profile">Set my targets</button></div>';
@@ -9884,9 +9883,9 @@ function ikRenderToday(ctx) {
         (e.note ? '<br><span class="ik-enote">' + ikEsc(e.note) + "</span>" : "") + ikEntryBadges(e, d) + '</span>' + (ikEntryBars(e, et, d) || '<span class="ik-ekcal">' + right + "</span>") + "</button>";
     });
   });
+  if (ikShow(d, "supps")) h += ikRegItems(d).length ? ikDoseCard(d, day, "supp") : ikRegSetupCard();   // 0.5.8 (Oran, 2026-10-17): vitamins & supplements sit above the Food section
   h += '<div class="ik-foodhead"><h2 class="ik-h2">Food</h2><span class="ik-fm-addgrp">' + ikGlassBtn("sm") + '<button class="ik-btn" data-act="add">＋ Add food</button></span></div>';
   h += '<section class="ik-list">' + (listHtml || '<div class="ik-empty">Nothing logged ' + (isToday ? "yet today" : "on this day") + '.<br>Tap the camera to snap your food, or ＋ Add food.</div>') + "</section>";
-  h += '<div class="ik-quick"><button class="ik-btn" data-act="photo">📷 Snap my food</button><button class="ik-btn ghost" data-act="add">＋ Add food</button></div>';
   if (es.length) h += '<p class="ik-small ik-footnote">Each bar is how much of your day\'s target that meal gave you.</p>';   // 0.5.8: reminders go small, at the bottom
   // 0.5.7: food first (right under the fuel map), then the other cards; hydration is a folded section near the bottom
   var hyd = "";   // 0.5.8: hydration lives in the fuel map now (tap the Hydration light): a 8-hour chart, the day so far and cup sizes
@@ -10724,9 +10723,9 @@ function ikFuelMap(d, t, week, day, es) {
       (LV ? '<span><b class="g">▲+N</b>still filling (last 2 h)</span>' : "") +
       '<span class="w">' + (N.live ? "% = last " + (N.days ? N.days + " days + " : "") + "24 h as absorbed" : N.days ? "% = average day, last " + N.days + " days" : "% = today so far") +
       ' · estimates, not medical advice · <button class="ik-fm-link" data-fm="sources">How it works</button></span></div>';
-    h += '<div class="ik-fm-foot">';   // 0.5.7: a neutral light panel, so the colours never fight the person's theme
-    if (!set.fmAck) h += '<div class="ik-fm-legal first"><span>The fuel map is an estimate built from published nutrition research, not medical advice or a test.</span><button class="ik-fm-ok" data-fm="ack">Got it</button></div>';
-    h += "</div></div>";   // foot, card
+    // 0.5.8 (Oran, 2026-10-17): no empty foot — it showed as a white strip once the legal notice was acknowledged
+    if (!set.fmAck) h += '<div class="ik-fm-foot"><div class="ik-fm-legal first"><span>The fuel map is an estimate built from published nutrition research, not medical advice or a test.</span><button class="ik-fm-ok" data-fm="ack">Got it</button></div></div>';
+    h += "</div>";   // card
   }
   h += '</div><div class="ik-fm-right">';
   // the panel: folded away on phones until something is tapped; always shown beside the map on computers
