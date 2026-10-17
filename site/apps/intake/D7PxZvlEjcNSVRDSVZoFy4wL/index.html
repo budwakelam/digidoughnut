@@ -89,6 +89,18 @@
   Hydration on the map is now a running water balance for right now (absorption, losses, kidneys), not a 3-day
   average; the map's labels scale with the screen so they fit on small phones.
   Looking at an earlier day shows a Today button beside the arrows (tapping the Today tab again also jumps back).
+  0.5.8 (Oran, 2026-10-17): (0) 0-kcal meals fixed for real: a saved food or recipe with no energy number (any
+  source, not only estimates) is made whole when it's counted: energy from its own protein, carbs and fat, or a blend
+  of the closest table foods by each word of its name (Greek yogurt + blueberries + walnuts, no longer lasagna); a
+  photo never counts through such a food, and adding the photo fixes the saved food for good. (1) Fuel in is docked
+  on the fuel map, with a thicker stream of fuel and travelling orbs into the stomach. (2) The sync light is a small
+  dot with a faded word: Online, Offline, Connecting…, Reconnecting…, Not syncing, Update needed, Sync off.
+  (3) "Each bar is…" is a small note under the food list. (4) Hydration card folded into the fuel map's Hydration
+  panel: an 8-hour line of the water balance, today's total and cup sizes. (5) Scan results: count-up energy with
+  calories adding up from protein, carbs, fibre, fat and alcohol, Add now at the top, each food's numbers, what the
+  meal is made of, medals for the biggest boosts, vitamin and mineral coverage, every nutrient found, Add pinned.
+  (6) The fuel map reacts to a meal: absorption over the next hours, ▲/▼ on each system, pulsing systems and
+  nutrients for about 75 minutes, orbs along the paths, and "Absorbing … NN%" in Fuel in.
   To make a new app, change only the parts marked PROGRAM-SPECIFIC (styles, markup, script)
   and the app name in the <head>.
 -->
@@ -1083,6 +1095,57 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-row>i{grid-column:1/-1;height:6px;border-radius:3px;background:#f0f0f4;overflow:hidden;display:block}
 .ik-fm-row>i em{display:block;height:6px;border-radius:3px}
 .ik-fm-tip{margin-top:12px;background:var(--ik-amberbg);border-radius:14px;padding:11px 13px;font-size:14px;line-height:1.4;color:#5c2e00}
+/* 0.5.8 (Oran, 2026-10-17): Fuel in docked on the map, a thicker stream of fuel, and the map reacting to a meal */
+.ik-fm-dock{position:absolute;left:50%;bottom:1.6%;transform:translateX(-50%);width:82%;height:13cqw;min-height:44px;box-sizing:border-box;margin:0;z-index:2;
+  gap:2cqw;padding:0 1.4cqw 0 1.8cqw;border-radius:6.5cqw;background:rgba(5,14,22,.8);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  border:1.5px solid color-mix(in srgb,var(--c) 60%,transparent);box-shadow:0 0 22px color-mix(in srgb,var(--c) 40%,transparent),inset 0 0 14px color-mix(in srgb,var(--c) 16%,transparent);overflow:hidden}
+.ik-fm-dock.on{background:rgba(8,22,34,.9)}
+.ik-fm-dock.beat{animation:ikFmBeat 1.9s ease-in-out infinite}
+@keyframes ikFmBeat{0%,100%{border-color:color-mix(in srgb,var(--c) 30%,#fff);box-shadow:0 0 32px 4px color-mix(in srgb,var(--c) 80%,transparent),0 -6px 26px color-mix(in srgb,var(--c) 60%,transparent),inset 0 0 20px color-mix(in srgb,var(--c) 40%,transparent)}
+  50%{border-color:color-mix(in srgb,var(--c) 40%,transparent);box-shadow:0 0 12px color-mix(in srgb,var(--c) 22%,transparent),0 0 0 transparent,inset 0 0 8px color-mix(in srgb,var(--c) 8%,transparent)}}
+.ik-fm-dock .ik-fm-fuelbtn{gap:2cqw;padding:0;height:100%}
+.ik-fm-dock .ik-fm-orb{width:clamp(26px,8.6cqw,36px);height:clamp(26px,8.6cqw,36px);animation:ikFmOrbGlow 2.2s ease-in-out infinite}
+.ik-fm-dock .ik-fm-orb svg{width:52%;height:52%}
+.ik-fm-dock .ik-fm-k{font-size:clamp(8px,2.45cqw,10.5px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#9fb4c4}
+.ik-fm-dock .ik-fm-title{font-size:clamp(11.5px,3.8cqw,15px)}
+.ik-fm-dock .ik-fm-fuelbtn .ik-grow{min-width:0}
+.ik-fm-dock .ik-fm-since b{font-size:clamp(11px,3.4cqw,13.5px)}
+.ik-fm-dock .ik-fm-since small{font-size:clamp(8px,2.4cqw,10.5px)}
+.ik-fm-dock .ik-fm-chev{width:clamp(28px,8.6cqw,36px);height:clamp(28px,8.6cqw,36px)}
+.ik-fm-absbar{position:absolute;left:7%;right:7%;bottom:0;height:3px;border-radius:2px;background:rgba(255,255,255,.1);overflow:hidden}
+.ik-fm-absbar em{display:block;height:3px;background:var(--c);box-shadow:0 0 8px var(--c);transition:width 1s}
+.ik-fm-dock.eating .ik-fm-k{color:#fff}
+.ik-fm-port{position:absolute;left:59.18%;top:88.6%;width:11%;aspect-ratio:2.2;transform:translate(-50%,-50%);border-radius:50%;z-index:3;pointer-events:none;
+  background:radial-gradient(closest-side,#fff 0%,var(--c) 38%,color-mix(in srgb,var(--c) 30%,transparent) 70%,transparent 100%);animation:ikFmPort 1.9s ease-in-out infinite}
+@keyframes ikFmPort{0%,100%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}50%{opacity:.5;transform:translate(-50%,-50%) scale(.85)}}
+@keyframes ikFmOrbGlow{0%,100%{box-shadow:0 0 10px var(--c)}50%{box-shadow:0 0 22px var(--c),0 0 4px #fff}}
+.ik-fm-run.trunk path{stroke-dasharray:30 100;animation-delay:0s!important}
+.ik-fm-dash{stroke-dasharray:3 13;animation:ikFmDash .9s linear infinite;opacity:.9}
+@keyframes ikFmDash{from{stroke-dashoffset:16}to{stroke-dashoffset:0}}
+.ik-fm-paused .ik-fm-orbs{display:none}
+.ik-fm-paused .ik-fm-dash,.ik-fm-paused .ik-fm-port,.ik-fm-paused .ik-fm-dock.beat,.ik-fm-paused .ik-fm-pill.boost,.ik-fm-paused .ik-fm-dock .ik-fm-orb{animation-play-state:paused}
+.ik-fm-tr{font-style:normal;font-size:.62em;margin-left:.3em;vertical-align:.18em;line-height:1}
+.ik-fm-tr.up{color:#7cf2c7;text-shadow:0 0 8px #7cf2c7;animation:ikFmUp 1.6s ease-in-out infinite;display:inline-block}
+.ik-fm-tr.dn{color:#ffb340}
+@keyframes ikFmUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+.ik-fm-pill.boost{animation:ikFmBoost 1.6s ease-in-out infinite}
+@keyframes ikFmBoost{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--c) 0%,transparent);border-color:color-mix(in srgb,var(--c) 40%,transparent)}50%{box-shadow:0 0 18px 2px color-mix(in srgb,var(--c) 70%,transparent);border-color:var(--c)}}
+.ik-fm-boostnote{display:flex;align-items:center;gap:8px;margin:12px 0 0;padding:9px 12px;border-radius:12px;background:#e6fbf3;color:#03543c;font-size:13.5px;font-weight:600}
+.ik-fm-boostnote i{flex:none;width:9px;height:9px;border-radius:50%;background:#19c58c;box-shadow:0 0 0 0 #19c58c;animation:ikRowPulse 1.6s ease-in-out infinite}
+.ik-fm-row.pulse,.ik-drow.pulse,.ik-nrow.pulse{animation:ikRowPulse 1.6s ease-in-out infinite;border-radius:10px}
+@keyframes ikRowPulse{0%,100%{box-shadow:0 0 0 0 rgba(25,197,140,0);background-color:transparent}50%{box-shadow:0 0 0 3px rgba(25,197,140,.28);background-color:rgba(25,197,140,.08)}}
+.ik-entry.fresh{border-radius:14px;box-shadow:0 0 0 2px rgba(25,197,140,.45),0 6px 18px rgba(25,197,140,.18)}
+.ik-footnote{font-size:11.5px;line-height:1.35;color:var(--ik-ink2);opacity:.75;text-align:center;margin:10px 4px 6px}
+.ik-fm-wchart{display:block;width:100%;height:auto;margin:2px 0 0}
+.ik-fm-wline{stroke-dasharray:100;animation:ikFmDraw 1.4s ease-out both}
+.ik-fm-warea{animation:ikFadeIn 1.4s ease-out both}
+.ik-fm-wnow{animation:ikFmNow 1.8s ease-in-out infinite}
+@keyframes ikFmDraw{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+@keyframes ikFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes ikFmNow{0%,100%{r:5}50%{r:7}}
+.ik-fm-wtr{font-size:12px;font-weight:700;margin-left:6px;color:var(--ik-ink2);vertical-align:2px}
+.ik-fm-wtr.up{color:#0c8a5f}.ik-fm-wtr.dn{color:#c56a00}
+@media (prefers-reduced-motion:reduce){.ik-fm-orbs,.ik-fm-dash{display:none}.ik-fm-port,.ik-fm-dock.beat,.ik-fm-pill.boost,.ik-fm-tr.up,.ik-fm-row.pulse,.ik-drow.pulse,.ik-nrow.pulse,.ik-fm-dock .ik-fm-orb,.ik-fm-wline,.ik-fm-warea,.ik-fm-wnow{animation:none}}
 @media (prefers-reduced-motion:reduce){.ik-fm-run{display:none}.ik-fm-halo,.ik-fm-drawer{animation:none}}
 @media (min-width:900px){
   .ik-fm-cols{display:grid;grid-template-columns:minmax(0,430px) minmax(0,1fr);gap:20px;align-items:start}
@@ -1195,6 +1258,77 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 @keyframes ik-spin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.ik-spin{animation:none}}
 .ik-results{display:flex;flex-direction:column}
+/* 0.5.8: scan results */
+.ik-scanhero{border-radius:22px;padding:16px 16px 14px;margin:2px 0 0;color:#fff;background:radial-gradient(120% 140% at 0% 0%,color-mix(in srgb,var(--dd-brand) 70%,#10131a) 0%,#10131a 70%);box-shadow:0 12px 30px rgba(10,14,22,.25);overflow:hidden;position:relative}
+.ik-scanhero.anim{animation:ikPop .5s cubic-bezier(.2,1.3,.4,1) both}
+.ik-hero-k{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.62)}
+.ik-hero-big{font-size:46px;font-weight:800;line-height:1.02;font-variant-numeric:tabular-nums;letter-spacing:-.02em;margin-top:2px}
+.ik-hero-big small{font-size:17px;font-weight:700;letter-spacing:0;color:rgba(255,255,255,.75)}
+.ik-hero-sub{font-size:12.5px;color:rgba(255,255,255,.78);margin-top:4px;line-height:1.35}
+.ik-hero-sub b{color:#fff}
+.ik-hero-add{flex:none;min-height:40px;padding:8px 16px;background:#fff!important;color:#10131a!important;font-weight:800;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+.ik-kbar{display:flex;gap:3px;height:14px;border-radius:7px;overflow:hidden;margin-top:6px;background:rgba(255,255,255,.1)}
+.ik-kbar span{display:block;height:100%}
+.ik-scanhero.anim .ik-kbar span,.ik-break.anim .ik-cbar span{animation:ikGrow .8s cubic-bezier(.2,.9,.3,1) both;animation-delay:calc(.25s + var(--i) * .12s);transform-origin:left}
+.ik-keq{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;margin-top:8px;font-size:12.5px;color:rgba(255,255,255,.85)}
+.ik-keq span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.ik-keq i{width:8px;height:8px;border-radius:50%}
+.ik-keq b{color:#fff;font-variant-numeric:tabular-nums}
+.ik-keq em{font-style:normal;color:rgba(255,255,255,.45);font-weight:700}
+.ik-itmac{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px;color:var(--ik-ink2)}
+.ik-itmac span{display:inline-flex;gap:3px;align-items:baseline}
+.ik-itmac b{color:var(--c);font-variant-numeric:tabular-nums}
+.ik-break{margin:6px 0 12px}
+.ik-bsec{background:#fff;border-radius:18px;padding:13px 14px;margin:0 0 10px;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.ik-bh{display:flex;justify-content:space-between;align-items:baseline;font-size:15px;font-weight:800;margin:0 0 9px}
+.ik-bh span{font-size:12px;font-weight:600;color:var(--ik-ink2)}
+.ik-cbar{display:flex;gap:2px;height:18px;border-radius:9px;overflow:hidden;background:#f0f0f4}
+.ik-cbar span{display:block;height:100%}
+.ik-ckey{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 10px;margin-top:10px}
+.ik-ckey>span{display:flex;align-items:center;gap:7px;min-width:0}
+.ik-ckey>span>span{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 6px;font-size:13px;min-width:0}
+.ik-ckey b{font-variant-numeric:tabular-nums}
+.ik-ckey small{color:var(--ik-ink2);font-size:11.5px}
+.ik-medals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.ik-medal{display:flex;align-items:center;gap:7px;padding:8px 10px;border-radius:14px;position:relative;font-size:13px;min-width:0}
+.ik-medal b{flex:1;min-width:0;font-size:12.5px;line-height:1.2;overflow-wrap:anywhere}
+.ik-medal .ik-ni{display:none}
+.ik-medal em{font-style:normal;font-weight:800;font-variant-numeric:tabular-nums}
+.ik-medal-m{font-size:18px;line-height:1}
+.ik-medal.gold{background:linear-gradient(135deg,#fff4cf,#ffe39a)}.ik-medal.silver{background:linear-gradient(135deg,#f3f4f7,#e2e5ec)}.ik-medal.bronze{background:linear-gradient(135deg,#fdeee2,#f6d8c0)}
+.ik-break.anim .ik-medal{animation:ikPop .5s cubic-bezier(.2,1.4,.4,1) both;animation-delay:calc(.5s + var(--i) * .1s)}
+.ik-covs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ik-cov{display:flex;align-items:center;gap:10px}
+.ik-cov svg{width:46px;height:46px;flex:none}
+.ik-cov>span{display:flex;flex-direction:column;align-items:flex-start;text-align:left;min-width:0}
+.ik-cov b{display:block;font-size:20px;font-weight:800;color:var(--c);font-variant-numeric:tabular-nums}
+.ik-cov small{font-size:12px;color:var(--ik-ink2)}
+.ik-break.anim .ik-covarc{animation:ikArc 1.1s cubic-bezier(.2,.9,.3,1) .3s both}
+.ik-ngrp{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ik-ink2);margin:12px 0 6px}
+.ik-ngrp:first-of-type{margin-top:2px}
+.ik-fm-row.kv{grid-template-columns:minmax(0,1fr) auto}
+.ik-results .ik-item>.ik-row:first-child{flex-wrap:wrap;row-gap:6px}
+.ik-results .ik-item>.ik-row:first-child>b{flex:1 1 100%}
+.ik-ntiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.ik-ntile{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:2px 8px;padding:8px 9px;border-radius:12px;background:#f7f7f9}
+.ik-ntile.hi{background:color-mix(in srgb,var(--ik-fibre) 9%,#fff);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ik-fibre) 30%,transparent)}
+.ik-ntile .ik-ni{margin:0}
+.ik-ntx{display:flex;flex-direction:column;min-width:0;font-size:11.5px;line-height:1.2;color:var(--ik-ink2)}
+.ik-ntx span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ik-ntx b{font-size:13.5px;color:var(--ik-ink);font-variant-numeric:tabular-nums}
+.ik-npct{font-size:12px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ik-ink)}
+.ik-npct.lim{font-weight:600;color:var(--ik-ink2);font-size:11px}
+.ik-ntile>i{grid-column:1/-1;height:4px;border-radius:2px;background:#e9e9ee;overflow:hidden;display:block}
+.ik-ntile>i em{display:block;height:4px;border-radius:2px}
+.ik-break.anim .ik-ntile{animation:ikRise .45s ease-out both;animation-delay:calc(.6s + var(--i) * .035s)}
+.ik-break.anim .ik-ntile>i em{animation:ikGrow .8s cubic-bezier(.2,.9,.3,1) both;animation-delay:calc(.8s + var(--i) * .035s);transform-origin:left}
+.ik-addbar{position:sticky;bottom:-18px;margin:0 -18px -18px;padding:12px 18px calc(16px + env(safe-area-inset-bottom));background:linear-gradient(to top,var(--ik-grey) 72%,color-mix(in srgb,var(--ik-grey) 0%,transparent));z-index:3}
+@keyframes ikPop{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+@keyframes ikRise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes ikGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes ikArc{from{stroke-dasharray:0 100}}
+@media (max-width:380px){.ik-ntiles,.ik-ckey{grid-template-columns:1fr}.ik-hero-big{font-size:40px}}
+@media (prefers-reduced-motion:reduce){.ik-scanhero.anim,.ik-scanhero.anim .ik-kbar span,.ik-break.anim *{animation:none!important}}
 .ik-search{position:relative}
 .ik-hits{background:#fff;border-radius:16px;margin-top:8px;max-height:46vh;overflow:auto}
 .ik-hit{display:flex;align-items:center;gap:10px;width:100%;border:0;border-bottom:1px solid var(--ik-line);background:none;font:inherit;text-align:left;padding:11px 14px;cursor:pointer;min-height:48px;color:inherit}
@@ -1250,12 +1384,17 @@ input[type=time].ik-input::-webkit-date-and-time-value,input[type=date].ik-input
 .dd-menu-head-ico img{width:40px;height:40px;display:block}
 .dd-menu-head-tx b.ik-brandname{font-family:"IntakeBrand",var(--dd-font);font-weight:800;letter-spacing:.01em}
 .dd-top .dd-menu-dot{top:6px;left:24px}
-@media (min-width:641px){.dd-top .dd-sync-chip{min-height:40px;padding:6px 13px;font-size:.9rem}.dd-top .dd-sync-chip i{width:13px;height:13px}}
+/* 0.5.8 (Oran, 2026-10-17): the sync light is just a dot with a small faded word beside it (Online, Offline,
+   Connecting…, Reconnecting…, Not syncing, Update needed, Sync off). No button look, small on every screen. */
+.dd-top .dd-sync-chip,.dd-top .dd-sync-chip.bad{min-height:0;padding:3px 2px;gap:5px;background:transparent;border:0;box-shadow:none;
+  font-size:.64rem;line-height:1;font-weight:600;letter-spacing:.02em;color:rgba(255,255,255,.4);text-transform:none}
+.dd-top .dd-sync-chip.bad{color:rgba(255,255,255,.62)}
+.dd-top .dd-sync-chip i{width:9px;height:9px;box-shadow:0 0 0 1.5px rgba(255,255,255,.55)}
+@media (min-width:641px){.dd-top .dd-sync-chip,.dd-top .dd-sync-chip.bad{font-size:.72rem}.dd-top .dd-sync-chip i{width:10px;height:10px}}
 @media (max-width:640px){
   .dd-top .dd-slot{align-self:center}
-  .dd-top .dd-sync-chip{padding:11px;min-height:0}
-  .dd-top .dd-sync-chip i{width:18px;height:18px}
-  .dd-top .dd-sync-chip.bad{font-size:.8rem;padding:6px 11px}
+  .dd-top .dd-sync-chip,.dd-top .dd-sync-chip.bad{font-size:.58rem;padding:3px 0;gap:4px}
+  .dd-top .dd-sync-chip i{width:8px;height:8px}
 }
 
 /* the nutrient balance chart */
@@ -4541,7 +4680,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
         body: function () { return '<p>This device is connected to your database.' + (dd.env.isPhone
             ? ' To bring in your other devices, open ' + esc(program.name) + ' on your computer, then menu → ⚙️ Settings → <b>Send to my phone</b>.</p>'
             : ' Now bring your phone in: tap <b>Send to my phone</b> and scan the square. The phone joins straight away and stays synced.</p>') +
-          '<p class="dd-note">The chip at the top of the page shows "Synced" while everything is up to date.</p>'; },
+          '<p class="dd-note">The chip at the top of the page shows a green dot and "Online" while everything is up to date.</p>'; },
         action: dd.env.isPhone ? null : { label: "📲 Send to my phone", run: function (c) {
           c.next();
           setTimeout(function () {
@@ -6471,7 +6610,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
   /* {kind: ok|wait|bad|off, short, long} in plain words */
   sync.status = function () {
     if (state === "connecting") return { kind: "wait", short: "Connecting…", long: "Connecting to your Firebase database." };
-    if (state === "on" && connectedNow) return { kind: "ok", short: "Synced", long: "Live sync is on. Changes go to your other devices straight away." };
+    if (state === "on" && connectedNow) return { kind: "ok", short: "Online", long: "Live sync is on. Changes go to your other devices straight away." };
     if (state === "on") return { kind: "wait", short: "Offline", long: "Can't reach your database right now. Your changes are kept here and go across when you're back online." };
     if (state === "newer") { var n = dd.errors.friendly("sync_newer"); return { kind: "bad", short: "Update needed", long: n.title + " " + n.help }; }
     if (state === "problem" && sync.isSoft()) return { kind: "wait", short: "Reconnecting…", long: "Lost touch with your database for a moment. Trying again by itself; your changes are kept here meanwhile." };
@@ -7707,12 +7846,17 @@ function ikLc(s) { s = String(s || ""); return /^[A-Z][a-z]/.test(s) ? s.charAt(
 function ikResolve(ref, d) {
   var kind = String(ref || "").slice(0, 2), id = String(ref || "").slice(2);
   if (kind === "t:") { var f = IK_FOODS[id]; return f ? { type: "table", food: f, label: f.label, per100: f.n, plant: f.plant, kind: f.kind } : null; }
-  if (kind === "r:") { var r = (d.recipes || []).filter(function (x) { return x.id === id; })[0]; return r ? { type: "recipe", recipe: r, label: r.name, per100: r.per100 || {}, plantKeys: r.plants || [] } : null; }
+  if (kind === "r:") {
+    var r = (d.recipes || []).filter(function (x) { return x.id === id; })[0]; if (!r) return null;
+    var rfix = ikHealRecipe(r, d);   // 0.5.8: a recipe with no energy number is worked out again from its ingredients
+    return { type: "recipe", recipe: r, label: r.name, per100: rfix || r.per100 || {}, filled: !!rfix, plantKeys: r.plants || [] };
+  }
   if (kind === "c:") {
     var c = (d.customFoods || []).filter(function (x) { return x.id === id; })[0];
     if (!c) return null;
-    var fill = c.est && !c.perServing ? ikFillEstimate(c.per100, c.name) : null;   // V5: calories-only estimates
-    return { type: "custom", custom: c, label: c.name, per100: fill || c.per100 || null, filled: !!fill, perServing: c.perServing || null, servingG: c.servingG || null, est: !!c.est, kind: c.kind || "food" };
+    var heal = ikHealCustom(c);   // V5 calories-only estimates; 0.5.8: any food (not a supplement) with no energy number
+    return { type: "custom", custom: c, label: c.name, per100: (heal && heal.per100) || c.per100 || null, filled: !!heal, perServing: (heal && heal.perServing) || c.perServing || null,
+             servingG: c.servingG || null, est: !!c.est || !!heal, kind: c.kind || "food" };
   }
   if (kind === "s:") { var s = IK_SUPPS[id]; return s ? { type: "supp", label: s.label, perServing: s.n, est: true, typical: true, kind: "supplement" } : null; }
   return null;
@@ -8438,7 +8582,8 @@ function ikRadarSwitch(mode) {
 function ikDetailRow(d, t, week, m, day) {
   var v = m.get(t), tg = ikMacroTarget(d, m), pct = tg ? v / tg : 0, over = m.kind === "limit" && pct > 1;
   var allMissing = t.items > 0 && t.miss[m.k] != null && t.miss[m.k] >= t.items;
-  return '<button class="ik-drow" data-act="nutrients" aria-label="' + ikEsc(m.label + " " + ikNum(v, m.dp) + (tg ? " of " + ikNum(tg, m.dp) : "") + " " + m.unit) + '">' +
+  var lp = IK_FM_LIVE && IK_FM_LIVE.day === day && IK_FM_LIVE.pulse[m.k];   // 0.5.8: brought by the meal you just had
+  return '<button class="ik-drow' + (lp ? " pulse" : "") + '" data-act="nutrients" aria-label="' + ikEsc(m.label + " " + ikNum(v, m.dp) + (tg ? " of " + ikNum(tg, m.dp) : "") + " " + m.unit) + '">' +
     ikRingSvg([{ label: m.label, pct: allMissing ? 0 : pct, color: over ? "var(--ik-amber)" : m.color, soft: m.soft }], 34, 6, 0) +
     '<span class="ik-drowtx"><b>' + ikNIcon(m.k) + ikEsc(m.label) + "</b><span>" + (allMissing ? "not measured" : ikNum(v, m.dp) + (tg ? " / " + ikNum(tg, m.dp) : "") + " " + m.unit + (m.kind === "limit" ? " max" : "")) + "</span></span>" +
     ikSpark(week, m.k, tg, m.color, day, function (s) { return m.get(s.t); }) +
@@ -9662,16 +9807,17 @@ function ikRenderToday(ctx) {
       var et = ikTotals([e], d), icon = e.kind === "drink" ? "drink" : e.kind === "supplement" ? "supplement" : e.part;
       var right = hide ? ikNum(et.v.protein, 0) + "<span> g protein</span>" : ikNum(et.v.kcal, 0) + "<span> kcal</span>";
       if (e.kind === "drink" && (et.v.kcal || 0) < 5) right = ikNum(et.drinksMl, 0) + "<span> mL</span>";   // V5.1: water and black coffee show how much
-      listHtml += '<button class="ik-entry" data-entry="' + ikEsc(e.id) + '"><span class="ik-ico ' + icon + '" aria-hidden="true">' + (IK_PART_ICON[icon] || "🍽️") + "</span>" +
+      listHtml += '<button class="ik-entry' + (IK_FM_LIVE && IK_FM_LIVE.day === day && IK_FM_LIVE.fresh[e.id] ? " fresh" : "") + '" data-entry="' + ikEsc(e.id) + '"><span class="ik-ico ' + icon + '" aria-hidden="true">' + (IK_PART_ICON[icon] || "🍽️") + "</span>" +
         '<span class="ik-grow"><span class="ik-ewhen">' + IK_PARTS[e.part] + " · " + ikNiceTime(e.time) + '</span><br><span class="ik-ename">' + ikEsc(ikEntryName(e, d)) + "</span>" + (et.est ? '<span class="ik-est">estimated</span>' : "") +
         (e.note ? '<br><span class="ik-enote">' + ikEsc(e.note) + "</span>" : "") + ikEntryBadges(e, d) + '</span>' + (ikEntryBars(e, et, d) || '<span class="ik-ekcal">' + right + "</span>") + "</button>";
     });
   });
-  h += '<div class="ik-foodhead"><h2 class="ik-h2">Food</h2><span class="ik-fm-addgrp">' + ikGlassBtn("sm") + '<button class="ik-btn" data-act="add">＋ Add food</button></span></div>' + (es.length ? '<p class="ik-small" style="margin:-6px 2px 8px">Each bar is how much of your day\'s target that meal gave you.</p>' : "");
+  h += '<div class="ik-foodhead"><h2 class="ik-h2">Food</h2><span class="ik-fm-addgrp">' + ikGlassBtn("sm") + '<button class="ik-btn" data-act="add">＋ Add food</button></span></div>';
   h += '<section class="ik-list">' + (listHtml || '<div class="ik-empty">Nothing logged ' + (isToday ? "yet today" : "on this day") + '.<br>Tap the camera to snap your food, or ＋ Add food.</div>') + "</section>";
   h += '<div class="ik-quick"><button class="ik-btn" data-act="photo">📷 Snap my food</button><button class="ik-btn ghost" data-act="add">＋ Add food</button></div>';
+  if (es.length) h += '<p class="ik-small ik-footnote">Each bar is how much of your day\'s target that meal gave you.</p>';   // 0.5.8: reminders go small, at the bottom
   // 0.5.7: food first (right under the fuel map), then the other cards; hydration is a folded section near the bottom
-  var hyd = ikShow(d, "drinks") ? '<details class="ik-card ik-more" id="ikHyd"' + (IK_UI.openHyd ? " open" : "") + '><summary>💧 Hydration and cup sizes</summary>' + ikHydrationCard(d, t, week, day).replace('class="ik-card ik-hyd"', 'class="ik-hyd"') + '<p class="ik-small" style="margin:10px 0 0">Note: press and hold the 💧 water glass at the top of your screen to pick a different glass size.</p></details>' : "";
+  var hyd = "";   // 0.5.8: hydration lives in the fuel map now (tap the Hydration light): a 8-hour chart, the day so far and cup sizes
   h += "</div><div>" + pre + rest + hyd + "</div></div>";
   // every nutrient, folded away
   h += '<details class="ik-card ik-more" id="ikAllN"' + (IK_UI.openAll === false ? "" : " open") + '><summary>Every nutrient ' + (isToday ? "today" : "this day") + "</summary>" + ikNutrientList(d, t, 1, day) + "</details>";
@@ -9680,6 +9826,15 @@ function ikRenderToday(ctx) {
   var newVis = host.querySelector(".ik-fm-vis");   // V5.5c: same picture and light? keep the running one, so nothing restarts
   if (oldVis && newVis && oldVis.getAttribute("data-sig") === newVis.getAttribute("data-sig")) newVis.parentNode.replaceChild(oldVis, newVis);
   ikFmWatch(host);
+  ikFmSyncBeat(host);
+}
+/* 0.5.8b: the Fuel in border and port flash each time a pulse of fuel leaves, in step with the moving light. */
+function ikFmSyncBeat(host) {
+  try {
+    var tp = host.querySelector(".ik-fm-run.trunk path"), an = tp && tp.getAnimations ? tp.getAnimations()[0] : null;
+    var t = an && an.currentTime != null ? an.currentTime % 1900 : 0;
+    host.querySelectorAll(".ik-fm-dock.beat,.ik-fm-port").forEach(function (el) { el.style.animationDelay = (-t).toFixed(0) + "ms"; });
+  } catch (e) {}
 }
 /* V5.1 (Oran, 2026-10-15): what each meal brought. Small bars, anchored on the right edge, growing to the left:
    energy, protein, carbs and fat (fibre when calories are hidden). A full bar is the whole day's target, so a bar
@@ -9709,7 +9864,7 @@ function ikNutrientList(d, t, days, srcDay) {
     if (n.k === "alcohol" && v > 0) note += '<div class="ik-small">' + ikNum(v / IK_EDITION.standardDrinkG, 1) + " standard drinks" + (days > 1 ? " a day on average" : "") + ".</div>";
     var color = n.g === "Vitamins" ? "var(--ik-vit)" : n.g === "Minerals" ? "var(--ik-min)" : n.k === "protein" ? "var(--ik-protein)" : n.k === "fibre" ? "var(--ik-fibre)" : n.k === "kcal" ? "var(--ik-energy)" : "var(--ik-fat)";
     if (cls === "ik-hi") color = "var(--ik-high)";
-    out += '<div class="ik-nrow"' + (srcDay && t.v[n.k] > 0 ? ' data-src="' + n.k + '" role="button" tabindex="0" style="cursor:pointer" title="See where it came from"' : "") + '><div class="ik-row"><span>' + ikNIcon(n.k) + ikEsc(n.label) + (srcDay && t.v[n.k] > 0 ? ' <span class="ik-small">›</span>' : "") + "</span><span>" + val + "</span></div>" +
+    out += '<div class="ik-nrow' + (IK_FM_LIVE && IK_FM_LIVE.day === srcDay && IK_FM_LIVE.pulse[n.k] ? " pulse" : "") + '"' + (srcDay && t.v[n.k] > 0 ? ' data-src="' + n.k + '" role="button" tabindex="0" style="cursor:pointer" title="See where it came from"' : "") + '><div class="ik-row"><span>' + ikNIcon(n.k) + ikEsc(n.label) + (srcDay && t.v[n.k] > 0 ? ' <span class="ik-small">›</span>' : "") + "</span><span>" + val + "</span></div>" +
       (tg && !allMissing ? '<div class="ik-bar"><i style="width:' + Math.min(100, Math.max(0, pct || 0)).toFixed(0) + "%;background:" + color + '"></i></div>' : "") + note + "</div>";
   });
   return out + '</div><p class="ik-small" style="margin-top:12px">"Not measured" means the food table has no value for that food, so it isn\'t counted as zero. Added sugars aren\'t listed separately in the Canadian Nutrient File.</p>';
@@ -10048,7 +10203,7 @@ function ikFmFuelDetails(d, F, dayKcal) {
   var net = c.fatOx - c.Af;
   var store = net < -1 ? ["Storing", "About " + Math.round(-net) + " g an hour of the fat from your meal is being tucked away, to be burned later.", "#ffb340"]
     : net > 1 ? ["Burning", "About " + Math.round(net) + " g of body fat an hour.", "#7cf2c7"] : ["Holding steady", "About as much fat coming in as being burned.", "#8db8ff"];
-  var hoursToday = (Date.now() - ikParseDay(ikToday()).getTime()) / 3600000, burned = Math.round(F.E * hoursToday), gap = burned - Math.round(dayKcal);
+  var hoursToday = Math.max(0, (Date.now() - ikParseDay(ikToday()).getTime()) / 3600000 + 12) /* 0.5.8: ikParseDay is noon; count from midnight */, burned = Math.round(F.E * hoursToday), gap = burned - Math.round(dayKcal);
   var lm = F.fs && !F.fs.none ? F.fs.last.e : null;
   var tile = function (label, big, small, extra) { return '<div class="ik-fm-tile"' + (extra || "") + '><div class="ik-fm-k">' + label + "</div>" + big + (small ? '<div class="ik-fm-s">' + small + "</div>" : "") + "</div>"; };
   return '<div class="ik-fm-drawer">' +
@@ -10081,25 +10236,51 @@ function ikFmSystemPanel(d, S, F, N, tToday) {
     '<div class="ik-row" style="gap:12px"><div class="ik-fm-badge" style="box-shadow:inset 0 0 0 2px ' + col + ",0 0 14px " + col + '55">' + S.pct + '%</div><div class="ik-grow"><div style="font-size:20px;font-weight:800">' + ikEsc(S.s.name) + '</div><div class="ik-small">' + ikEsc(S.s.what) + "</div></div>" +
       '<span class="ik-fm-chip ' + S.st + '">' + tag + "</span></div>" +
     (F && !F.past ? '<div class="ik-fm-now"><i style="background:' + fu.c + ";box-shadow:0 0 10px " + fu.c + '"></i><span><b>Powered right now by</b><br>' + ikEsc(fu.label) + "</span></div>" : "") +
-    '<div class="ik-fm-h">' + (N && N.days ? "Nourished: your average day, last " + N.days + " day" + (N.days === 1 ? "" : "s") + '<span class="ik-fm-today">Today so far: ' + todayPct + "%</span>" : "What feeds it, today so far") + "</div>" + S.rows.map(function (r) {
-      var c = r.pct >= 80 ? "#0e8fa3" : r.pct >= 50 ? "#2a72d4" : "#c56a00";
-      return '<div class="ik-fm-row"><span>' + (r.k.charAt(0) === "_" ? "" : ikNIcon(r.k)) + ikEsc(r.name) + '</span><b style="color:' + c + '">' + r.pct + '%</b><i><em style="width:' + Math.max(3, r.pct) + "%;background:" + c + '"></em></i></div>';
+    (S.boost ? '<div class="ik-fm-boostnote"><i aria-hidden="true"></i>Your last meal is feeding this right now' + (S.dPct >= 1 ? ": up " + S.dPct + " points in the last 45 minutes" : "") + ".</div>" : "") +
+    '<div class="ik-fm-h">' + (N && N.live ? (N.days ? "Nourished: last " + N.days + " day" + (N.days === 1 ? "" : "s") + " + last 24 h" : "Fed: the last 24 hours, as it's absorbed") + '<span class="ik-fm-today">Today so far: ' + todayPct + "%</span>" : N && N.days ? "Nourished: your average day, last " + N.days + " day" + (N.days === 1 ? "" : "s") + '<span class="ik-fm-today">Today so far: ' + todayPct + "%</span>" : "What feeds it, today so far") + "</div>" + S.rows.map(function (r) {
+      var c = r.pct >= 80 ? "#0e8fa3" : r.pct >= 50 ? "#2a72d4" : "#c56a00", lp = IK_FM_LIVE && IK_FM_LIVE.pulse[r.k];
+      return '<div class="ik-fm-row' + (lp ? " pulse" : "") + '"><span>' + (r.k.charAt(0) === "_" ? "" : ikNIcon(r.k)) + ikEsc(r.name) + '</span><b style="color:' + c + '">' + r.pct + '%</b><i><em style="width:' + Math.max(3, r.pct) + "%;background:" + c + '"></em></i></div>';
     }).join("") +
     (S.foods ? '<div class="ik-fm-h">Fed most by</div><div style="font-size:14.5px">' + ikEsc(S.foods) + "</div>" : "") +
     (S.tip ? '<div class="ik-fm-tip">' + ikEsc(S.tip) + "</div>" : "") +
-    '<p class="ik-small" style="margin:10px 0 0">The light is the fuel it\'s running on right now. The % is how well it\'s been nourished: how close your average day over the last week came to the target for each nutrient that supports it (each capped at 100%). An estimate of what your food supplies, not a medical reading.</p></div>';
+    '<p class="ik-small" style="margin:10px 0 0">The light is the fuel it\'s running on right now. The % is how well it\'s been nourished: how close your average day over the last week came to the target for each nutrient that supports it (each capped at 100%)' + (N && N.live ? ", blended with the last 24 hours as your food is absorbed (about half in the first hour, most by 3 to 4 hours), so it climbs after a meal" : "") + '. An estimate of what your food supplies, not a medical reading.</p></div>';
 }
 
+/* 0.5.8 (Oran, 2026-10-17): the Hydration card moved in here. A flowing line of how hydrated the body has been
+   over the last 8 hours (the same running water balance as the light on the map), drops where drinks were
+   logged, today's total and a link to change the cup sizes. The one-tap water glass sits beside Add. */
+function ikFmWaterChart(HY) {
+  var W = 314, Hc = 96, top = 6, span = HY.now - HY.from8, X = function (tt) { return (6 + (tt - HY.from8) / span * (W - 14)).toFixed(1); }, Y = function (p) { return (top + (Hc - top) * (1 - p / 100)).toFixed(1); };
+  var pts = HY.samples.map(function (q) { return [X(q.t), Y(q.pct)]; });
+  if (pts.length < 2) return "";
+  var line = "M" + pts[0][0] + " " + pts[0][1];
+  for (var i = 1; i < pts.length; i++) { var p0 = pts[i - 1], p1 = pts[i], mx = ((+p0[0] + +p1[0]) / 2).toFixed(1); line += " C" + mx + " " + p0[1] + " " + mx + " " + p1[1] + " " + p1[0] + " " + p1[1]; }
+  var area = line + " L" + pts[pts.length - 1][0] + " " + Hc + " L" + pts[0][0] + " " + Hc + " Z", last = pts[pts.length - 1];
+  var drops = HY.drinks.map(function (w) { var x = X(w.at); return '<g transform="translate(' + x + ' ' + (Hc - 1) + ')"><path d="M0 -11 C3 -7 5 -4.5 5 -2.2 A5 5 0 0 1 -5 -2.2 C-5 -4.5 -3 -7 0 -11 Z" fill="var(--ik-water)" opacity=".9"/><title>' + Math.round(w.ml) + " mL</title></g>"; }).join("");
+  return '<svg class="ik-fm-wchart" viewBox="0 0 314 116" role="img" aria-label="How hydrated you have been over the last 8 hours: ' + HY.pct + '% now">' +
+    '<defs><linearGradient id="fmWArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--ik-water)" stop-opacity=".42"/><stop offset="1" stop-color="var(--ik-water)" stop-opacity=".03"/></linearGradient></defs>' +
+    '<rect x="0" y="' + top + '" width="314" height="' + (Hc - top) + '" rx="8" fill="var(--ik-water-soft)" opacity=".35"/>' +
+    '<path d="M0 ' + Y(60) + ' H314" stroke="#c56a00" stroke-width="1" stroke-dasharray="3 4" opacity=".55"/><text x="4" y="' + (+Y(60) - 4) + '" font-size="9.5" font-weight="700" fill="#c56a00" opacity=".8">thirst starts</text>' +
+    '<path d="M0 ' + Y(100) + ' H314" stroke="var(--ik-water)" stroke-width="1" opacity=".25"/>' +
+    '<path class="ik-fm-warea" d="' + area + '" fill="url(#fmWArea)"/><path class="ik-fm-wline" pathLength="100" d="' + line + '" fill="none" stroke="var(--ik-water)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>' +
+    drops + '<circle class="ik-fm-wnow" cx="' + last[0] + '" cy="' + last[1] + '" r="5" fill="#fff" stroke="var(--ik-water)" stroke-width="3"/>' +
+    '<text x="2" y="113" font-size="10" font-weight="700" fill="#8e8e93">8 h ago</text><text x="157" y="113" text-anchor="middle" font-size="10" font-weight="700" fill="#8e8e93">4 h ago</text>' +
+    '<text x="312" y="113" text-anchor="end" font-size="10" font-weight="700" fill="var(--ik-ink)">now</text></svg>';
+}
 function ikFmWaterPanel(d, t, pct, HY) {
-  var tg = ikTarget(d, "drinks") || 2200, st = ikFmStatus(pct), col = IK_FM_COL[st];
-  return '<div class="ik-card ik-fm-panel"><div class="ik-row" style="gap:12px"><div class="ik-fm-badge" style="box-shadow:inset 0 0 0 2px ' + col + '">' + pct + '%</div><div class="ik-grow"><div style="font-size:20px;font-weight:800">Hydration</div>' +
+  var tg = ikTarget(d, "drinks") || 2200, st = ikFmStatus(pct), col = IK_FM_COL[st], today = ikTotals(ikEntriesOn(d, ikToday()), d).drinksMl || 0;
+  var tr = HY.none ? "" : HY.trend >= 2 ? ' <span class="ik-fm-wtr up">▲ rising</span>' : HY.trend <= -2 ? ' <span class="ik-fm-wtr dn">▼ falling</span>' : ' <span class="ik-fm-wtr">steady</span>';
+  return '<div class="ik-card ik-fm-panel"><div class="ik-row" style="gap:12px"><div class="ik-fm-badge" style="box-shadow:inset 0 0 0 2px ' + col + '">' + pct + '%</div><div class="ik-grow"><div style="font-size:20px;font-weight:800">Hydration' + tr + '</div>' +
     '<div class="ik-small">Every system runs on water: blood, digestion, focus and energy</div></div><span class="ik-fm-chip ' + st + '">' + (st === "thrive" ? "Thriving" : st === "steady" ? "Steady" : "Running low") + "</span></div>" +
-    '<p style="font-size:15px;margin:12px 0 4px">' + (HY.none ? "No drinks logged in the last day, so there's nothing to go on yet. Tap a cup on the Hydration card when you drink." : HY.behind >= 50 ? "You're about <b>" + HY.behind + " mL behind</b> right now" + (HY.behind >= HY.onePct ? ": enough that you're probably thirsty." : ".") : "<b>Topped up</b> right now.") + "</p>" +
-    '<div class="ik-fm-row" style="margin-top:8px"><span>Last drink</span><b style="color:var(--ik-ink)">' + (HY.last ? ikHM(Date.now() - HY.last.at) + " ago · " + Math.round(HY.last.ml) + " mL" : "none logged") + "</b></div>" +
-    '<div class="ik-fm-row"><span>Last 6 hours</span><b style="color:var(--ik-ink)">' + ikNum(HY.sum6 / 1000, 1) + " L</b></div>" +
-    '<div class="ik-fm-row"><span>You\'re losing about</span><b style="color:var(--ik-ink)">' + HY.rate + " mL an hour</b></div>" +
-    '<p class="ik-small" style="margin:6px 0 0">This is a running balance: drinks soak in over about 20 to 45 minutes, your body loses water all day (less while you sleep), and your kidneys pass any extra within a couple of hours. Water in food counts too. It\'s based on what you log.</p>' +
-    (pct < 80 ? '<div class="ik-fm-tip">' + (HY.behind >= 50 ? "A " + (HY.behind > 400 ? "large glass or a bottle (about " + Math.min(750, Math.round(HY.behind / 50) * 50) + " mL)" : "glass of water") + " now would catch you up. Sip rather than chug: the body holds on to it better." : "Keep sipping through the day.") + " Tap a cup on the Hydration card to log it.</div>" : "") + "</div>";
+    '<p style="font-size:15px;margin:12px 0 4px">' + (HY.none ? "No drinks logged in the last day, so there's nothing to go on yet. Tap the 💧 glass beside Add when you drink." : HY.behind >= 50 ? "You're about <b>" + HY.behind + " mL behind</b> right now" + (HY.behind >= HY.onePct ? ": enough that you're probably thirsty." : ".") : "<b>Topped up</b> right now.") + "</p>" +
+    (HY.none ? "" : '<div class="ik-fm-h" style="display:flex;justify-content:space-between"><span>Last 8 hours</span><span style="text-transform:none;letter-spacing:0">💧 = a drink</span></div>' + ikFmWaterChart(HY)) +
+    '<div class="ik-fm-row kv" style="margin-top:10px"><span>Today so far</span><b style="color:var(--ik-ink)">' + ikNum(today / 1000, 1) + " of " + ikNum(tg / 1000, 1) + ' L</b><i><em style="width:' + Math.min(100, Math.max(today > 0 ? 3 : 0, today / tg * 100)).toFixed(0) + '%;background:var(--ik-water)"></em></i></div>' +
+    '<div class="ik-fm-row kv"><span>Last drink</span><b style="color:var(--ik-ink)">' + (HY.last ? ikHM(Date.now() - HY.last.at) + " ago · " + Math.round(HY.last.ml) + " mL" : "none logged") + "</b></div>" +
+    '<div class="ik-fm-row kv"><span>Last 6 hours</span><b style="color:var(--ik-ink)">' + ikNum(HY.sum6 / 1000, 1) + " L</b></div>" +
+    '<div class="ik-fm-row kv"><span>You\'re losing about</span><b style="color:var(--ik-ink)">' + HY.rate + " mL an hour</b></div>" +
+    (pct < 80 ? '<div class="ik-fm-tip">' + (HY.behind >= 50 ? "A " + (HY.behind > 400 ? "large glass or a bottle (about " + Math.min(750, Math.round(HY.behind / 50) * 50) + " mL)" : "glass of water") + " now would catch you up. Sip rather than chug: the body holds on to it better." : "Keep sipping through the day.") + " Tap the 💧 glass beside Add to log it.</div>" : "") +
+    '<div class="ik-row" style="margin-top:12px;gap:6px 14px;flex-wrap:wrap"><button class="ik-link" data-act="cups">⚙️ Change my cup sizes</button><span class="ik-small" style="margin:0">Press and hold the 💧 glass to pick a cup.</span></div>' +
+    '<p class="ik-small" style="margin:8px 0 0">A running balance: drinks soak in over about 20 to 45 minutes, your body loses water all day (less while you sleep), and your kidneys pass any extra within a couple of hours. Water in food counts too. Based on what you log.</p></div>';
 }
 
 /* V5.6b (Oran, 2026-10-16): "how I should be feeling about my hydration in the moment". A running water balance
@@ -10120,13 +10301,13 @@ function ikFmHydration(d) {
     (d.entries || []).forEach(function (e) {
       var at = ikEntryDate(e).getTime(); if (at < from - H || at > now) return;
       var x = ikTotals([e], d), ml = Math.max(x.drinksMl || 0, x.v.water || 0); if (ml < 5) return;
-      intakes.push({ at: at, ml: ml }); if ((x.drinksMl || 0) > 0) any = true;
+      intakes.push({ at: at, ml: ml, drink: (x.drinksMl || 0) > 0 }); if ((x.drinksMl || 0) > 0) any = true;
       if ((x.drinksMl || 0) > 0 && (!last || at > last.at)) last = { at: at, ml: x.drinksMl };
       if (now - at <= 6 * H) sum6 += ml;
     });
     /* Losses: the day's total (drinks target plus about 20% from food) split into a fixed part (breath and skin,
        about a third) and urine. When you're behind, the kidneys hold on: urine drops toward a quarter of normal. */
-    var dayRate = tg * 1.2 / 20, onePctMl = kg * 10, B = 0, dt = 1 / 6, rateNow = 0;
+    var dayRate = tg * 1.2 / 20, onePctMl = kg * 10, B = 0, dt = 1 / 6, rateNow = 0, samples = [], from8 = now - 8 * H;
     for (var t = from; t <= now; t += dt * H) {
       var hr = new Date(t).getHours(), sleep = hr >= 23 || hr < 7 ? 0.5 : 1;
       var kidney = B < 0 ? Math.max(0.25, 1 + 0.75 * B / onePctMl) : 1;
@@ -10137,11 +10318,14 @@ function ikFmHydration(d) {
       if (B > 0) B -= B * dt / 1.5;          // the kidneys pass the extra
       if (B > 600) B = 600;
       if (B < -0.06 * kg * 1000) B = -0.06 * kg * 1000;
+      if (t >= from8) samples.push({ t: t, pct: Math.max(3, Math.min(100, 100 - 37.5 * Math.max(0, -B) / onePctMl)) });   // 0.5.8: for the 8-hour chart
     }
     var onePct = onePctMl, behind = Math.max(0, -B);
     var pct = Math.round(Math.max(3, Math.min(100, 100 - 37.5 * behind / onePct)));
-    if (!any) return { none: true, pct: 0, behind: 0, onePct: onePct, last: null, sum6: 0, rate: Math.round(rateNow / 10) * 10, tg: tg };
-    return { pct: pct, behind: Math.round(behind / 10) * 10, onePct: onePct, last: last, sum6: sum6, rate: Math.round(rateNow / 10) * 10, tg: tg };
+    var drinks = intakes.filter(function (w) { return w.drink && w.at >= from8; });
+    var ago = samples.filter(function (q) { return q.t <= now - 0.75 * H; }).pop(), trend = ago ? pct - Math.round(ago.pct) : 0;
+    if (!any) return { none: true, pct: 0, behind: 0, onePct: onePct, last: null, sum6: 0, rate: Math.round(rateNow / 10) * 10, tg: tg, samples: [], drinks: [], trend: 0, from8: from8, now: now };
+    return { pct: pct, behind: Math.round(behind / 10) * 10, onePct: onePct, last: last, sum6: sum6, rate: Math.round(rateNow / 10) * 10, tg: tg, samples: samples, drinks: drinks, trend: trend, from8: from8, now: now };
   });
 }
 /* The body pictures as object URLs, made once: a short src instead of 40 KB of text in every redraw. */
@@ -10166,10 +10350,65 @@ function ikFmWatch(root) {
 }
 /* Which body to draw: the person's choice in My profile, else the sex in their profile (male when not set). */
 function ikFmBody(d) { var s = ikSet(d), b = s.fmBody; if (b === "f" || b === "m") return b; return ((s.profile || {}).sex === "f") ? "f" : "m"; }
+/* 0.5.8 (Oran, 2026-10-17: "logging food changes nothing on the fuel map"). What a meal does after you eat it:
+   eating is taken to start at the entry's time; the food is digested and absorbed over the next few hours
+   (about half in the first hour, most of it by 3 to 4 hours, slower for a big or fatty meal). The last 24 hours
+   of food count as they're absorbed, so a system's % climbs over the hour after a meal (▲) and eases back as
+   older meals drop out (▼). Nutrients a meal in the last ~75 minutes brought (3% of a day's target or more) pulse,
+   and light carrying them travels out to each system they feed. */
+var IK_FM_LIVE = null;
+function ikAbsorbFrac(h) { if (h <= 0.1) return 0; var f = 1 - Math.exp(-(h - 0.1) / 1.3); return h > 20 ? f * Math.max(0, (24 - h) / 4) : f; }
+function ikFmRecent(d, at) {
+  return ikMemo("fmr:" + Math.round(at / 60000), function () {
+    var H = 3600000, t = { v: {}, miss: {}, items: 0, drinksMl: 0, plants: {}, plantCount: 0 }, es = [];
+    IK_N.forEach(function (n) { t.v[n.k] = 0; t.miss[n.k] = 0; });
+    (d.entries || []).forEach(function (e) {
+      var age = (at - ikEntryDate(e).getTime()) / H; if (age < 0 || age > 24) return;
+      var f = ikAbsorbFrac(age); if (f <= 0) return;
+      var x = ikTotals([e], d);
+      IK_N.forEach(function (n) { t.v[n.k] += (x.v[n.k] || 0) * f; });
+      t.drinksMl += (x.drinksMl || 0) * f;
+      Object.keys(x.plants).forEach(function (k) { t.plants[k] = 1; });
+      es.push(e);
+    });
+    t.plantCount = Object.keys(t.plants).length;
+    return { t: t, es: es };
+  });
+}
+/* The last few days' average (60%) and the last 24 hours as absorbed (40%). */
+function ikFmBlend(N, R) {
+  if (!N.days) return R.t;
+  var t = { v: {}, miss: {}, items: 0, drinksMl: 0.6 * (N.t.drinksMl || 0) + 0.4 * (R.t.drinksMl || 0), plants: {}, plantCount: 0.6 * (N.t.plantCount || 0) + 0.4 * (R.t.plantCount || 0) };
+  IK_N.forEach(function (n) { t.v[n.k] = 0.6 * (N.t.v[n.k] || 0) + 0.4 * (R.t.v[n.k] || 0); t.miss[n.k] = 0; });
+  return t;
+}
+function ikFmLive(d, N) {
+  var now = Date.now(), R = ikFmRecent(d, now), R45 = ikFmRecent(d, now - 45 * 60000), pulse = {}, fresh = {}, last = null;
+  (d.entries || []).forEach(function (e) {
+    var ms = ikEntryDate(e).getTime(), age = (now - ms) / 60000; if (age < 0 || age > 240) return;
+    var x = ikTotals([e], d);
+    if ((x.v.kcal || 0) > 20 && (!last || ms > last.ms)) last = { e: e, ms: ms };
+    if (age > 75) return;
+    fresh[e.id] = 1;
+    IK_N.forEach(function (n) { var tg = n.kind === "limit" ? 0 : ikTarget(d, n.k); if (tg && (x.v[n.k] || 0) / tg >= 0.03) pulse[n.k] = 1; });
+    if ((x.drinksMl || 0) >= 100) pulse._water = 1;
+    if (Object.keys(x.plants).length) pulse._plants = 1;
+  });
+  var abs = last ? { e: last.e, frac: ikAbsorbFrac((now - last.ms) / 3600000), mins: (now - last.ms) / 60000 } : null;
+  return { day: ikToday(), at: now, R: R, R45: R45, t: ikFmBlend(N, R), t45: ikFmBlend(N, R45), pulse: pulse, fresh: fresh, abs: abs, any: Object.keys(pulse).length > 0 };
+}
 /* The whole module: the switch row, the map (or the balance chart), and the folded-away panel. */
 function ikFuelMap(d, t, week, day, es) {
   var U = ikFmUI(), set = ikSet(d), isToday = day === ikToday(), view = set.fmView === "chart" ? "chart" : "map";
-  var N = ikFmNourish(d, day, t, es), sys = ikFmSystems(d, N.t, N.es), F = isToday ? ikFmFuel(d) : { none: true, past: true };
+  var N = ikFmNourish(d, day, t, es), F = isToday ? ikFmFuel(d) : { none: true, past: true };
+  var LV = isToday ? ikFmLive(d, N) : null, sys;
+  IK_FM_LIVE = LV;
+  if (LV) {   // 0.5.8: today's map moves with what's being absorbed now
+    sys = ikFmSystems(d, LV.t, LV.R.es.length ? LV.R.es : N.es);
+    var sys45 = ikFmSystems(d, LV.t45, []);
+    sys.forEach(function (S, i) { S.dPct = S.pct - sys45[i].pct; S.boost = S.s.n.some(function (k) { return LV.pulse[k]; }); });
+    N.live = true;
+  } else sys = ikFmSystems(d, N.t, N.es);
   var HY = ikFmHydration(d), waterPct = HY.pct, fed = sys.filter(function (x) { return x.st !== "low"; }).length + (waterPct >= 50 ? 1 : 0);
   var ST = IK_FM_ST[F.none ? "none" : F.state], absorbing = !F.none && F.cur.absorbing;
   if (F.past) ST = { c: "#8ea3b3", title: "This day's balance", sub: "" };
@@ -10188,17 +10427,33 @@ function ikFuelMap(d, t, week, day, es) {
        - the picture is a reusable object URL, and the whole visual layer is kept as-is across redraws (the
          once-a-minute clock redraw no longer restarts the animation or re-decodes the picture);
        - the motion pauses when the map is off screen. */
-    var body = ikFmBody(d), trunk = "M432 938 C442 820 446 660 440 530 C434 440 410 378 380 352";
+    var body = ikFmBody(d), trunk = "M432 824 C442 740 446 640 440 530 C434 440 410 378 380 352";   // 0.5.8: starts at Fuel in, docked on the map
     var stomach = body === "f" ? "M363 298 C366 310 386 306 404 312 C421 320 419 352 401 364 C382 375 352 375 340 365 C332 357 337 348 346 349"
       : "M363 288 C365 302 380 300 395 306 C411 314 409 346 393 357 C376 369 350 369 340 359 C333 351 338 342 347 343";
     var still = "", flow = "", halos = "", ring = "", trunkC = ST.c;
-    still += '<path d="' + trunk + '" stroke="' + trunkC + '" stroke-width="16" opacity="' + (absorbing ? 0.6 : 0.22) + '" filter="url(#fmBlur)" fill="none" stroke-linecap="round"/>' +
-      '<path d="' + trunk + '" stroke="' + trunkC + '" stroke-width="3" opacity=".85" fill="none" stroke-linecap="round"/>' +
+    var eating = LV && LV.abs && LV.abs.frac < 0.9;   // 0.5.8: a meal is still being absorbed
+    still += '<path d="' + trunk + '" stroke="' + trunkC + '" stroke-width="44" opacity="' + (absorbing || eating ? 0.6 : 0.3) + '" filter="url(#fmBlurWide)" fill="none" stroke-linecap="round"/>' +
+      '<path d="' + trunk + '" stroke="' + trunkC + '" stroke-width="14" opacity=".5" fill="none" stroke-linecap="round" filter="url(#fmBlur)"/>' +
+      '<path d="' + trunk + '" stroke="#fff" stroke-width="2.5" opacity=".55" fill="none" stroke-linecap="round" filter="url(#fmSoft)"/>' +
       '<path d="' + stomach + '" stroke="#ff3d7f" stroke-width="12" opacity="' + (absorbing ? 0.55 : 0.15) + '" filter="url(#fmBlur)" fill="none" stroke-linecap="round"/>' +
       '<path d="' + stomach + '" stroke="#ffc2d8" stroke-width="3" opacity="' + (absorbing ? 0.95 : 0.3) + '" fill="none" stroke-linecap="round" filter="url(#fmSoft)"/>';
-    flow += '<g class="ik-fm-run trunk"><path pathLength="100" d="' + trunk + '" stroke="#ffd1e3" stroke-width="20" opacity=".22"/><path pathLength="100" d="' + trunk + '" stroke="#fff4f8" stroke-width="7"/></g>';
+    var grads = {}, orb = function (path, c, r, dur, n) {   // 0.5.8: glowing orbs that travel along a path
+      var id = "fmOrb" + c.replace(/[^0-9a-z]/gi, ""); grads[id] = c; var o = "";
+      for (var oi = 0; oi < n; oi++) o += '<circle r="' + r + '" fill="url(#' + id + ')"><animateMotion dur="' + dur + 's" begin="-' + (dur * oi / n).toFixed(2) + 's" repeatCount="indefinite" calcMode="spline" keyTimes="0;1" keySplines=".4 0 .6 1" path="' + path + '"/></circle>';
+      return o;
+    };
+    /* 0.5.8b (Oran: "it looks like a white sausage"): the pulse is a soft blurred glow with a faint core, not a hard capsule */
+    flow += '<defs><filter id="fmPulseW" filterUnits="userSpaceOnUse" x="330" y="300" width="180" height="580"><feGaussianBlur stdDeviation="16"/></filter>' +
+      '<filter id="fmPulseM" filterUnits="userSpaceOnUse" x="330" y="300" width="180" height="580"><feGaussianBlur stdDeviation="6"/></filter>' +
+      '<filter id="fmSysW" filterUnits="userSpaceOnUse" x="190" y="20" width="380" height="640"><feGaussianBlur stdDeviation="10"/></filter>' +
+      '<filter id="fmSysM" filterUnits="userSpaceOnUse" x="190" y="20" width="380" height="640"><feGaussianBlur stdDeviation="3.5"/></filter></defs>' +
+      '<g class="ik-fm-run trunk"><path pathLength="100" d="' + trunk + '" stroke="' + trunkC + '" stroke-width="58" opacity=".55" filter="url(#fmPulseW)"/>' +
+      '<path pathLength="100" d="' + trunk + '" stroke="#ffe6f0" stroke-width="18" opacity=".7" filter="url(#fmPulseM)"/>' +
+      '<path pathLength="100" d="' + trunk + '" stroke="#fff" stroke-width="3" opacity=".5"/></g>';
+    var orbs = F.past || F.none ? "" : orb(trunk, trunkC, eating ? 15 : 11, eating ? 2.2 : 3.2, eating ? 4 : 2);
     var halo = function (x, y, r, c, cls) { return '<i class="ik-fm-halo' + (cls || "") + '" style="left:' + (x / 7.3).toFixed(2) + "%;top:" + (y / 9.3).toFixed(2) + "%;width:" + (r * 2 / 7.3).toFixed(2) + "%;--c:" + c + '"></i>'; };
     halos += halo(374, 334, absorbing ? 46 : 30, "#ff3d7f", absorbing ? "" : " dim");
+    var sysW = "", sysM = "", sysC = "", sysN = 0;
     sys.forEach(function (S) {
       var st = S.st, s = S.s, on = U.open && U.pick === s.id, fu = ikFmSysFuel(s.id, F), c = F.past ? "#5d7387" : fu.c;
       var nc = st === "thrive" ? "#6fe7ff" : st === "steady" ? "#3f8cff" : "#5d7387";
@@ -10209,39 +10464,56 @@ function ikFuelMap(d, t, week, day, es) {
         '<circle cx="' + s.x + '" cy="' + s.y + '" r="7" fill="' + (st === "low" ? "#ffb340" : st === "thrive" ? "#e9fdff" : "#9cc4ff") + '" filter="url(#fmSoft)"/>' +
         "";
       if (on) ring = '<i class="ik-fm-ring" style="left:' + (s.x / 7.3).toFixed(2) + "%;top:" + (s.y / 9.3).toFixed(2) + "%;--c:" + IK_FM_COL[st] + '"></i>';
-      if (!F.past) flow += '<g class="ik-fm-run"><path pathLength="100" d="' + s.d + '" stroke="' + c + '" stroke-width="18" opacity=".28"/><path pathLength="100" d="' + s.d + '" stroke="#fff6fb" stroke-width="6"/></g>';
+      if (!F.past) {   // 0.5.8b: soft, blurred pulses like the main stream (one blur per layer, not per path)
+        var dl = ' style="animation-delay:-' + ((sysN++ * 0.8) % 2.4).toFixed(1) + 's"';
+        sysW += '<g class="ik-fm-run"><path pathLength="100" d="' + s.d + '" stroke="' + c + '" stroke-width="30" opacity=".6"' + dl + "/></g>";
+        sysM += '<g class="ik-fm-run"><path pathLength="100" d="' + s.d + '" stroke="#ffeef6" stroke-width="9" opacity=".75"' + dl + "/></g>";
+        sysC += '<g class="ik-fm-run"><path pathLength="100" d="' + s.d + '" stroke="#fff" stroke-width="1.6" opacity=".45"' + dl + "/></g>";
+      }
+      if (S.boost) {   // 0.5.8: this system is getting something from the meal you just had
+        sysM += '<path class="ik-fm-dash" d="' + s.d + '" stroke="#fff" stroke-width="3.5" fill="none" stroke-linecap="round"/>';
+        orbs += orb(s.d, c, 10, 1.9, 2);
+      }
       halos += halo(s.x, s.y, st === "thrive" ? 40 : st === "steady" ? 31 : 22, nc, st === "low" ? " dim" : "");
     });
     var vis = '<img src="' + ikFmImgUrl(body) + '" alt="" draggable="false">' +
       '<svg class="ik-fm-still" viewBox="0 0 730 930" aria-hidden="true"><defs>' +
         '<filter id="fmBlur" filterUnits="userSpaceOnUse" x="0" y="0" width="730" height="930"><feGaussianBlur stdDeviation="7"/></filter>' +
+        '<filter id="fmBlurWide" filterUnits="userSpaceOnUse" x="0" y="0" width="730" height="930"><feGaussianBlur stdDeviation="18"/></filter>' +
         '<filter id="fmSoft" filterUnits="userSpaceOnUse" x="0" y="0" width="730" height="930"><feGaussianBlur in="SourceGraphic" stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>' + still + "</svg>" +
       '<div class="ik-fm-halos" aria-hidden="true">' + halos + "</div>" +
-      '<svg class="ik-fm-flow" viewBox="0 0 730 930" aria-hidden="true">' + flow + "</svg>";
+      '<svg class="ik-fm-flow" viewBox="0 0 730 930" aria-hidden="true"><defs>' + Object.keys(grads).map(function (id) {
+        return '<radialGradient id="' + id + '"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="' + grads[id] + '"/><stop offset="1" stop-color="' + grads[id] + '" stop-opacity="0"/></radialGradient>'; }).join("") +
+        "</defs>" + flow + '<g filter="url(#fmSysW)">' + sysW + '</g><g filter="url(#fmSysM)">' + sysM + "</g>" + sysC + '<g class="ik-fm-orbs">' + orbs + "</g></svg>";
     var sig = 0; for (var si = 0; si < vis.length; si += 7) sig = (sig * 31 + vis.charCodeAt(si)) | 0;
     h += '<div class="ik-fm-card"><div class="ik-fm-stage" data-fm="bg"><div class="ik-fm-vis" data-sig="' + sig + '">' + vis + "</div>" + ring;
     sys.forEach(function (S) {
       var s = S.s, col = IK_FM_COL[S.st], on = U.open && U.pick === s.id;
-      h += '<button class="ik-fm-pill' + (on ? " on" : "") + '" data-fm="pick:' + s.id + '" style="' + (s.side === "L" ? "left:1.1%" : "right:1.1%") + ";top:" + s.top + "%;--c:" + col + '" aria-pressed="' + on + '" aria-label="' + ikEsc(s.name + ", " + S.pct + "%") + '">' +
-        '<b>' + ikEsc(s.short) + "</b><span>" + S.pct + "%</span></button>";
+      var tr = S.dPct >= 1 ? '<em class="ik-fm-tr up" aria-hidden="true">▲</em>' : S.dPct <= -1 ? '<em class="ik-fm-tr dn" aria-hidden="true">▼</em>' : "";
+      h += '<button class="ik-fm-pill' + (on ? " on" : "") + (S.boost ? " boost" : "") + '" data-fm="pick:' + s.id + '" style="' + (s.side === "L" ? "left:1.1%" : "right:1.1%") + ";top:" + s.top + "%;--c:" + col + '" aria-pressed="' + on + '" aria-label="' + ikEsc(s.name + ", " + S.pct + "%" + (S.dPct >= 1 ? ", rising" : S.dPct <= -1 ? ", easing off" : "")) + '">' +
+        '<b>' + ikEsc(s.short) + "</b><span>" + S.pct + "%" + tr + "</span></button>";
     });
     var wst = ikFmStatus(waterPct), wcol = IK_FM_COL[wst], won = U.open && U.pick === "water";
-    h += '<button class="ik-fm-pill wide' + (won ? " on" : "") + '" data-fm="pick:water" style="right:1.1%;top:57%;--c:' + wcol + '" aria-pressed="' + won + '" aria-label="Hydration, ' + waterPct + '%">' +
-      '<b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.2 4.2 6 7.5 6 10.8a6 6 0 0 1-12 0C6 10.5 8.8 7.2 12 3z"/></svg>Hydration</b><span>' + waterPct + '%</span>' +
+    var wtr = !isToday || HY.none ? "" : HY.trend >= 2 ? '<em class="ik-fm-tr up" aria-hidden="true">▲</em>' : HY.trend <= -2 ? '<em class="ik-fm-tr dn" aria-hidden="true">▼</em>' : "";
+    h += '<button class="ik-fm-pill wide' + (won ? " on" : "") + (LV && LV.pulse._water ? " boost" : "") + '" data-fm="pick:water" style="right:1.1%;top:57%;--c:' + wcol + '" aria-pressed="' + won + '" aria-label="Hydration, ' + waterPct + '%">' +
+      '<b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.2 4.2 6 7.5 6 10.8a6 6 0 0 1-12 0C6 10.5 8.8 7.2 12 3z"/></svg>Hydration</b><span>' + waterPct + "%" + wtr + '</span>' +
       '<i><em style="width:' + Math.min(100, waterPct) + '%"></em></i><small>' + (HY.none ? "Log a drink" : HY.behind >= 50 ? HY.behind + " mL behind" : "Topped up") + "</small></button>";
     h += '<span class="ik-fm-fed"><i></i>' + (N.days ? "Well nourished: " : "Fed well today: ") + fed + " of 9</span>";
+    // Fuel in: 0.5.8 (Oran, 2026-10-17) docked on the map itself, so the stream of fuel visibly comes out of it
+    var fon = U.open && U.pick === "fuel", AB = LV && LV.abs && LV.abs.frac < 0.98 ? LV.abs : null;
+    var fk = F.past ? "Fuel in" : AB ? (AB.mins < 30 ? "Eating · " : "Absorbing · ") + ikEntryName(AB.e, d) : "Fuel in · running on";
+    h += '<i class="ik-fm-port" style="--c:' + ST.c + '" aria-hidden="true"></i>';
+    h += '<div class="ik-fm-fuel ik-fm-dock' + (fon ? " on" : "") + (AB ? " eating" : "") + (F.past ? "" : " beat") + '" style="--c:' + ST.c + '">' +
+      '<button class="ik-fm-fuelbtn" data-fm="' + (F.past ? "pick:fuel" : "details") + '" aria-pressed="' + fon + '" aria-expanded="' + !!(fon && U.details) + '" aria-label="Fuel in: ' + ikEsc(ST.title) + (AB ? ". " + Math.round(AB.frac * 100) + "% of " + ikEntryName(AB.e, d) + " absorbed so far" : "") + '"><span class="ik-fm-orb"><svg viewBox="0 0 24 24" fill="none" stroke="#0b1520" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span>' +
+        '<span class="ik-grow"><span class="ik-fm-k">' + ikEsc(fk) + '</span><span class="ik-fm-title">' + ikEsc(ST.title) + "</span></span>" +
+        (F.none ? "" : AB ? '<span class="ik-fm-since"><b>' + Math.round(AB.frac * 100) + "%</b><small>absorbed</small></span>" : '<span class="ik-fm-since"><b>' + (F.fs && !F.fs.none ? ikHM(F.fs.since) : "–") + "</b><small>since you ate</small></span>") + "</button>" +
+      (F.past ? "" : '<button class="ik-fm-chev" data-fm="details" aria-expanded="' + !!(fon && U.details) + '" aria-label="' + (fon && U.details ? "Hide" : "Show") + ' fuel details"><svg viewBox="0 0 24 24" fill="none" stroke="#dff6ff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"' + (fon && U.details ? ' style="transform:rotate(180deg)"' : "") + '><path d="M6 9l6 6 6-6"/></svg></button>') +
+      (AB ? '<i class="ik-fm-absbar" aria-hidden="true"><em style="width:' + Math.round(AB.frac * 100) + '%"></em></i>' : "") + "</div>";
     h += "</div>";   // stage
-    // Fuel in
-    var fon = U.open && U.pick === "fuel";
     h += '<div class="ik-fm-foot">';   // 0.5.7: a neutral light panel, so the colours never fight the person's theme
-    h += '<div class="ik-fm-fuel' + (fon ? " on" : "") + '" style="--c:' + ST.c + '">' +
-      '<button class="ik-fm-fuelbtn" data-fm="pick:fuel" aria-pressed="' + fon + '" aria-label="Fuel in: ' + ikEsc(ST.title) + '"><span class="ik-fm-orb"><svg viewBox="0 0 24 24" fill="none" stroke="#0b1520" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span>' +
-        '<span class="ik-grow"><span class="ik-fm-k">' + (F.past ? "Fuel in" : "Fuel in · running on") + '</span><span class="ik-fm-title">' + ikEsc(ST.title) + "</span></span>" +
-        (F.none ? "" : '<span class="ik-fm-since"><b>' + (F.fs && !F.fs.none ? ikHM(F.fs.since) : "–") + "</b><small>since you ate</small></span>") + "</button>" +
-      (F.none ? "" : '<button class="ik-fm-chev" data-fm="details" aria-expanded="' + !!(fon && U.details) + '" aria-label="' + (fon && U.details ? "Hide" : "Show") + ' fuel details"><svg viewBox="0 0 24 24" fill="none" stroke="#dff6ff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"' + (fon && U.details ? ' style="transform:rotate(180deg)"' : "") + '><path d="M6 9l6 6 6-6"/></svg></button>') + "</div>";
-    if (fon && U.details && !F.none) h += ikFmFuelDetails(d, F, t.v.kcal || 0);
+    if (fon && U.details && !F.past) h += F.none ? '<div class="ik-fm-drawer"><p class="ik-fm-sub" style="margin:0">No food logged in the last 3 days, so there\'s no meal to replay yet. Log what you eat and this opens up: what your body is burning right now, the last 12 hours of fuel, time since you ate, sugar stores, ketones and today\'s balance.</p></div>' : ikFmFuelDetails(d, F, t.v.kcal || 0);
     h += '<div class="ik-fm-key"><b>Light</b> = fuel flowing now:<span><i style="background:' + IK_FM_FUELC.glucose + '"></i>sugar</span><span><i style="background:' + IK_FM_FUELC.fat + '"></i>fat</span><span><i style="background:' + IK_FM_FUELC.ketones + '"></i>ketones</span></div>' +
-      '<div class="ik-fm-key"><b>%</b> = ' + (N.days ? "nourished, last " + N.days + " day" + (N.days === 1 ? "" : "s") : "fed so far today") + ':<span><i style="background:#a8f6ff;box-shadow:0 0 8px #6fe7ff"></i>thriving</span><span><i style="background:#3f8cff"></i>steady</span><span><i style="background:#ffb340"></i>low</span></div>';
+      '<div class="ik-fm-key"><b>%</b> = ' + (N.live ? (N.days ? "nourished: last " + N.days + " day" + (N.days === 1 ? "" : "s") + " + the last 24 h as it's absorbed" : "fed: the last 24 h, as it's absorbed") + " · ▲ rising" : N.days ? "nourished, last " + N.days + " day" + (N.days === 1 ? "" : "s") : "fed so far today") + ':<span><i style="background:#a8f6ff;box-shadow:0 0 8px #6fe7ff"></i>thriving</span><span><i style="background:#3f8cff"></i>steady</span><span><i style="background:#ffb340"></i>low</span></div>';
     h += set.fmAck ? '<p class="ik-fm-legal">Estimates to help you understand your food, not medical advice. <button class="ik-fm-link" data-fm="sources">How it works &amp; sources</button></p>'
       : '<div class="ik-fm-legal first"><span>The fuel map is an estimate built from published nutrition research, not medical advice or a test. It\'s here to give you a better picture than no tool at all. <button class="ik-fm-link" data-fm="sources">How it works &amp; sources</button></span><button class="ik-fm-ok" data-fm="ack">Got it</button></div>';
     h += "</div></div>";   // foot, card
@@ -10611,39 +10883,110 @@ function ikSearch(q, d, limit) {
    scaled to the estimated calories (a dessert from cake, whipped cream from cream, anything else from the
    closest name match), and the food is marked as a rough guess with a button to have DigiBot redo it. */
 var IK_EST_SWEET = /(pie|cake|cheesecake|tart|brownie|pastry|dessert|pudding|cookie|biscuit|cobbler|crumble|crisp|square|fudge|candy|sweet|danish|cinnamon roll|scone)/i;
+/* 0.5.8 (Oran, 2026-10-17: "Plain Greek Yogurt Blueberries and Walnuts" still came out 0 kcal):
+   the closest known food used to need EVERY word of the name to match, so any longer dish name fell back
+   to lasagna. Now each word of the name is matched on its own and up to three table foods are blended
+   (first named counts most): Greek yogurt + blueberries + walnuts, not lasagna. */
+var IK_EST_STOP = /^(and|with|the|plain|large|small|medium|big|fresh|homemade|home|made|bowl|plate|cup|side|piece|slice|some|mixed|style|topped|over|bits|serving|portion|extra|little|light|full|whole|half|from|for|one|two|three)$/;
+var IK_ZERO_KCAL = /\b(water|black coffee|espresso|americano|tea|diet|zero|sugar[- ]free|sparkling|seltzer|club soda)\b/i;
 function ikEstFallback(name) {
-  var n = String(name || "").toLowerCase();
+  var n = String(name || "").toLowerCase().replace(/\([^)]*\)/g, " ");
   if (/ice cream|gelato|frozen yogurt/.test(n)) return IK_FOODS.ice_cream;
-  if (/(whip|cream)/.test(n) && !/cheese|soup|sauce|pie|cake/.test(n)) return IK_FOODS.cream_35;
+  if (/(whip|cream)/.test(n) && !/cheese|soup|sauce|pie|cake|yogurt|yoghurt/.test(n)) return IK_FOODS.cream_35;
   if (IK_EST_SWEET.test(n)) return IK_FOODS.cake_choc;
-  var hit = ikSearch(n, { recipes: [], customFoods: [] }, 1)[0];
-  if (hit && /^t:/.test(hit.ref) && IK_FOODS[hit.ref.slice(2)] && IK_FOODS[hit.ref.slice(2)].n.kcal > 0) return IK_FOODS[hit.ref.slice(2)];
-  return IK_FOODS.lasagna;
+  var whole = ikSearch(n, { recipes: [], customFoods: [] }, 1)[0];
+  if (whole && /^t:/.test(whole.ref) && IK_FOODS[whole.ref.slice(2)] && IK_FOODS[whole.ref.slice(2)].n.kcal > 0) return IK_FOODS[whole.ref.slice(2)];
+  return ikEstBlend(n) || IK_FOODS.lasagna;
+}
+function ikEstStem(w) { w = w.replace(/yoghurt/, "yogurt"); return w.length > 4 ? w.replace(/(ies|es|s)$/, "") : w; }
+function ikEstBlend(n) {
+  var words = n.split(/[^a-z]+/).filter(function (w) { return w.length > 2 && !IK_EST_STOP.test(w); }).map(ikEstStem);
+  if (!words.length) return null;
+  var picks = [];
+  words.forEach(function (w, wi) {
+    if (picks.some(function (f) { return f.label.toLowerCase().indexOf(w) >= 0; })) return;   // "greek yogurt": one food, not two
+    var best = null, bs = 0;
+    IK_FOODLIST.forEach(function (f) {
+      if (!(f.n.kcal > 0)) return;
+      var l = f.label.toLowerCase(), at = l.indexOf(w); if (at < 0) return;
+      var sc = (at === 0 ? 3 : 1) - l.length / 100;
+      words.forEach(function (o, oi) { if (oi !== wi && l.indexOf(o) >= 0) sc += 2; });
+      if (sc > bs) { bs = sc; best = f; }
+    });
+    if (best && picks.indexOf(best) < 0) picks.push(best);
+  });
+  if (!picks.length) return null;
+  picks = picks.slice(0, 3);
+  var wts = picks.length === 1 ? [1] : picks.length === 2 ? [0.65, 0.35] : [0.55, 0.27, 0.18], out = {};
+  IK_N.forEach(function (nt) {
+    if (picks[0].n[nt.k] == null) { out[nt.k] = null; return; }
+    var v = 0; picks.forEach(function (f, i) { v += (f.n[nt.k] || 0) * wts[i]; }); out[nt.k] = +v.toPrecision(4);
+  });
+  return { key: null, label: picks.map(function (f) { return f.label; }).join(" + "), n: out, kind: "food" };
+}
+/* Energy from protein, carbs, fat and alcohol (4, 4, 9 and 7 kcal per gram), when only those are known. */
+function ikAtwater(p) {
+  if (!p || (p.protein == null && p.carb == null && p.fat == null)) return 0;
+  return 4 * (+p.protein || 0) + 4 * (+p.carb || 0) + 9 * (+p.fat || 0) + 7 * (+p.alcohol || 0);
 }
 var IK_FILL_MEMO = {};
 function ikFillEstimate(per, name) {
   var key = name + "|" + JSON.stringify(per);
-  if (IK_FILL_MEMO[key]) return IK_FILL_MEMO[key];
-  if (!per || !(per.kcal > 0)) {
-    /* V5.7 (0-kcal bug, 2026-10-16): the AI gave no usable energy number for an estimate.
-       Use the closest known food's whole profile instead of a 0-kcal estimate; the item is
-       still marked "estimated" everywhere, and ikResolve heals already-saved broken foods. */
-    var f0 = ikEstFallback(name); if (!f0 || !(f0.n.kcal > 0)) return null;
+  if (key in IK_FILL_MEMO) return IK_FILL_MEMO[key];
+  var p = per ? Object.assign({}, per) : null, changed = false;
+  if (p && !(p.kcal > 0)) { var a = ikAtwater(p); if (a > 0) { p.kcal = +a.toPrecision(4); changed = true; } }
+  if (!p || !(p.kcal > 0)) {
+    /* V5.7 / 0.5.8: no usable energy number at all. Use the closest known food's whole profile (blended from
+       the words of the name), keeping any real numbers the estimate did have. Still marked "estimated". */
+    var f0 = ikEstFallback(name); if (!f0 || !(f0.n.kcal > 0)) return (IK_FILL_MEMO[key] = null);
     var out0 = {};
-    IK_N.forEach(function (n) { out0[n.k] = f0.n[n.k] == null ? null : f0.n[n.k]; });
+    IK_N.forEach(function (n) { var mine = per && per[n.k]; out0[n.k] = n.k !== "kcal" && mine != null && mine > 0 ? mine : f0.n[n.k] == null ? null : f0.n[n.k]; });
     out0._from = f0.label;
     return (IK_FILL_MEMO[key] = out0);
   }
-  if (per.protein != null && per.carb != null && per.fat != null) return null;
-  var f = ikEstFallback(name); if (!f || !(f.n.kcal > 0)) return null;
-  var k = per.kcal / f.n.kcal, out = {};
+  if (p.protein != null && p.carb != null && p.fat != null) return (IK_FILL_MEMO[key] = changed ? p : null);
+  var f = ikEstFallback(name); if (!f || !(f.n.kcal > 0)) return (IK_FILL_MEMO[key] = changed ? p : null);
+  var k = p.kcal / f.n.kcal, out = {};
   IK_N.forEach(function (n) {
-    if (per[n.k] != null) out[n.k] = per[n.k];
+    if (p[n.k] != null) out[n.k] = p[n.k];
     else if (n.k === "caffeine" || n.k === "alcohol" || n.k === "added") out[n.k] = null;
     else out[n.k] = f.n[n.k] == null ? null : +(f.n[n.k] * k).toPrecision(4);
   });
   out._from = f.label;
   return (IK_FILL_MEMO[key] = out);
+}
+/* 0.5.8: one of the person's foods, made whole when its energy number is missing. -> {per100?, perServing?} or null.
+   Estimates (photo, DigiBot) get the full fill. A food the person typed in or copied from a label only has its
+   missing energy worked out from its own protein, carbs and fat, or (when it has none) a blend of similar foods. */
+function ikHealCustom(c) {
+  if (!c || c.kind === "supplement") return null;
+  if (c.perServing && !c.per100) {
+    var ps = c.perServing; if (ps.kcal > 0 || IK_ZERO_KCAL.test(c.name || "")) return null;
+    var a = ikAtwater(ps); if (a > 0) return { perServing: Object.assign({}, ps, { kcal: +a.toPrecision(4) }) };
+    if (!(c.servingG > 0)) return null;
+    var f100 = ikFillEstimate(null, c.name); if (!f100) return null;
+    var sv = {}, kk = c.servingG / 100; IK_N.forEach(function (n) { sv[n.k] = ps[n.k] != null && ps[n.k] > 0 ? ps[n.k] : f100[n.k] == null ? null : +(f100[n.k] * kk).toPrecision(4); });
+    return { perServing: sv };
+  }
+  var per = c.per100;
+  if (c.est) { var fe = ikFillEstimate(per, c.name); return fe ? { per100: fe } : null; }
+  if (per && per.kcal > 0) return null;
+  if (IK_ZERO_KCAL.test(c.name || "")) return null;
+  if ((c.src === "mine" || c.src === "label") && !(ikAtwater(per) > 0) && !ikEstBlend(String(c.name || "").toLowerCase().replace(/\([^)]*\)/g, " "))) return null;   // e.g. psyllium: nothing like it to borrow from
+  var fm = ikFillEstimate(per, c.name); return fm ? { per100: fm } : null;
+}
+var IK_HEAL_DEPTH = 0;
+function ikHealRecipe(r, d) {
+  if (!r || (r.per100 && r.per100.kcal > 0) || IK_ZERO_KCAL.test(r.name || "")) return null;
+  return ikMemo("rheal:" + r.id, function () {
+    var out = null;
+    if (IK_HEAL_DEPTH < 3 && (r.ingredients || []).length) {
+      IK_HEAL_DEPTH++;
+      try { out = ikRecipeFrom(r.name, r.ingredients, d).per100; } finally { IK_HEAL_DEPTH--; }
+      if (out && !(out.kcal > 0)) out = ikFillEstimate(out, r.name);
+    } else out = ikFillEstimate(r.per100 || null, r.name);
+    return out && out.kcal > 0 ? out : null;
+  });
 }
 /* Ask DigiBot for a proper per-100 g estimate of one of the person's estimated foods. */
 function ikReEstimate(cid, done) {
@@ -10788,16 +11131,24 @@ function ikPhotoPaint() {
       '<button class="ik-btn wide" data-addlabel>Save it and add to ' + ikEsc(ikDayName(P.day).toLowerCase() === "today" ? "today" : ikDayName(P.day)) + "</button>" +
       '<p class="ik-small" style="text-align:center">Saved under My foods, so next time you can add it by typing its name.</p>';
   } else if (P.stage === "results") {
+    /* 0.5.8 (Oran, 2026-10-17: "make the results page awesome"): a big count-up of the meal's energy with the
+       calories adding up from protein, carbs, fibre, fat and alcohol; Add now right there for anyone in a hurry;
+       then the foods (each with its own numbers), what the meal is made of by weight, medals for the biggest
+       boosts, and every nutrient found, grouped, each against the day's target. Add stays pinned at the bottom. */
+    var anim = !P.animDone;
     if (P.busy) h += '<div class="ik-warn soft">📸 Lots going on in this image. For the best numbers, try one plate at a time.</div>';   // V4
-    h += '<h2 class="ik-h2" style="margin-top:4px">Here\'s what I see</h2><div class="ik-results">' + P.items.map(function (it, i) { return ikPhotoItemHtml(it, i, d, name); }).join("") + "</div>";
+    h += '<div data-hero>' + ikPhotoHero(P, d, anim) + "</div>";
+    h += '<h2 class="ik-h2" style="margin-top:14px">Here\'s what I see</h2><div class="ik-results">' + P.items.map(function (it, i) { return ikPhotoItemHtml(it, i, d, name); }).join("") + "</div>";
     h += ikPhotoFlagsHtml(P, d);   // V3: balance and flags before Add
+    h += '<div data-breakdown>' + ikPhotoBreak(P, d, anim) + "</div>";
     if (P.items.length > 1) h += '<label class="ik-label" style="margin-top:0">Name this meal (optional)</label><input class="ik-input" data-mealname maxlength="60" value="' + ikEsc(P.mealName || "") + '" placeholder="e.g. Sunday supper" style="margin:0 0 10px">';   // V4
     h += '<div class="ik-row" style="margin:0 0 10px"><button class="ik-link" data-additem>＋ Something I missed</button><span class="ik-grow"></span><button class="ik-link" data-again>Look again</button></div>';
     var waiting = P.items.some(function (it) { return it.ask && !it.answered; });
-    h += '<button class="ik-btn wide" data-addall' + (P.items.length ? "" : " disabled") + ">Add to " + ikEsc(ikDayName(P.day).toLowerCase() === "today" ? "today" : ikDayName(P.day)) + (hide ? "" : ' · about <span data-total>' + ikNum(ikPhotoTotal(), 0) + "</span> kcal") + "</button>" +
-      (waiting ? '<p class="ik-small" style="text-align:center">Not sure what\'s in it? Add it anyway: ' + ikEsc(name) + "'s estimate is used and marked \"estimated\".</p>" : "");
+    h += (waiting ? '<p class="ik-small" style="text-align:center">Not sure what\'s in it? Add it anyway: ' + ikEsc(name) + "'s estimate is used and marked \"estimated\".</p>" : "") +
+      '<div class="ik-addbar"><button class="ik-btn wide" data-addall' + (P.items.length ? "" : " disabled") + ">Add to " + ikEsc(ikDayName(P.day).toLowerCase() === "today" ? "today" : ikDayName(P.day)) + (hide ? "" : ' · about <span data-total>' + ikNum(ikPhotoTotal(), 0) + "</span> kcal") + "</button></div>";
   }
   P.el.innerHTML = h;
+  if (P.stage === "results" && !P.animDone) { P.animDone = true; ikCountUp(P.el); }
   if (P.stage === "looking") {   // V5.4: walk through the steps while waiting (the last one waits for the answer)
     var at = 0, t0 = Date.now();
     P.scanT = setInterval(function () {
@@ -10810,14 +11161,117 @@ function ikPhotoPaint() {
   }
   ikPhotoWire();
 }
+/* ---------- 0.5.8: the scan results breakdown ---------- */
+function ikPhotoT(P, d) { return ikTotals([{ kind: "food", items: ikPhotoLogItems(P, d) }], d); }
+function ikPhotoItemMac(it, d) {
+  var x = ikItemNutrients(ikPhotoItemRef(it), d).v, hide = ikHideKcal(d);
+  var chip = function (v, u, lbl, col) { return '<span style="--c:' + col + '"><b>' + ikNum(v || 0, 0) + "</b>" + u + " " + lbl + "</span>"; };
+  return (hide ? "" : chip(x.kcal, "", "kcal", "var(--ik-energy)")) + chip(x.protein, " g", "protein", "var(--ik-protein)") + chip(x.carb, " g", "carbs", "var(--ik-carb)") + chip(x.fat, " g", "fat", "var(--ik-fat)") + chip(x.fibre, " g", "fibre", "var(--ik-fibre)");
+}
+function ikCnt(v, dp, anim) { return '<span data-cnt="' + (+v || 0).toFixed(dp || 0) + '" data-dp="' + (dp || 0) + '">' + (anim ? "0" : ikNum(v || 0, dp || 0)) + "</span>"; }
+function ikCountUp(root) {
+  var els = root.querySelectorAll("[data-cnt]"); if (!els.length) return;
+  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches, t0 = performance.now(), dur = 1100;
+  function step(now) {
+    var k = reduce ? 1 : Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    els.forEach(function (el) { el.textContent = ikNum(+el.getAttribute("data-cnt") * e, +el.getAttribute("data-dp")); });
+    if (k < 1 && document.body.contains(root)) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+function ikPhotoHero(P, d, anim) {
+  var T = ikPhotoT(P, d), v = T.v, hide = ikHideKcal(d), G = P.items.reduce(function (a, it) { return a + (Number(it.g) || 0); }, 0);
+  var found = IK_N.filter(function (n) { return n.k !== "kcal" && (v[n.k] || 0) > 0 && !(T.items && T.miss[n.k] >= T.items); }).length;
+  var parts = [["protein", "Protein", (v.protein || 0) * 4, "var(--ik-protein)"], ["carb", "Carbs", Math.max(0, (v.carb || 0) - (v.fibre || 0)) * 4, "var(--ik-carb)"],
+               ["fibre", "Fibre", (v.fibre || 0) * 2, "var(--ik-fibre)"], ["fat", "Fat", (v.fat || 0) * 9, "var(--ik-fat)"], ["alcohol", "Alcohol", (v.alcohol || 0) * 7, "var(--ik-sugar)"]];
+  var S = parts.reduce(function (a, x) { return a + x[2]; }, 0) || 1, kc = v.kcal || 0, sc = kc > 0 ? kc / S : 1;
+  parts = parts.filter(function (x) { return x[2] * sc >= 1; });
+  var tg = ikTarget(d, hide ? "protein" : "kcal"), big = hide ? v.protein || 0 : kc;
+  var h = '<div class="ik-scanhero' + (anim ? " anim" : "") + '"><div class="ik-row" style="align-items:flex-end;gap:10px"><div class="ik-grow"><div class="ik-hero-k">This meal</div>' +
+    '<div class="ik-hero-big">' + ikCnt(big, 0, anim) + "<small>" + (hide ? " g protein" : " kcal") + "</small></div>" +
+    '<div class="ik-hero-sub">' + P.items.length + (P.items.length === 1 ? " food" : " foods") + " · " + ikNum(G, 0) + " g · <b>" + ikCnt(found, 0, anim) + "</b> nutrients found" + (tg ? " · " + Math.round(big / tg * 100) + "% of your day" : "") + "</div></div>" +
+    '<button class="ik-btn ik-hero-add" data-addall' + (P.items.length ? "" : " disabled") + ">Add now</button></div>";
+  if (!hide && kc > 0) {
+    h += '<div class="ik-hero-k" style="margin-top:12px">Where the calories come from</div><div class="ik-kbar">' + parts.map(function (x, i) {
+      return '<span style="flex:' + (x[2] / S).toFixed(4) + " 1 0;background:" + x[3] + ";--i:" + i + '"></span>'; }).join("") + "</div>" +
+      '<div class="ik-keq">' + parts.map(function (x) { return '<span><i style="background:' + x[3] + '"></i>' + x[1] + " <b>" + ikNum(x[2] * sc, 0) + "</b></span>"; }).join('<em>+</em>') + '<em>=</em><span><b>' + ikNum(kc, 0) + " kcal</b></span></div>";
+  }
+  return h + "</div>";
+}
+function ikPhotoBreak(P, d, anim) {
+  var T = ikPhotoT(P, d), v = T.v, G = P.items.reduce(function (a, it) { return a + (Number(it.g) || 0); }, 0);
+  if (!(G > 0)) return "";
+  var out = '<div class="ik-break' + (anim ? " anim" : "") + '">';
+  /* what it's made of, by weight */
+  var comp = [["Water", v.water || 0, "var(--ik-water)", "water"], ["Protein", v.protein || 0, "var(--ik-protein)", "protein"], ["Starch", Math.max(0, (v.carb || 0) - (v.fibre || 0) - (v.sugar || 0)), "var(--ik-carb)", "carb"],
+              ["Sugars", v.sugar || 0, "var(--ik-sugar)", "sugar"], ["Fibre", v.fibre || 0, "var(--ik-fibre)", "fibre"], ["Fat", v.fat || 0, "var(--ik-fat)", "fat"], ["Alcohol", v.alcohol || 0, "var(--ik-sat)", "alcohol"]];
+  var sum = comp.reduce(function (a, c) { return a + c[1]; }, 0), k = sum > G ? G / sum : 1;
+  comp.forEach(function (c) { c[1] *= k; });
+  comp.push(["Minerals & other", Math.max(0, G - sum * k), "#c7c7cc", "other"]);
+  comp = comp.filter(function (c) { return c[1] >= 0.5; });
+  out += '<div class="ik-bsec"><div class="ik-bh">What it\'s made of <span>' + ikNum(G, 0) + ' g</span></div><div class="ik-cbar">' + comp.map(function (c, i) {
+    return '<span style="flex:' + (c[1] / G).toFixed(4) + " 1 0;background:" + c[2] + ";--i:" + i + '"></span>'; }).join("") + '</div><div class="ik-ckey">' + comp.map(function (c) {
+    return '<span>' + (c[3] === "other" ? '<i class="ik-ni" style="--ni:#8e8e93;--ni-soft:#ececf0" aria-hidden="true"></i>' : ikNIcon(c[3])) + "<span>" + c[0] + "<b>" + ikNum(c[1], c[1] < 10 ? 1 : 0) + " g</b><small>" + Math.round(c[1] / G * 100) + "%</small></span></span>"; }).join("") + "</div></div>";
+  /* medals for the biggest boosts */
+  var boosts = IK_N.filter(function (n) { return n.kind === "target" && n.k !== "kcal" && !(ikLowCarb(d) && (n.k === "carb" || n.k === "sugar")); }).map(function (n) {
+    var tg = ikTarget(d, n.k); return tg && v[n.k] > 0 ? { n: n, pct: v[n.k] / tg * 100 } : null; }).filter(function (x) { return x && x.pct >= 10; })
+    .sort(function (a, b) { return b.pct - a.pct; }).slice(0, 6);
+  if (boosts.length) out += '<div class="ik-bsec"><div class="ik-bh">Biggest boosts <span>share of your day</span></div><div class="ik-medals">' + boosts.map(function (b, i) {
+    var m = b.pct >= 50 ? ["gold", "🥇"] : b.pct >= 25 ? ["silver", "🥈"] : ["bronze", "🥉"];
+    return '<div class="ik-medal ' + m[0] + '" style="--i:' + i + '"><span class="ik-medal-m" aria-hidden="true">' + m[1] + "</span>" + ikNIcon(b.n.k) + "<b>" + ikEsc(ikShortN(b.n)) + "</b><em>" + ikCnt(Math.min(999, b.pct), 0, anim) + "%</em></div>"; }).join("") + "</div></div>";
+  /* coverage scores */
+  var cov = function (keys) { var a = keys.map(function (k) { var tg = ikTarget(d, k); return tg ? Math.min(100, (v[k] || 0) / tg * 100) : null; }).filter(function (x) { return x != null; }); return a.length ? a.reduce(function (p, q) { return p + q; }, 0) / a.length : 0; };
+  var cv = cov(IK_VITS), cm = cov(IK_MINS);
+  out += '<div class="ik-bsec ik-covs"><div class="ik-cov" style="--c:var(--ik-vit)"><svg viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15" fill="none" stroke="var(--ik-vit-soft)" stroke-width="5"/><circle class="ik-covarc" cx="18" cy="18" r="15" fill="none" stroke="var(--ik-vit)" stroke-width="5" stroke-linecap="round" pathLength="100" stroke-dasharray="' + Math.max(1, cv).toFixed(1) + ' 100" transform="rotate(-90 18 18)"/></svg><span><b>' + ikCnt(cv, 0, anim) + '%</b><small>of a day\'s vitamins</small></span></div>' +
+    '<div class="ik-cov" style="--c:var(--ik-min)"><svg viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15" fill="none" stroke="var(--ik-min-soft)" stroke-width="5"/><circle class="ik-covarc" cx="18" cy="18" r="15" fill="none" stroke="var(--ik-min)" stroke-width="5" stroke-linecap="round" pathLength="100" stroke-dasharray="' + Math.max(1, cm).toFixed(1) + ' 100" transform="rotate(-90 18 18)"/></svg><span><b>' + ikCnt(cm, 0, anim) + '%</b><small>of a day\'s minerals</small></span></div></div>';
+  /* every nutrient, grouped */
+  var groups = {}, order = [], none = [], idx = 0;
+  IK_N.forEach(function (n) {
+    if (n.k === "kcal" || n.k === "added") return;
+    if (T.items && T.miss[n.k] >= T.items) { none.push(ikShortN(n)); return; }
+    var val = v[n.k] || 0; if (!(val > 0) && n.k !== "na") return;
+    var g = n.g === "Protein" || n.g === "Energy" ? "Protein & carbs" : n.g === "Carbs" ? "Protein & carbs" : n.g;
+    if (!groups[g]) { groups[g] = []; order.push(g); }
+    groups[g].push(n);
+  });
+  out += '<div class="ik-bsec"><div class="ik-bh">Every nutrient in this meal <span>' + order.reduce(function (a, g) { return a + groups[g].length; }, 0) + " found</span></div>";
+  order.forEach(function (g) {
+    out += '<div class="ik-ngrp">' + ikEsc(g) + '</div><div class="ik-ntiles">' + groups[g].map(function (n) {
+      var val = v[n.k] || 0, tg = n.kind === "info" ? null : ikTarget(d, n.k), lim = n.kind === "limit" || (ikLowCarb(d) && (n.k === "carb" || n.k === "sugar")), pct = tg ? val / tg * 100 : null;
+      var col = n.g === "Vitamins" ? "var(--ik-vit)" : n.g === "Minerals" ? "var(--ik-min)" : n.k === "protein" ? "var(--ik-protein)" : n.k === "fibre" ? "var(--ik-fibre)" : n.k === "sugar" ? "var(--ik-sugar)" : n.k === "carb" ? "var(--ik-carb)" : n.k === "water" ? "var(--ik-water)" : "var(--ik-fat)";
+      if (lim) col = pct > 33 ? "var(--ik-high)" : "#8e8e93";
+      var miss = T.miss[n.k] > 0 ? ' title="Not measured for ' + T.miss[n.k] + " of " + T.items + ' foods"' : "";
+      return '<div class="ik-ntile' + (pct >= 50 && !lim ? " hi" : "") + '" style="--i:' + (idx++) + '"' + miss + ">" + ikNIcon(n.k) + '<span class="ik-ntx"><span>' + ikEsc(ikShortN(n)) + (T.miss[n.k] > 0 ? "*" : "") + "</span><b>" + ikNum(val, val < 10 ? Math.max(1, n.dp) : n.dp) + " " + n.unit + "</b></span>" +
+        (pct != null ? '<span class="ik-npct' + (lim ? " lim" : "") + '">' + Math.round(pct) + "%" + (lim ? " of max" : "") + "</span><i><em style=\"width:" + Math.min(100, Math.max(2, pct)).toFixed(0) + "%;background:" + col + '"></em></i>' : '<span class="ik-npct">info</span>') + "</div>";
+    }).join("") + "</div>";
+  });
+  if (none.length) out += '<p class="ik-small" style="margin:8px 0 0">Not measured for these foods: ' + ikEsc(none.join(", ")) + ". Nothing is counted as zero.</p>";
+  if (order.some(function (g) { return groups[g].some(function (n) { return T.miss[n.k] > 0; }); })) out += '<p class="ik-small" style="margin:4px 0 0">* Not measured for every food in the photo, so the real amount may be a little higher.</p>';
+  return out + "</div></div>";
+}
+function ikShortN(n) { return { "Fat, total": "Fat", "Saturated fat": "Saturated fat", "Monounsaturated fat": "Mono fat", "Polyunsaturated fat": "Poly fat", "Carbohydrate": "Carbs", "Water (from food and drinks)": "Water", "Pantothenic acid (B5)": "B5 (pantothenic)", "Omega-3 (EPA + DHA)": "Omega-3 EPA+DHA" }[n.label] || n.label; }
+var IK_PH_T = null;
+function ikPhotoRefresh(i) {
+  var P = IK_P; if (!P || !P.el) return;
+  var d = dd.getData(), it = P.items[i], m = P.el.querySelector('[data-itmac="' + i + '"]');
+  if (m && it) m.innerHTML = ikPhotoItemMac(it, d);
+  clearTimeout(IK_PH_T);
+  IK_PH_T = setTimeout(function () {
+    if (!IK_P || IK_P !== P || P.stage !== "results") return;
+    var hz = P.el.querySelector("[data-hero]"), bz = P.el.querySelector("[data-breakdown]");
+    if (hz) { hz.innerHTML = ikPhotoHero(P, d, false); var ab = hz.querySelector("[data-addall]"); if (ab) ab.addEventListener("click", ikPhotoAdd); }
+    if (bz) bz.innerHTML = ikPhotoBreak(P, d, false);
+  }, 220);
+}
 function ikPhotoItemHtml(it, i, d, name) {
   var r = it.ref ? ikResolve(it.ref, d) : null, food = r && r.food, max = Math.max(500, Math.ceil(it.g * 2 / 50) * 50);
-  var est = !it.ref && !it.recipe;
+  var est = !it.ref && !it.recipe || !!(r && r.filled);
   var h = '<div class="ik-item' + (it.ask && !it.answered ? " ask" : "") + '" data-item="' + i + '"><div class="ik-row"><b class="ik-grow">' + ikEsc(it.name) + "</b>" +
     (est ? '<span class="ik-est">estimated</span>' : "") + '<span class="ik-conf ' + it.conf + '">' + ikConfLabel(it.conf) + "</span>" +
     '<input class="ik-gnum" type="number" inputmode="decimal" min="1" step="5" value="' + Math.round(it.g) + '" data-g="' + i + '" aria-label="Grams of ' + ikEsc(it.name) + '"><span class="ik-small">g</span>' +
     '<button class="ik-x" data-del="' + i + '" aria-label="Remove ' + ikEsc(it.name) + '">✕</button></div>' +
     '<label class="ik-grams"><span data-about="' + i + '">' + ikEsc(ikAbout(food, it.g) || (r ? r.label : est ? "Not in the food table: " + name + "'s estimate" : "")) + '</span><input type="range" min="5" max="' + max + '" step="5" value="' + Math.round(it.g) + '" data-r="' + i + '" aria-label="Amount of ' + ikEsc(it.name) + ' in grams"></label>' +
+    '<div class="ik-itmac" data-itmac="' + i + '">' + ikPhotoItemMac(it, d) + "</div>" +
     (r && r.label !== it.name ? '<div class="ik-small">Counted as: ' + ikEsc(r.label) + ' · <button class="ik-link" data-swap="' + i + '">Not right?</button></div>' : '<div class="ik-small"><button class="ik-link" data-swap="' + i + '" style="padding-left:0">Pick the right food</button></div>');
   if (it.ref && ikCookable(it.ref)) {   // V4: cooking method changes the numbers (oil)
     var og = ikOilGrams(d, it.method, it.g), oil = IK_OILS.filter(function (o) { return o.k === ikCook(d).oil; })[0];
@@ -10896,7 +11350,7 @@ function ikPhotoWire() {
   all("[data-save]").forEach(function (c) { c.addEventListener("change", function () { P.items[+c.getAttribute("data-save")].saveRecipe = c.checked; }); });
   all("[data-rname]").forEach(function (c) { c.addEventListener("input", function () { var it = P.items[+c.getAttribute("data-rname")]; if (it.recipe) it.recipe.name = c.value.slice(0, 60); }); });
   var mn = q("[data-mealname]"); if (mn) mn.addEventListener("input", function () { P.mealName = mn.value.trim().slice(0, 60); });
-  var addAll = q("[data-addall]"); if (addAll) addAll.addEventListener("click", ikPhotoAdd);
+  all("[data-addall]").forEach(function (b) { b.addEventListener("click", ikPhotoAdd); });   // 0.5.8: Add now (top) and Add (pinned)
   var ls = q("[data-lserv]"); if (ls) ls.addEventListener("input", function () { P.lserv = Math.max(0.25, Number(ls.value) || 1); });
   var al = q("[data-addlabel]"); if (al) al.addEventListener("click", ikLabelAdd);
   var tc = q("[data-tochk]"); if (tc) tc.addEventListener("click", function () { var img = P.image; dd.ui.closeSheet(); ikRegScan("supp", null, null, img); });
@@ -10910,6 +11364,7 @@ function ikPhotoSetG(i, g, from) {
   var r = it.ref ? ikResolve(it.ref, dd.getData()) : null;
   if (ab && r && r.food) ab.textContent = ikAbout(r.food, g) || r.label;
   if (tot) tot.textContent = ikNum(ikPhotoTotal(), 0);
+  ikPhotoRefresh(i);   // 0.5.8: the breakdown follows the slider
   var ol = el.querySelector('[data-oil="' + i + '"]'), dd0 = dd.getData(), og = ikOilGrams(dd0, it.method, g), oo = IK_OILS.filter(function (o) { return o.k === ikCook(dd0).oil; })[0];
   if (ol) ol.textContent = og >= 0.5 && oo && oo.ref ? "+ about " + Math.round(og) + " g " + oo.label.toLowerCase() : "";
 }
@@ -10978,8 +11433,12 @@ function ikPhotoLook() {
         return { name: String(f.name).slice(0, 60), ref: mixed ? null : ref, tableRef: ref, g: g, conf: /^(sure|likely|guess)$/.test(f.confidence) ? f.confidence : "likely", ask: mixed,
                  method: IK_METHOD_KEYS.indexOf(f.method) >= 0 ? f.method : null,
                  per100: ikPer100FromEstimate(f), drink: P.mode === "drink" || !!f.drink || (ref && ikResolve(ref, d) && ikResolve(ref, d).kind === "drink"), x: Number(f.x), y: Number(f.y) };
-      }).map(function (it) { if (!isFinite(it.x)) it.x = null; if (!isFinite(it.y)) it.y = null; if (!it.ref && !it.ask && it.tableRef) it.ref = it.tableRef; return it; });
-      P.stage = "results";
+      }).map(function (it) { if (!isFinite(it.x)) it.x = null; if (!isFinite(it.y)) it.y = null; if (!it.ref && !it.ask && it.tableRef) it.ref = it.tableRef; return it; })
+        .map(function (it) {   // 0.5.8: never count a meal through one of my foods that has no energy number; use the photo's estimate instead
+          if (it.ref && /^[cr]:/.test(it.ref) && !IK_ZERO_KCAL.test(it.name) && !((ikItemNutrients({ ref: it.ref, g: 100 }, d).v.kcal || 0) >= 1)) { it.brokenRef = it.ref; it.ref = null; it.tableRef = null; }
+          return it;
+        });
+      P.stage = "results"; P.animDone = false;
       P.busy = (Number(got.plates) || 1) > 1 || (got.foods || []).length > 8;   // V4
       if (!P.items.length) { P.stage = "error"; P.err = { title: "I couldn't see any food in that photo.", help: "Try again with the food filling more of the picture." }; }
       ikPhotoPaint();
@@ -11035,6 +11494,13 @@ function ikPhotoAdd() {
   ctx.update(function (d) {
     newFoods.forEach(function (f) { d.customFoods.push(f); });
     newRecipes.forEach(function (r) { d.recipes.push(r); });
+    /* 0.5.8: a saved photo or DigiBot food with no energy number is fixed for good (every day it was on heals too) */
+    var used = {}; items.forEach(function (x) { if (/^c:/.test(x.ref || "")) used[x.ref.slice(2)] = 1; });
+    P.items.forEach(function (x) { if (/^c:/.test(x.brokenRef || "")) used[x.brokenRef.slice(2)] = 1; });
+    d.customFoods.forEach(function (c) {
+      if (!used[c.id] || c.src === "mine" || c.src === "label") return;
+      var hl = ikHealCustom(c); if (hl && hl.per100) c.per100 = hl.per100; else if (hl && hl.perServing) c.perServing = hl.perServing;
+    });
     ikTouch(d, items);
     d.entries.push(entry);
   });
@@ -11876,6 +12342,7 @@ function ikOpenAbout(opts) {
     '<div class="ik-card ik-about" id="ikAboutFuel"><h3 style="margin:0 0 8px;font-size:18px">The fuel map</h3>' +
     "<p><b>The light</b> flowing to each body system is the fuel it's most likely running on right now: pink for sugar, gold for fat, violet for ketones. Between meals your body runs on what it stored, so it stays lit while you fast.</p>" +
     "<p><b>The %</b> on each system is how well it's been nourished: how close your average logged day over the last 7 days came to the target for each nutrient that supports it, each capped at 100%. Vitamins, minerals and protein come from stores your body builds up over days, so one morning without food doesn't empty them. Tap a system to see which nutrients count.</p>" +
+    "<p><b>After you eat</b>, today's map moves with your meal. Eating is taken to start at the time on the entry, and food is absorbed over the next few hours: about half in the first hour, most of it by 3 to 4 hours. On today's map the % blends your last few days (60%) with the last 24 hours as it's absorbed (40%), so a system's number climbs for the hour or two after a meal (▲) and eases back as older meals fade (▼). For about 75 minutes after a meal, the systems it feeds pulse, light travels out to them from the stomach, and the nutrients it brought pulse in your lists. Fuel in shows how much of your last meal has been absorbed so far.</p>" +
     "<p><b>Fuel in</b> estimates what your body is most likely burning right now. It replays your last three days of food in 6-minute steps: when you ate, and how much sugar, starch, fibre, fat, protein and alcohol was in it. It follows what research shows: carbs raise insulin, which turns sugar burning up and fat burning down while they're absorbed; fat and fibre slow that down and sugary drinks speed it up; your liver's sugar stores drain between meals; ketones rise once those stores are low; and alcohol is burned first, holding fat burning back while it clears.</p>" +
     "<p><b>Hydration</b> on the map is a running water balance for right now: drinks soak in over about 20 to 45 minutes, your body loses water all day (less while you sleep, and less again when you're behind, because your kidneys hold on), and any extra is passed within a couple of hours, so a big drink this morning doesn't cover this afternoon. About 1% of your body weight behind is when thirst usually starts; about 2% is when focus and mood measurably slip.</p>" +
     "<p><b>It's an estimate, not a measurement.</b> Real timing varies with your body size, activity, sleep, medicines and health conditions such as diabetes. It isn't medical advice or a blood test, and it isn't meant to be exact. It's here to give you a clearer picture of how your food affects your body than no tool at all.</p>" +
@@ -11967,7 +12434,7 @@ const DD_PROGRAM = {
   id: "intake",          // working name: may change until the first sale, never after (it names the saved data)
   name: "Intake",
   
-  version: "0.5.7",
+  version: "0.5.8",
   barTagline: false,
   iconImg: "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20120%20120%22%3E%3Cstyle%3E*%7Banimation-timing-function:linear;animation-iteration-count:infinite%7D.p,.s,.d%7Bopacity:0%7D.d%7Banimation:dr%201.5s%20infinite%7D.d2%7Banimation-delay:-.75s%7D%40keyframes%20dr%7B0%25%7Btransform:translate(56px,4px);opacity:0%7D50%25%7Bopacity:1%7D100%25%7Btransform:translate(56px,36px);opacity:0%7D%7D.r%7Btransform-box:fill-box;transform-origin:center;animation:rp%202.4s%20infinite%7D%40keyframes%20rp%7B0%25%7Btransform:scale(1);opacity:.8%7D100%25%7Btransform:scale(1.4);opacity:0%7D%7D.gl%7Banimation:gl%202s%20ease-in-out%20infinite%20alternate%7D%40keyframes%20gl%7B0%25%7Bopacity:.35%7D100%25%7Bopacity:1%7D%7D.s0%7Banimation-name:sa%7D.s1%7Banimation-name:sb%7D%40keyframes%20sa%7B0%25,16%25%7Bopacity:0%7D17.5%25%7Bopacity:1%7D22%25%7Bopacity:.6%7D32%25,100%25%7Bopacity:0%7D%7D%40keyframes%20sb%7B0%25,30%25%7Bopacity:0%7D31.5%25%7Bopacity:1%7D36%25%7Bopacity:.6%7D46%25,100%25%7Bopacity:0%7D%7D%40keyframes%20m1%7B0%25%7Btransform:translate(80px,58px);opacity:0%7D5%25%7Btransform:translate(85.2px,56.8px);opacity:1%7D10%25%7Btransform:translate(90.3px,55.3px);opacity:1%7D15%25%7Btransform:translate(95.2px,53.1px);opacity:1%7D20%25%7Btransform:translate(99.4px,49.8px);opacity:1%7D25%25%7Btransform:translate(103px,45.9px);opacity:1%7D30%25%7Btransform:translate(107.5px,43.1px);opacity:1%7D35%25%7Btransform:translate(112.7px,41.8px);opacity:0.6%7D40%25%7Btransform:translate(118px,42px);opacity:0.2%7D42%25,100%25%7Btransform:translate(118px,42px);opacity:0%7D%7D.p1%7Banimation:m1%204.1s%20linear%20-0.3s%20infinite%7D%40keyframes%20m2%7B0%25%7Btransform:translate(74px,82px);opacity:0%7D5%25%7Btransform:translate(78px,85.7px);opacity:1%7D10%25%7Btransform:translate(82.1px,89.1px);opacity:1%7D15%25%7Btransform:translate(86.4px,92.3px);opacity:1%7D20%25%7Btransform:translate(90.8px,95.4px);opacity:1%7D25%25%7Btransform:translate(95.2px,98.4px);opacity:1%7D30%25%7Btransform:translate(99.6px,101.5px);opacity:1%7D35%25%7Btransform:translate(103.9px,104.7px);opacity:0.6%7D40%25%7Btransform:translate(108px,108px);opacity:0.2%7D42%25,100%25%7Btransform:translate(108px,108px);opacity:0%7D%7D.p2%7Banimation:m2%205.3s%20linear%20-1.9s%20infinite%7D%40keyframes%20m3%7B0%25%7Btransform:translate(36px,84px);opacity:0%7D5%25%7Btransform:translate(32.3px,88.1px);opacity:1%7D10%25%7Btransform:translate(28.9px,92.4px);opacity:1%7D15%25%7Btransform:translate(26.1px,97.1px);opacity:1%7D20%25%7Btransform:translate(24px,102.1px);opacity:1%7D25%25%7Btransform:translate(21.1px,106.8px);opacity:1%7D30%25%7Btransform:translate(16.7px,109.9px);opacity:1%7D35%25%7Btransform:translate(11.5px,111.5px);opacity:0.6%7D40%25%7Btransform:translate(6px,112px);opacity:0.2%7D42%25,100%25%7Btransform:translate(6px,112px);opacity:0%7D%7D.p3%7Banimation:m3%204.7s%20linear%20-3.2s%20infinite%7D%40keyframes%20m4%7B0%25%7Btransform:translate(44px,62px);opacity:0%7D5%25%7Btransform:translate(38.4px,61.1px);opacity:1%7D10%25%7Btransform:translate(32.7px,60.8px);opacity:1%7D15%25%7Btransform:translate(27.1px,60.1px);opacity:1%7D20%25%7Btransform:translate(21.9px,57.9px);opacity:1%7D25%25%7Btransform:translate(17.8px,54px);opacity:1%7D30%25%7Btransform:translate(14.3px,49.5px);opacity:1%7D35%25%7Btransform:translate(10.6px,45.2px);opacity:0.6%7D40%25%7Btransform:translate(6px,42px);opacity:0.2%7D42%25,100%25%7Btransform:translate(6px,42px);opacity:0%7D%7D.p4%7Banimation:m4%205.9s%20linear%20-0.9s%20infinite%7D%40keyframes%20m5%7B0%25%7Btransform:translate(70px,40px);opacity:0%7D5%25%7Btransform:translate(72.6px,35.9px);opacity:1%7D10%25%7Btransform:translate(75.3px,31.8px);opacity:1%7D15%25%7Btransform:translate(78.1px,27.8px);opacity:1%7D20%25%7Btransform:translate(80.9px,23.9px);opacity:1%7D25%25%7Btransform:translate(83.7px,20px);opacity:1%7D30%25%7Btransform:translate(86.5px,16px);opacity:1%7D35%25%7Btransform:translate(89.3px,12px);opacity:0.6%7D40%25%7Btransform:translate(92px,8px);opacity:0.2%7D42%25,100%25%7Btransform:translate(92px,8px);opacity:0%7D%7D.p5%7Banimation:m5%204.4s%20linear%20-2.6s%20infinite%7D%40keyframes%20m6%7B0%25%7Btransform:translate(50px,44px);opacity:0%7D5%25%7Btransform:translate(45.5px,39.9px);opacity:1%7D10%25%7Btransform:translate(40.4px,36.6px);opacity:1%7D15%25%7Btransform:translate(34.7px,34.5px);opacity:1%7D20%25%7Btransform:translate(28.6px,33.9px);opacity:1%7D25%25%7Btransform:translate(22.9px,32.2px);opacity:1%7D30%25%7Btransform:translate(18.1px,28.4px);opacity:1%7D35%25%7Btransform:translate(14.6px,23.4px);opacity:0.6%7D40%25%7Btransform:translate(12px,18px);opacity:0.2%7D42%25,100%25%7Btransform:translate(12px,18px);opacity:0%7D%7D.p6%7Banimation:m6%205.6s%20linear%20-4.4s%20infinite%7D%40media%20(prefers-reduced-motion:reduce)%7B*%7Banimation:none!important%7D.r%7Bopacity:0%7D%7D%3C/style%3E%3Cdefs%3E%3CradialGradient%20id=%22f%22%20cx=%22.6%22%20cy=%22.55%22%20r=%22.6%22%3E%3Cstop%20offset=%220%22%20stop-color=%22%23fff6d6%22/%3E%3Cstop%20offset=%22.5%22%20stop-color=%22%23ffb36b%22/%3E%3Cstop%20offset=%221%22%20stop-color=%22%23ff4f7a%22/%3E%3C/radialGradient%3E%3CradialGradient%20id=%22w%22%3E%3Cstop%20offset=%220%22%20stop-color=%22%23fff%22/%3E%3Cstop%20offset=%22.4%22%20stop-color=%22%23fff%22%20stop-opacity=%22.8%22/%3E%3Cstop%20offset=%221%22%20stop-color=%22%23fff%22%20stop-opacity=%220%22/%3E%3C/radialGradient%3E%3CradialGradient%20id=%22g1%22%3E%3Cstop%20offset=%220%22%20stop-color=%22%23fff%22/%3E%3Cstop%20offset=%22.28%22%20stop-color=%22%23fff%22%20stop-opacity=%22.95%22/%3E%3Cstop%20offset=%22.55%22%20stop-color=%22%23ff453a%22%20stop-opacity=%22.75%22/%3E%3Cstop%20offset=%221%22%20stop-color=%22%23ff453a%22%20stop-opacity=%220%22/%3E%3C/radialGradient%3E%3CradialGradient%20id=%22g2%22%3E%3Cstop%20offset=%220%22%20stop-color=%22%23fff%22/%3E%3Cstop%20offset=%22.28%22%20stop-color=%22%23fff%22%20stop-opacity=%22.95%22/%3E%3Cstop%20offset=%22.55%22%20stop-color=%22%23ff9f0a%22%20stop-opacity=%22.75%22/%3E%3Cstop%20offset=%221%22%20stop-color=%22%23ff9f0a%22%20stop-opacity=%220%22/%3E%3C/radialGradient%3E%3CradialGradient%20id=%22g3%22%3E%3Cstop%20offset=%220%22%20stop-color=%22%23fff%22/%3E%3Cstop%20offset=%22.28%22%20stop-color=%22%23fff%22%20stop-opacity=%22.95%22/%3E%3Cstop%20offset=%22.55%22%20stop-color=%22%2330d158%22%20stop-opacity=%22.75%22/%3E%3Cstop%20offset=%221%22%20stop-color=%22%2330d158%22%20stop-opacity=%220%22/%3E%3C/radialGradient%3E%3CradialGradient%20id=%22g4%22%3E%3Cstop%20offset=%220%22%20stop-color=%22%23fff%22/%3E%3Cstop%20offset=%22.28%22%20stop-color=%22%23fff%22%20stop-opacity=%22.95%22/%3E%3Cstop%20offset=%22.55%22%20stop-color=%22%230a84ff%22%20stop-opacity=%22.75%22/%3E%3Cstop%20offset=%221%22%20stop-color=%22%230a84ff%22%20stop-opacity=%220%22/%3E%3C/radialGradient%3E%3CradialGradient%20id=%22g5%22%3E%3Cstop%20offset=%220%22%20stop-color=%22%23fff%22/%3E%3Cstop%20offset=%22.28%22%20stop-color=%22%23fff%22%20stop-opacity=%22.95%22/%3E%3Cstop%20offset=%22.55%22%20stop-color=%22%23bf5af2%22%20stop-opacity=%22.75%22/%3E%3Cstop%20offset=%221%22%20stop-color=%22%23bf5af2%22%20stop-opacity=%220%22/%3E%3C/radialGradient%3E%3CradialGradient%20id=%22g6%22%3E%3Cstop%20offset=%220%22%20stop-color=%22%23fff%22/%3E%3Cstop%20offset=%22.28%22%20stop-color=%22%23fff%22%20stop-opacity=%22.95%22/%3E%3Cstop%20offset=%22.55%22%20stop-color=%22%2364d2ff%22%20stop-opacity=%22.75%22/%3E%3Cstop%20offset=%221%22%20stop-color=%22%2364d2ff%22%20stop-opacity=%220%22/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle%20class=%22d%22%20r=%227%22%20fill=%22url(%23w)%22/%3E%3Ccircle%20class=%22d%20d2%22%20r=%227%22%20fill=%22url(%23w)%22/%3E%3Cg%20transform=%22translate(12%2012.4)%20scale(.8)%22%20stroke=%22%23fff%22%20stroke-linejoin=%22round%22%3E%3Cpath%20class=%22r%22%20d=%22M52%2028L58%2028L58%2040C64%2036%2080%2036%2086%2048C92%2062%2084%2082%2068%2088C58%2092%2048%2090%2042%2084L36%2088L32%2082L38%2076C46%2080%2056%2078%2062%2072C68%2066%2066%2058%2060%2056C55%2054%2052%2050%2052%2044Z%22%20fill=%22none%22%20stroke-width=%222.5%22/%3E%3Cg%20class=%22gl%22%20fill=%22none%22%3E%3Cpath%20d=%22M52%2028L58%2028L58%2040C64%2036%2080%2036%2086%2048C92%2062%2084%2082%2068%2088C58%2092%2048%2090%2042%2084L36%2088L32%2082L38%2076C46%2080%2056%2078%2062%2072C68%2066%2066%2058%2060%2056C55%2054%2052%2050%2052%2044Z%22%20stroke-width=%2213%22%20stroke-opacity=%22.12%22/%3E%3Cpath%20d=%22M52%2028L58%2028L58%2040C64%2036%2080%2036%2086%2048C92%2062%2084%2082%2068%2088C58%2092%2048%2090%2042%2084L36%2088L32%2082L38%2076C46%2080%2056%2078%2062%2072C68%2066%2066%2058%2060%2056C55%2054%2052%2050%2052%2044Z%22%20stroke-width=%228.5%22%20stroke-opacity=%22.22%22/%3E%3C/g%3E%3Cpath%20d=%22M52%2028L58%2028L58%2040C64%2036%2080%2036%2086%2048C92%2062%2084%2082%2068%2088C58%2092%2048%2090%2042%2084L36%2088L32%2082L38%2076C46%2080%2056%2078%2062%2072C68%2066%2066%2058%2060%2056C55%2054%2052%2050%2052%2044Z%22%20fill=%22url(%23f)%22%20stroke-width=%224.5%22/%3E%3Cpath%20d=%22M66%2046C74%2046%2080%2052%2081%2060%22%20fill=%22none%22%20stroke-opacity=%22.6%22%20stroke-width=%222.5%22%20stroke-linecap=%22round%22/%3E%3C/g%3E%3Cg%20class=%22p%20p1%22%3E%3Ccircle%20r=%2210%22%20fill=%22url(%23g1)%22/%3E%3Ccircle%20r=%223.6%22%20fill=%22%23fff%22/%3E%3C/g%3E%3Ccircle%20class=%22s%20s0%22%20style=%22animation-duration:4.1s;animation-delay:-0.3s%22%20cx=%2296.1%22%20cy=%2252.5%22%20r=%225%22%20fill=%22url(%23g1)%22/%3E%3Ccircle%20class=%22s%20s1%22%20style=%22animation-duration:4.1s;animation-delay:-0.3s%22%20cx=%22107.5%22%20cy=%2243.1%22%20r=%225%22%20fill=%22url(%23g1)%22/%3E%3Cg%20class=%22p%20p2%22%3E%3Ccircle%20r=%2210%22%20fill=%22url(%23g2)%22/%3E%3Ccircle%20r=%223.6%22%20fill=%22%23fff%22/%3E%3C/g%3E%3Ccircle%20class=%22s%20s0%22%20style=%22animation-duration:5.3s;animation-delay:-1.9s%22%20cx=%2287.3%22%20cy=%2292.9%22%20r=%225%22%20fill=%22url(%23g2)%22/%3E%3Ccircle%20class=%22s%20s1%22%20style=%22animation-duration:5.3s;animation-delay:-1.9s%22%20cx=%2299.6%22%20cy=%22101.5%22%20r=%225%22%20fill=%22url(%23g2)%22/%3E%3Cg%20class=%22p%20p3%22%3E%3Ccircle%20r=%2210%22%20fill=%22url(%23g3)%22/%3E%3Ccircle%20r=%223.6%22%20fill=%22%23fff%22/%3E%3C/g%3E%3Ccircle%20class=%22s%20s0%22%20style=%22animation-duration:4.7s;animation-delay:-3.2s%22%20cx=%2225.6%22%20cy=%2298.1%22%20r=%225%22%20fill=%22url(%23g3)%22/%3E%3Ccircle%20class=%22s%20s1%22%20style=%22animation-duration:4.7s;animation-delay:-3.2s%22%20cx=%2216.7%22%20cy=%22109.9%22%20r=%225%22%20fill=%22url(%23g3)%22/%3E%3Cg%20class=%22p%20p4%22%3E%3Ccircle%20r=%2210%22%20fill=%22url(%23g4)%22/%3E%3Ccircle%20r=%223.6%22%20fill=%22%23fff%22/%3E%3C/g%3E%3Ccircle%20class=%22s%20s0%22%20style=%22animation-duration:5.9s;animation-delay:-0.9s%22%20cx=%2226%22%20cy=%2259.8%22%20r=%225%22%20fill=%22url(%23g4)%22/%3E%3Ccircle%20class=%22s%20s1%22%20style=%22animation-duration:5.9s;animation-delay:-0.9s%22%20cx=%2214.3%22%20cy=%2249.5%22%20r=%225%22%20fill=%22url(%23g4)%22/%3E%3Cg%20class=%22p%20p5%22%3E%3Ccircle%20r=%2210%22%20fill=%22url(%23g5)%22/%3E%3Ccircle%20r=%223.6%22%20fill=%22%23fff%22/%3E%3C/g%3E%3Ccircle%20class=%22s%20s0%22%20style=%22animation-duration:4.4s;animation-delay:-2.6s%22%20cx=%2278.6%22%20cy=%2227%22%20r=%225%22%20fill=%22url(%23g5)%22/%3E%3Ccircle%20class=%22s%20s1%22%20style=%22animation-duration:4.4s;animation-delay:-2.6s%22%20cx=%2286.5%22%20cy=%2216%22%20r=%225%22%20fill=%22url(%23g5)%22/%3E%3Cg%20class=%22p%20p6%22%3E%3Ccircle%20r=%2210%22%20fill=%22url(%23g6)%22/%3E%3Ccircle%20r=%223.6%22%20fill=%22%23fff%22/%3E%3C/g%3E%3Ccircle%20class=%22s%20s0%22%20style=%22animation-duration:5.6s;animation-delay:-4.4s%22%20cx=%2233.5%22%20cy=%2234.3%22%20r=%225%22%20fill=%22url(%23g6)%22/%3E%3Ccircle%20class=%22s%20s1%22%20style=%22animation-duration:5.6s;animation-delay:-4.4s%22%20cx=%2218.1%22%20cy=%2228.4%22%20r=%225%22%20fill=%22url(%23g6)%22/%3E%3C/svg%3E",   // V5.1: Oran's app icon (shown in the top bar and menu)     // V5 (Oran, 2026-10-15): no tagline line in the top bar
   schemaVersion: 1,
@@ -11978,7 +12445,7 @@ const DD_PROGRAM = {
   dataLabel: "food log",
   exampleNotice: "You're looking at two weeks of example meals so you can try everything. Snap or add your own food and the examples clear away.",
 
-  menu: [{ id: "photo", section: "Log it", icon: "📷", label: "Snap my food", note: "Photo → foods, amounts and nutrients", run: function () { ikPickPhoto(); } }, { id: "add", section: "Log it", icon: "＋", label: "Add food", note: "Search, quick adds, recent and every other way to add", run: function () { ikOpenAdd(); } }, { id: "label", section: "Log it", icon: "🏷️", label: "Snap a Nutrition Facts label", note: "Exact numbers for packaged foods", run: function () { ikPickPhoto({ label: true }); } }, { id: "quick", section: "Log it", icon: "⚡", label: "My quick adds", note: "One-tap foods and drinks, in the amounts you have them", run: function () { ikOpenQuickAdds(); } }, { id: "profile", section: "About me", icon: "🎯", label: "My profile & targets", note: function () { return ikProfileReady((dd.getData().settings || {}).profile) ? "Recommended amounts, or your own" : "Not set yet: tap to make targets yours"; }, run: function () { ikOpenProfile(); } }, { id: "cooking", section: "About me", icon: "🧂", label: "How I cook", note: "Salt and cooking oil, for closer sodium and fat numbers", run: function () { ikOpenCooking(); } }, { id: "eating", section: "About me", icon: "🥗", label: "How I like to eat", note: "Whole foods, low sugar or plant-based: steers food ideas", run: function () { ikOpenEating(); } }, { id: "regimen", section: "About me", icon: "💊", label: "My medications & vitamins", note: "A daily checklist: tap each one when you take it", run: function () { ikOpenRegimen(); } }, { id: "cups", section: "About me", icon: "💧", label: "My cups", note: "The three cup sizes on the Hydration card", run: function () { ikOpenCups(); } }, { id: "charts", section: "Home screen", icon: "📊", label: "My home screen charts", note: "Pick the main ring, charts and small bars on Today", run: function () { ikOpenCharts(); } }, { id: "gauges", section: "Home screen", icon: "🎛️", label: "Home screen & health", note: "Gauges, fasting, health conditions, medicines", run: function () { ikOpenGauges(); } }, { id: "recipes", section: "My data", icon: "🍲", label: "My recipes & foods", note: "Saved sauces, dishes and labels", run: function () { ikOpenRecipes(); } }, { id: "export", section: "My data", icon: "📤", label: "Export my data", note: "A readable report, a spreadsheet or the raw data", run: function () { ikOpenExport(); } }, { id: "about", icon: "📖", label: "About the numbers", note: "Where they come from · not medical advice", run: function () { ikOpenAbout(); } }],
+  menu: [{ id: "photo", section: "Log it", icon: "📷", label: "Snap my food", note: "Photo → foods, amounts and nutrients", run: function () { ikPickPhoto(); } }, { id: "add", section: "Log it", icon: "＋", label: "Add food", note: "Search, quick adds, recent and every other way to add", run: function () { ikOpenAdd(); } }, { id: "label", section: "Log it", icon: "🏷️", label: "Snap a Nutrition Facts label", note: "Exact numbers for packaged foods", run: function () { ikPickPhoto({ label: true }); } }, { id: "quick", section: "Log it", icon: "⚡", label: "My quick adds", note: "One-tap foods and drinks, in the amounts you have them", run: function () { ikOpenQuickAdds(); } }, { id: "profile", section: "About me", icon: "🎯", label: "My profile & targets", note: function () { return ikProfileReady((dd.getData().settings || {}).profile) ? "Recommended amounts, or your own" : "Not set yet: tap to make targets yours"; }, run: function () { ikOpenProfile(); } }, { id: "cooking", section: "About me", icon: "🧂", label: "How I cook", note: "Salt and cooking oil, for closer sodium and fat numbers", run: function () { ikOpenCooking(); } }, { id: "eating", section: "About me", icon: "🥗", label: "How I like to eat", note: "Whole foods, low sugar or plant-based: steers food ideas", run: function () { ikOpenEating(); } }, { id: "regimen", section: "About me", icon: "💊", label: "My medications & vitamins", note: "A daily checklist: tap each one when you take it", run: function () { ikOpenRegimen(); } }, { id: "cups", section: "About me", icon: "💧", label: "My cups", note: "The cup sizes for the 💧 glass (press and hold it)", run: function () { ikOpenCups(); } }, { id: "charts", section: "Home screen", icon: "📊", label: "My home screen charts", note: "Pick the main ring, charts and small bars on Today", run: function () { ikOpenCharts(); } }, { id: "gauges", section: "Home screen", icon: "🎛️", label: "Home screen & health", note: "Gauges, fasting, health conditions, medicines", run: function () { ikOpenGauges(); } }, { id: "recipes", section: "My data", icon: "🍲", label: "My recipes & foods", note: "Saved sauces, dishes and labels", run: function () { ikOpenRecipes(); } }, { id: "export", section: "My data", icon: "📤", label: "Export my data", note: "A readable report, a spreadsheet or the raw data", run: function () { ikOpenExport(); } }, { id: "about", icon: "📖", label: "About the numbers", note: "Where they come from · not medical advice", run: function () { ikOpenAbout(); } }],
 
   emptyData: function () { return { settings: { profile: {}, units: "metric", hideCalories: false, plateCm: 26 }, targets: {}, entries: [], recipes: [], customFoods: [], dayFills: [], regimen: [], doses: [] }; },
   exampleData: function () { return ikExample(); },
