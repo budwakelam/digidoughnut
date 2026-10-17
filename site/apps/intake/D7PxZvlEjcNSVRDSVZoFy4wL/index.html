@@ -1062,6 +1062,18 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-drawer{margin:0 12px;padding:12px 14px 14px;border:1px solid rgba(160,220,255,.14);border-top:0;border-radius:0 0 20px 20px;background:rgba(255,255,255,.035)}
 .ik-fm-darkdrawer{padding:0 0 14px;color:#e9f4fa;background:#0a1117}
 .ik-fm-darkdrawer .ik-fm-drawer{margin:0;border:0;border-radius:0;background:transparent;padding:6px 16px 4px}
+/* 0.5.8 (Oran, 2026-10-17): system + water details expand down on the dark ground, like the fuel details */
+.ik-fm-darkdrawer .ik-card.ik-fm-panel{background:transparent;border:0;box-shadow:none;color:#e9f4fa;padding:12px 16px 2px;margin:0}
+.ik-fm-darkdrawer .ik-fm-panel .ik-fm-h{color:#8ea3b3;border-top-color:rgba(255,255,255,.1)}
+.ik-fm-darkdrawer .ik-fm-panel .ik-small{color:#8ea3b3}
+.ik-fm-darkdrawer .ik-fm-panel .ik-row{color:#e9f4fa}
+.ik-fm-darkdrawer .ik-fm-row{color:#dbe6ee}
+.ik-fm-darkdrawer .ik-fm-rowgain{color:#7cf2c7}
+.ik-fm-darkdrawer .ik-fm-wtr{color:#8ea3b3}
+.ik-fm-darkdrawer .ik-fm-wtr.up{color:#7cf2c7}
+.ik-fm-darkdrawer .ik-fm-wtr.dn{color:#ffb340}
+.ik-fm-darkdrawer .ik-link{color:#a8d8f0}
+.ik-fm-darkdrawer .ik-fm-wchart text{fill:#9fb0bd}
 .ik-fm-drawer.opening{animation:ikFmExpand .45s cubic-bezier(.2,.8,.3,1) both;transform-origin:top;overflow:hidden}
 @keyframes ikFmExpand{from{max-height:0;opacity:0;padding-top:0;padding-bottom:0}to{max-height:1400px;opacity:1}}
 .ik-fm-ahead{margin:0 0 12px;padding:10px 12px 12px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(160,220,255,.12)}
@@ -10715,6 +10727,12 @@ function ikFuelMap(d, t, week, day, es) {
     /* 0.5.8: Fuel in's details open in the dark panel, straight down from Fuel in */
     if (fon && U.details && !F.past) h += '<div class="ik-fm-darkdrawer">' + (F.none ? '<div class="ik-fm-drawer' + (U.justOpened ? " opening" : "") + '"><p class="ik-fm-sub" style="margin:0">No food logged in the last 3 days, so there\'s no meal to replay yet. Log what you eat and this opens up: what your body is burning right now, the last 12 hours of fuel and a look ahead, time since you ate, sugar stores, ketones and today\'s balance.</p></div>' : ikFmFuelDetails(d, F, t.v.kcal || 0)) + "</div>";
     U.justOpened = false;
+    /* 0.5.8 (Oran, 2026-10-17): tapping a system (Muscles...) or Hydration expands down on the dark ground, just like the fuel details */
+    var pick = U.pick || "fuel", cardPanel = "", belowPanel = "";
+    if (pick === "water") cardPanel = ikFmWaterPanel(d, t, waterPct, HY);
+    else if (pick !== "fuel") { var S = sys.filter(function (x) { return x.s.id === pick; })[0]; if (S) cardPanel = ikFmSystemPanel(d, S, F, N, t); }
+    else if (view === "map") belowPanel = ikRadarCard(d, t, week, day);
+    if (cardPanel && !(fon && U.details && !F.past)) h += '<div class="ik-fm-darkdrawer">' + cardPanel + "</div>";
     /* 0.5.8 (Oran: "the legend is way too large"): one small, compact legend, on the dark ground */
     var dot = function (c, glow) { return '<i style="background:' + c + (glow ? ";box-shadow:0 0 5px " + c : "") + '"></i>'; };
     h += '<div class="ik-fm-legend">' +
@@ -10728,12 +10746,8 @@ function ikFuelMap(d, t, week, day, es) {
     h += "</div>";   // card
   }
   h += '</div><div class="ik-fm-right">';
-  // the panel: folded away on phones until something is tapped; always shown beside the map on computers
-  var pick = U.pick || "fuel", panel = "";
-  if (pick === "water") panel = ikFmWaterPanel(d, t, waterPct, HY);
-  else if (pick !== "fuel") { var S = sys.filter(function (x) { return x.s.id === pick; })[0]; if (S) panel = ikFmSystemPanel(d, S, F, N, t); }
-  else if (view === "map") panel = ikRadarCard(d, t, week, day);
-  h += '<div class="ik-fm-below"' + (U.open ? "" : " data-closed") + ">" + panel + "</div></div></div></section>";
+  // 0.5.8: the system/water panel now lives in the dark card above; only the radar card stays beside the map
+  h += '<div class="ik-fm-below"' + (U.open && belowPanel ? "" : " data-closed") + ">" + belowPanel + "</div></div></div></section>";
   return h;
 }
 function ikFmAct(a) {
