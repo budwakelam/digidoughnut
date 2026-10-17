@@ -101,6 +101,11 @@
   meal is made of, medals for the biggest boosts, vitamin and mineral coverage, every nutrient found, Add pinned.
   (6) The fuel map reacts to a meal: absorption over the next hours, ▲/▼ on each system, pulsing systems and
   nutrients for about 75 minutes, orbs along the paths, and "Absorbing … NN%" in Fuel in.
+  Every way of adding (typing a food, quick adds, Recent / Most often, My own food, a label) opens the same breakdown
+  as a photo scan before anything is added; Add now is at the top. The 💧 glass stays one tap. Each glass of water keeps
+  its own time; water counts on Hydration straight away. One rule for what glows on the map: food or drink from the
+  last 2 hours that will still raise a system by a point or more (▲ +N = points still to come). Fuel in details open
+  in the dark panel with a 4-hour look-ahead slider. The map runs edge to edge on phones.
   To make a new app, change only the parts marked PROGRAM-SPECIFIC (styles, markup, script)
   and the app name in the <head>.
 -->
@@ -11144,6 +11149,27 @@ function ikPhotoStart(image, opts) {
   IK_P.el = sh;
   ikPhotoPaint();
 }
+/* 0.5.8 (Oran, 2026-10-17: "if you add any other way you should get the same kind of experience"). Typing a
+   food, a quick add, Recent / Most often, My own food and a label all open the same breakdown as a photo scan
+   (energy count-up, what it's made of, medals, every nutrient) before anything is added. Add now is at the top
+   for a quick exit. items: log items {ref, g?, n?, name?, method?}. opts: {name, kind, src, time} */
+function ikReview(items, opts) {
+  opts = opts || {};
+  var d = dd.getData(), day = IK_UI.day || ikToday(), time = opts.time || (day === ikToday() ? ikNowTime() : "12:00");
+  var list = (items || []).filter(function (i) { return i && i.ref && !/for cooking$/.test(i.name || ""); }).map(function (i) {   // cooking oil is worked out again from the method
+    var r = ikResolve(i.ref, d), it = { name: i.name || (r ? r.label : "Food"), ref: i.ref, conf: "sure", method: i.method || null, drink: !!(r && r.kind === "drink") || opts.kind === "drink" };
+    if (i.n != null && r && r.perServing && !r.per100) { it.n = Number(i.n) || 1; it.g = i.g || (r.servingG ? it.n * r.servingG : 0); }
+    else it.g = Number(i.g) || (r && r.food && r.food.m[0] ? r.food.m[0][1] : 100);
+    return it;
+  });
+  if (!list.length) return;
+  IK_P = { image: null, review: true, mode: "food", day: day, time: time, part: ikPartOf(time), stage: "results", items: list, mealName: opts.name || "", kind: opts.kind || null, src: opts.src || "typed", animDone: false };
+  if (dd.helper && dd.helper.close) dd.helper.close();
+  var sh = dd.ui.sheet("", { sticky: true, onClose: function () { IK_P = null; }, onOutside: function () { dd.ui.toast("Tap ✕ to close. Nothing is added until you tap Add."); } });
+  sh.classList.add("ik-sheet");
+  IK_P.el = sh;
+  ikPhotoPaint();
+}
 function ikPickPhoto(opts) {
   opts = opts || {};
   dd.files.pick({ accept: "image/*" }).then(function (f) {
@@ -11174,6 +11200,7 @@ function ikPhotoLogItems(P, d) {
 /* A photo item as a log item (estimates are counted through a temporary per-100 g profile). */
 function ikPhotoItemRef(it) {
   if (it.recipe) return { ref: "__tmp", g: it.g, _per100: it.recipe.per100, name: it.name, _ings: it.recipe.ingredients };
+  if (it.ref && it.n != null) return { ref: it.ref, n: it.n, name: it.name };   // 0.5.8: servings (labels, supplements)
   if (it.ref) return { ref: it.ref, g: it.g, name: it.name };
   return { ref: "__tmp", g: it.g, _per100: ikFillEstimate(it.per100, it.name) || it.per100, name: it.name };
 }
@@ -11186,7 +11213,7 @@ function ikPhotoPaint() {
     '<select class="ik-input" data-part style="width:auto;min-height:38px;padding:4px 30px 4px 10px" aria-label="Part of day">' +
     ["morning", "afternoon", "evening"].map(function (p) { return '<option value="' + p + '"' + (P.part === p ? " selected" : "") + ">" + IK_PARTS[p] + "</option>"; }).join("") + "</select>" +
     '<input class="ik-input" type="time" data-time value="' + ikEsc(P.time) + '" style="width:auto;min-height:38px;padding:4px 8px" aria-label="Time"></div>';
-  if (P.stage !== "looking") h += '<div class="ik-photo"><img src="' + P.image.dataUrl + '" alt="Your photo">' + P.items.map(function (it) {
+  if (P.stage !== "looking" && P.image) h += '<div class="ik-photo"><img src="' + P.image.dataUrl + '" alt="Your photo">' + P.items.map(function (it) {
     if (it.x == null || it.y == null) return "";
     return '<span class="ik-tag' + (it.ask ? " q" : "") + '" style="left:' + Math.round(Math.min(0.92, Math.max(0.08, it.x)) * 100) + "%;top:" + Math.round(Math.min(0.92, Math.max(0.08, it.y)) * 100) + '%">' + ikEsc(it.name) + (it.ask ? "?" : "") + "</span>";
   }).join("") + "</div>";
@@ -11230,11 +11257,12 @@ function ikPhotoPaint() {
     var anim = !P.animDone;
     if (P.busy) h += '<div class="ik-warn soft">📸 Lots going on in this image. For the best numbers, try one plate at a time.</div>';   // V4
     h += '<div data-hero>' + ikPhotoHero(P, d, anim) + "</div>";
-    h += '<h2 class="ik-h2" style="margin-top:14px">Here\'s what I see</h2><div class="ik-results">' + P.items.map(function (it, i) { return ikPhotoItemHtml(it, i, d, name); }).join("") + "</div>";
+    h += '<h2 class="ik-h2" style="margin-top:14px">' + (P.review ? "What you're adding" : "Here\'s what I see") + '</h2><div class="ik-results">' + P.items.map(function (it, i) { return ikPhotoItemHtml(it, i, d, name); }).join("") + "</div>";
     h += ikPhotoFlagsHtml(P, d);   // V3: balance and flags before Add
     h += '<div data-breakdown>' + ikPhotoBreak(P, d, anim) + "</div>";
     if (P.items.length > 1) h += '<label class="ik-label" style="margin-top:0">Name this meal (optional)</label><input class="ik-input" data-mealname maxlength="60" value="' + ikEsc(P.mealName || "") + '" placeholder="e.g. Sunday supper" style="margin:0 0 10px">';   // V4
-    h += '<div class="ik-row" style="margin:0 0 10px"><button class="ik-link" data-additem>＋ Something I missed</button><span class="ik-grow"></span><button class="ik-link" data-again>Look again</button></div>';
+    h += '<div class="ik-row" style="margin:0 0 10px"><button class="ik-link" data-additem>＋ ' + (P.review ? "Add something else" : "Something I missed") + '</button><span class="ik-grow"></span>' +
+      (P.review ? '<button class="ik-link" data-saveqa>' + (P.savedQa ? "★ Saved as a quick add" : "☆ Save as a quick add") + "</button>" : '<button class="ik-link" data-again>Look again</button>') + "</div>";
     var waiting = P.items.some(function (it) { return it.ask && !it.answered; });
     h += (waiting ? '<p class="ik-small" style="text-align:center">Not sure what\'s in it? Add it anyway: ' + ikEsc(name) + "'s estimate is used and marked \"estimated\".</p>" : "") +
       '<div class="ik-addbar"><button class="ik-btn wide" data-addall' + (P.items.length ? "" : " disabled") + ">Add to " + ikEsc(ikDayName(P.day).toLowerCase() === "today" ? "today" : ikDayName(P.day)) + (hide ? "" : ' · about <span data-total>' + ikNum(ikPhotoTotal(), 0) + "</span> kcal") + "</button></div>";
@@ -11292,11 +11320,11 @@ function ikPhotoHero(P, d, anim) {
 }
 function ikPhotoBreak(P, d, anim) {
   var T = ikPhotoT(P, d), v = T.v, G = P.items.reduce(function (a, it) { return a + (Number(it.g) || 0); }, 0);
-  if (!(G > 0)) return "";
   var out = '<div class="ik-break' + (anim ? " anim" : "") + '">';
   /* what it's made of, by weight */
   var comp = [["Water", v.water || 0, "var(--ik-water)", "water"], ["Protein", v.protein || 0, "var(--ik-protein)", "protein"], ["Starch", Math.max(0, (v.carb || 0) - (v.fibre || 0) - (v.sugar || 0)), "var(--ik-carb)", "carb"],
               ["Sugars", v.sugar || 0, "var(--ik-sugar)", "sugar"], ["Fibre", v.fibre || 0, "var(--ik-fibre)", "fibre"], ["Fat", v.fat || 0, "var(--ik-fat)", "fat"], ["Alcohol", v.alcohol || 0, "var(--ik-sat)", "alcohol"]];
+  if (!(G > 0)) G = comp.reduce(function (a, c) { return a + c[1]; }, 0) || 1;   // servings with no weight: show it by what's in it
   var sum = comp.reduce(function (a, c) { return a + c[1]; }, 0), k = sum > G ? G / sum : 1;
   comp.forEach(function (c) { c[1] *= k; });
   comp.push(["Minerals & other", Math.max(0, G - sum * k), "#c7c7cc", "other"]);
@@ -11360,9 +11388,10 @@ function ikPhotoItemHtml(it, i, d, name) {
   var est = !it.ref && !it.recipe || !!(r && r.filled);
   var h = '<div class="ik-item' + (it.ask && !it.answered ? " ask" : "") + '" data-item="' + i + '"><div class="ik-row"><b class="ik-grow">' + ikEsc(it.name) + "</b>" +
     (est ? '<span class="ik-est">estimated</span>' : "") + '<span class="ik-conf ' + it.conf + '">' + ikConfLabel(it.conf) + "</span>" +
-    '<input class="ik-gnum" type="number" inputmode="decimal" min="1" step="5" value="' + Math.round(it.g) + '" data-g="' + i + '" aria-label="Grams of ' + ikEsc(it.name) + '"><span class="ik-small">g</span>' +
+    (it.n != null ? '<input class="ik-gnum" type="number" inputmode="decimal" min="0.25" step="0.25" value="' + it.n + '" data-sv="' + i + '" aria-label="Servings of ' + ikEsc(it.name) + '"><span class="ik-small">serv.</span>'
+      : '<input class="ik-gnum" type="number" inputmode="decimal" min="1" step="5" value="' + Math.round(it.g) + '" data-g="' + i + '" aria-label="Grams of ' + ikEsc(it.name) + '"><span class="ik-small">g</span>') +
     '<button class="ik-x" data-del="' + i + '" aria-label="Remove ' + ikEsc(it.name) + '">✕</button></div>' +
-    '<label class="ik-grams"><span data-about="' + i + '">' + ikEsc(ikAbout(food, it.g) || (r ? r.label : est ? "Not in the food table: " + name + "'s estimate" : "")) + '</span><input type="range" min="5" max="' + max + '" step="5" value="' + Math.round(it.g) + '" data-r="' + i + '" aria-label="Amount of ' + ikEsc(it.name) + ' in grams"></label>' +
+    (it.n != null ? "" : '<label class="ik-grams"><span data-about="' + i + '">' + ikEsc(ikAbout(food, it.g) || (r ? r.label : est ? "Not in the food table: " + name + "'s estimate" : "")) + '</span><input type="range" min="5" max="' + max + '" step="5" value="' + Math.round(it.g) + '" data-r="' + i + '" aria-label="Amount of ' + ikEsc(it.name) + ' in grams"></label>') +
     '<div class="ik-itmac" data-itmac="' + i + '">' + ikPhotoItemMac(it, d) + "</div>" +
     (r && r.label !== it.name ? '<div class="ik-small">Counted as: ' + ikEsc(r.label) + ' · <button class="ik-link" data-swap="' + i + '">Not right?</button></div>' : '<div class="ik-small"><button class="ik-link" data-swap="' + i + '" style="padding-left:0">Pick the right food</button></div>');
   if (it.ref && ikCookable(it.ref)) {   // V4: cooking method changes the numbers (oil)
@@ -11416,6 +11445,15 @@ function ikPhotoWire() {
   var again = q("[data-again]"); if (again) again.addEventListener("click", function () { P.stage = "ready"; P.items = []; ikPhotoPaint(); });
   var stop = q("[data-stop]"); if (stop) stop.addEventListener("click", function () { dd.ai.stop(); });
   all("[data-g]").forEach(function (inp) { inp.addEventListener("input", function () { ikPhotoSetG(+inp.getAttribute("data-g"), +inp.value, "num"); }); });
+  all("[data-sv]").forEach(function (inp) { inp.addEventListener("input", function () { var it = P.items[+inp.getAttribute("data-sv")], v = Number(inp.value); if (it && v > 0) { it.n = v; var tot = el.querySelector("[data-total]"); if (tot) tot.textContent = ikNum(ikPhotoTotal(), 0); ikPhotoRefresh(+inp.getAttribute("data-sv")); } }); });
+  var sq = q("[data-saveqa]"); if (sq) sq.addEventListener("click", function () {
+    if (P.savedQa) return;
+    var its = ikPhotoLogItems(P, dd.getData()).filter(function (x) { return x.ref !== "__tmp" && !/for cooking$/.test(x.name || ""); }).map(function (x, k) { var o = { ref: x.ref, name: x.name }; if (x.n != null) o.n = x.n; else o.g = Math.round(x.g); if (P.items[k] && P.items[k].method) o.method = P.items[k].method; return o; });
+    if (!its.length) return;
+    var nm = String(P.mealName || ikEntryName({ items: its }, dd.getData())).slice(0, 40);
+    ikQuickSave({ id: dd.ui.uid("q"), name: nm, icon: ikQuickIcon(nm, P.kind || "food"), kind: P.kind || (P.items.every(function (x) { return x.drink; }) ? "drink" : "food"), items: its });
+    P.savedQa = true; sq.textContent = "★ Saved as a quick add";
+  });
   all("[data-r]").forEach(function (inp) { inp.addEventListener("input", function () { ikPhotoSetG(+inp.getAttribute("data-r"), +inp.value, "range"); }); });
   all("[data-method]").forEach(function (sel) { sel.addEventListener("change", function () { var it = P.items[+sel.getAttribute("data-method")]; if (it) { it.method = sel.value || null; ikPhotoPaint(); } }); });
   all("[data-del]").forEach(function (b) { b.addEventListener("click", function () { P.items.splice(+b.getAttribute("data-del"), 1); ikPhotoPaint(); }); });
@@ -11573,7 +11611,8 @@ function ikPhotoAdd() {
     } else if (it.recipe) {
       var cid0 = ctx.ui.uid("c"); newFoods.push({ id: cid0, name: it.recipe.name || it.name, per100: it.recipe.per100, src: "described", kind: "food" });
       items.push({ ref: "c:" + cid0, g: Math.round(it.g), name: it.name });
-    } else if (it.ref) items.push(it.method && ikCookable(it.ref) ? { ref: it.ref, g: Math.round(it.g), name: it.name, method: it.method } : { ref: it.ref, g: Math.round(it.g), name: it.name });
+    } else if (it.ref && it.n != null) items.push(it.g ? { ref: it.ref, n: it.n, g: Math.round(it.g), name: it.name } : { ref: it.ref, n: it.n, name: it.name });
+    else if (it.ref) items.push(it.method && ikCookable(it.ref) ? { ref: it.ref, g: Math.round(it.g), name: it.name, method: it.method } : { ref: it.ref, g: Math.round(it.g), name: it.name });
     else {
       var cid = ctx.ui.uid("c"), pfill = ikFillEstimate(it.per100, it.name);   /* V5.7: never save a 0-kcal estimate */
       newFoods.push({ id: cid, name: it.name, per100: pfill || it.per100, est: true, src: "photo", kind: it.drink ? "drink" : "food" });
@@ -11582,7 +11621,7 @@ function ikPhotoAdd() {
   });
   var oilItem = ikOilItem(dd.getData(), ikPhotoOilG(P, dd.getData())); if (oilItem) items.push(oilItem);   // V4
   var allDrinks = P.items.every(function (it) { return it.drink; });
-  var entry = { id: ctx.ui.uid("e"), day: P.day, time: P.time, part: P.part, kind: allDrinks ? "drink" : "food", name: P.mealName || "", items: items, src: "photo" };
+  var entry = { id: ctx.ui.uid("e"), day: P.day, time: P.time, part: P.part, kind: P.kind || (allDrinks ? "drink" : "food"), name: P.mealName || "", items: items, src: P.review ? P.src || "typed" : "photo" };
   ctx.update(function (d) {
     newFoods.forEach(function (f) { d.customFoods.push(f); });
     newRecipes.forEach(function (r) { d.recipes.push(r); });
@@ -11615,10 +11654,12 @@ function ikLabelAdd() {
   var map = { kcal: "kcal", fat: "fat", sat: "sat", trans: "trans", chol: "chol", na: "sodium_mg", carb: "carb", fibre: "fibre", sugar: "sugar", protein: "protein", k: "k", ca: "ca", fe: "fe" };
   Object.keys(map).forEach(function (k) { var v = Number(L[map[k]]); if (L[map[k]] != null && isFinite(v)) per[k] = v; });
   var cid = ctx.ui.uid("c"), food = { id: cid, name: nm, perServing: per, servingG: L.serving_g, src: "label", kind: supp ? "supplement" : "food" };
-  var entry = { id: ctx.ui.uid("e"), day: P.day, time: P.time, part: P.part, kind: supp ? "supplement" : "food", name: "", items: [{ ref: "c:" + cid, n: serv, g: L.serving_g ? Math.round(L.serving_g * serv) : null, name: nm }], src: "label" };
-  ctx.update(function (d) { d.customFoods.push(food); d.entries.push(entry); });
-  dd.ui.closeSheet(); IK_UI.view = "today"; IK_UI.day = entry.day; ikRender(ikCtx());
-  dd.ui.toast("Saved " + nm + " and added it.", 3500);
+  ctx.update(function (d) { d.customFoods.push(food); });
+  dd.ui.closeSheet();
+  /* 0.5.8: the label's food is saved; the breakdown opens before it's added */
+  var dayL = P.day, timeL = P.time;
+  setTimeout(function () { IK_UI.day = dayL; ikReview([{ ref: "c:" + cid, n: serv, g: L.serving_g ? Math.round(L.serving_g * serv) : null, name: nm }], { kind: supp ? "supplement" : null, src: "label", time: timeL }); }, 30);
+  dd.ui.toast("Saved " + nm + " to My foods.", 2500);
 }
 
 /* ---------- pick a food by typing (used by the photo sheet and Add by typing) ---------- */
@@ -11749,11 +11790,14 @@ function ikOpenAdd(start, opts) {
       if (a === "photo") ikPickPhoto(); else if (a === "label") ikPickPhoto({ label: true }); else if (a === "regimen") ikOpenRegimen();
       else if (a === "supp") ikOpenSupps(); else if (a === "tell") ikTellHelper(); else if (a === "forgot") ikForgotMeal();
     }); });
-    home.querySelectorAll("[data-qa]").forEach(function (b) { b.addEventListener("click", function () { ikQuickAdd(b.getAttribute("data-qa")); flash(b); }); });
+    home.querySelectorAll("[data-qa]").forEach(function (b) { b.addEventListener("click", function () {   // 0.5.8: see it before it's added
+      var x = ikQuickList(dd.getData()).filter(function (o) { return o.id === b.getAttribute("data-qa"); })[0]; if (!x) return;
+      ikReview(x.items, { name: x.items.length > 1 ? x.name : "", kind: x.kind, src: "quick" });
+    }); });
     var qn = home.querySelector("[data-qnew]"); if (qn) qn.addEventListener("click", function () { ikQuickForm(null, function () { ikOpenAdd(); }); });
     home.querySelector("[data-qedit]").addEventListener("click", function () { if (ikQuickList(dd.getData()).length) ikOpenQuickAdds(function () { ikOpenAdd(); }); else ikQuickForm(null, function () { ikOpenAdd(); }); });
     home.querySelectorAll("[data-tab]").forEach(function (b) { b.addEventListener("click", function () { tab = IK_UI.addTab = b.getAttribute("data-tab"); paintHome(); }); });
-    home.querySelectorAll("[data-sig]").forEach(function (b) { b.addEventListener("click", function () { ikAddAgain(b.getAttribute("data-sig")); flash(b); }); });
+    home.querySelectorAll("[data-sig]").forEach(function (b) { b.addEventListener("click", function () { ikReviewAgain(b.getAttribute("data-sig")); }); });
     home.querySelectorAll("[data-pin]").forEach(function (b) { b.addEventListener("click", function () {
       var x = ikQuickFromSig(b.getAttribute("data-pin")); if (x) { dd.ui.toast("“" + x.name + "” is a quick add now. One tap next time."); paintHome(); }
     }); });
@@ -11769,7 +11813,11 @@ function ikOpenAdd(start, opts) {
         '<button class="ik-hit ik-hitmore" data-mkq><span class="ik-grow">✏️ Not here? Make “' + ikEsc(typed.slice(0, 40)) + '” with my own numbers</span></button>' :
       '<div class="ik-empty">Nothing matches. Try a simpler word' + (helperOn ? ", or tell " + ikEsc(name) : "") + '.<br><button class="ik-btn soft" data-mkq style="margin-top:10px">✏️ Make “' + ikEsc(typed.slice(0, 40)) + '” with my own numbers</button></div>';
     var mk = hits.querySelector("[data-mkq]"); if (mk) mk.addEventListener("click", function () { ikOpenFoodEditor({ name: typed.slice(0, 60), addNow: true }); });
-    hits.querySelectorAll("[data-i]").forEach(function (b) { b.addEventListener("click", function () { pick(res[+b.getAttribute("data-i")]); }); });
+    hits.querySelectorAll("[data-i]").forEach(function (b) { b.addEventListener("click", function () {   // 0.5.8: straight to the breakdown
+      var h = res[+b.getAttribute("data-i")], r = ikResolve(h.ref, d); if (!r) return;
+      var servings = !!r.perServing && !r.per100, ms = r.food ? r.food.m : r.recipe && r.recipe.totalG ? [["The whole recipe", r.recipe.totalG]] : [];
+      ikReview([servings ? { ref: h.ref, n: h.n || 1, name: r.label } : { ref: h.ref, g: h.g || (ms[0] ? ms[0][1] : 100), name: r.label }], { kind: r.kind === "supplement" || r.type === "supp" ? "supplement" : r.kind === "drink" ? "drink" : null, src: "typed" });
+    }); });
   }
   function pick(h) {
     var r = ikResolve(h.ref, d); if (!r) return;
@@ -11955,6 +12003,11 @@ function ikUsualAmount(u, d) {
     return i.n != null ? i.n + " serv." : Math.round(i.g || 0) + (drink ? " mL" : " g");
   }).join(" + ");
 }
+function ikReviewAgain(sig) {   // 0.5.8: Recent / Most often open the breakdown first
+  var d = dd.getData(), u = ikUsual(d, "recent").concat(ikUsual(d, "common")).filter(function (x) { return x.sig === sig; })[0]; if (!u) return;
+  var day = IK_UI.day || ikToday();
+  ikReview(u.e.items, { name: u.e.name || "", kind: u.e.kind || null, src: "again", time: day === ikToday() ? null : (u.e.time || "12:00") });
+}
 function ikAddAgain(sig) {
   var d = dd.getData(), u = ikUsual(d, "recent").concat(ikUsual(d, "common")).filter(function (x) { return x.sig === sig; })[0]; if (!u) return;
   var day = IK_UI.day || ikToday(), t = day === ikToday() ? ikNowTime() : (u.e.time || "12:00"), src = u.e;
@@ -12116,13 +12169,10 @@ function ikOpenFoodEditor(opts) {
         else next.g = g != null ? g : (n != null ? n * (food.servingG || 100) : 100);
         e.items[opts.swap.index] = next;
       });
-      if (how === "add") {
-        added = { id: dd.ui.uid("e"), day: day, time: t, part: ikPartOf(t), kind: w.kind, name: "", src: "typed",
-                  items: [basis === "serving" ? { ref: "c:" + food.id, n: 1, name: food.name } : { ref: "c:" + food.id, g: 100, name: food.name }] };
-        dt.entries.push(added);
-      }
+      if (how === "add") added = [basis === "serving" ? { ref: "c:" + food.id, n: 1, name: food.name } : { ref: "c:" + food.id, g: 100, name: food.name }];   // 0.5.8: shown first, then added
     });
     saved = true; dd.ui.closeSheet();
+    if (added) { var kind0 = w.kind; setTimeout(function () { ikReview(added, { kind: kind0 === "food" ? null : kind0, src: "typed" }); }, 30); if (opts.onDone) setTimeout(opts.onDone, 0); return; }
     var dn = dd.getData(), v = added ? ikTotals([added], dn).v : null;
     dd.ui.toast(added ? "Added " + food.name + (v.fibre ? ": " + ikNum(v.fibre, 1) + " g fibre" : "") + "." : "Saved " + food.name + ".", 3000);
     if (opts.onDone) setTimeout(opts.onDone, 0);
