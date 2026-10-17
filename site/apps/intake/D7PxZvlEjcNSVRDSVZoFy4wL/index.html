@@ -10331,7 +10331,7 @@ function ikFmSysFuel(id, F) {
   if (id === "blood" || id === "immune") return { c: IK_FM_FUELC.glucose, label: id === "blood" ? "Glucose. Red blood cells can only use sugar, and your liver keeps making it, even when you fast." : "Mostly glucose, which your liver keeps supplying between meals." };
   if (id === "heart") return st === "glucose" ? { c: IK_FM_FUELC.mixed, label: "Fat and sugar. The heart prefers fat but takes sugar after a carb meal." }
     : st === "ketones" ? { c: IK_FM_FUELC.ketones, label: "Fat and ketones, the heart's favourite fuels." } : { c: IK_FM_FUELC.fat, label: "Mostly fat, the heart's favourite fuel." };
-  var lbl = { glucose: "Mostly sugar from your meal.", mixed: "A mix of stored sugar and fat.", fat: "Mostly fat from your stores.", ketones: "Fat, with ketones joining in.", alc: "Alcohol first." }[st];
+  var lbl = { glucose: "Mostly sugar from your meal.", mixed: "A mix of stored sugar and fat.", fat: "Mostly fat from your stores.", ketones: "Fat, with ketones joining in.", alc: "Alcohol." }[st];
   return { c: IK_FM_FUELC[st] || IK_FM_FUELC.mixed, label: lbl };
 }
 
@@ -10390,7 +10390,7 @@ var IK_FM_ST = {
   mixed: { c: "#ff8fc0", title: "Stored sugar and fat", sub: "Your liver is releasing stored sugar, and fat is making up a growing share." },
   fat: { c: "#ffc247", title: "Mostly fat", sub: "Insulin is low, so fat is your main fuel." },
   ketones: { c: "#b48cff", title: "Fat and ketones", sub: "Your liver sugar stores are low, so it's turning fat into ketones, a second fuel your brain and muscles can use." },
-  alc: { c: "#9aa5ff", title: "Alcohol first", sub: "Your body clears alcohol before anything else, so fat burning is mostly on hold until it's gone (about 7 g an hour, roughly one drink every 2 hours)." },
+  alc: { c: "#9aa5ff", title: "Alcohol", sub:   /* 0.5.8s (Oran): just "Alcohol" */ "Your body clears alcohol before anything else, so fat burning is mostly on hold until it's gone (about 7 g an hour, roughly one drink every 2 hours)." },
   none: { c: "#8ea3b3", title: "Log a meal to see it", sub: "Fuel in works out what your body is likely burning from what you ate and when." }
 };
 
