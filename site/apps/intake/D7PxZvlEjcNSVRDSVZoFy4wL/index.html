@@ -1112,13 +1112,14 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-bal{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:12px;background:rgba(255,255,255,.05);margin-top:8px;font-size:12px;font-weight:600;color:#dbe6ee;line-height:1.35}
 .ik-fm-batt{flex:none;width:26px;height:14px;border-radius:4px;border:2px solid #8ea3b3;position:relative;box-sizing:border-box}
 .ik-fm-batt i{position:absolute;left:1px;top:1px;bottom:1px;border-radius:2px}
-.ik-fm-legend{display:flex;flex-wrap:wrap;justify-content:center;gap:3px 12px;padding:8px 14px 0;font-size:10.5px;line-height:1.3;color:#6e6e73;font-weight:600}
+/* 0.5.8 (Oran, 2026-10-17): the legend sits on the dark ground now, not a white strip */
+.ik-fm-legend{display:flex;flex-wrap:wrap;justify-content:center;gap:3px 12px;padding:10px 14px 12px;font-size:10.5px;line-height:1.3;color:#8ea3b3;font-weight:600}
 .ik-fm-legend span{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
-.ik-fm-legend span.w{display:block;white-space:normal;flex-basis:100%;color:#8e8e93;font-weight:500;text-align:center}
-.ik-fm-legend b{color:#1d1d1f;font-weight:800;margin-right:2px}
-.ik-fm-legend b.g{color:#0c8a5f;background:#e6fbf3;border-radius:5px;padding:0 4px}
+.ik-fm-legend span.w{display:block;white-space:normal;flex-basis:100%;color:#7f95a6;font-weight:500;text-align:center}
+.ik-fm-legend b{color:#e9f4fa;font-weight:800;margin-right:2px}
+.ik-fm-legend b.g{color:#7cf2c7;background:rgba(25,197,140,.16);border-radius:5px;padding:0 4px}
 .ik-fm-legend i{width:7px;height:7px;border-radius:50%;margin-left:3px}
-.ik-fm-legend .ik-fm-link{font-size:inherit}
+.ik-fm-legend .ik-fm-link{font-size:inherit;color:#a8d8f0}
 .ik-fm-foot{padding:4px 0 10px!important}
 .ik-fm-foot .ik-fm-legal.first{margin:8px 12px 0;padding:7px 9px;font-size:10.5px}
 .ik-fm-foot .ik-fm-legal.first .ik-fm-ok{min-height:28px;padding:4px 10px;font-size:11px}
@@ -9828,6 +9829,7 @@ function ikRenderToday(ctx) {
   h += ikFuelMap(d, t, ikDaySeries(d, ikDaysBack(day, 7)), day, es);   // V5.5: the fuel map, top and centre
   var pre = "";   // 0.5.7: these cards now come after the food list
   if (ikShow(d, "meds")) pre += ikDoseCard(d, day, "med");   // V5: medications next
+  if (ikShow(d, "supps")) pre += ikRegItems(d).length ? ikDoseCard(d, day, "supp") : ikRegSetupCard();   // 0.5.8 (Oran, 2026-10-17): vitamins & supplements sit right under medications, above the food list
   if (!ikProfileReady(p)) {
     pre += '<div class="ik-card ik-setup"><b>Make the targets yours</b><p class="ik-small" style="margin:4px 0 10px">Right now your targets are Canada\'s Daily Values. Add your age, height, weight and how active you are for amounts made for you. About a minute.</p>' +
       '<button class="ik-btn" data-act="profile">Set my targets</button></div>';
@@ -9855,18 +9857,12 @@ function ikRenderToday(ctx) {
      turned on, then the everyday body gauges, the macros, drinks and vitamins. Any of them can be hidden. */
   /* V5 (Oran, 2026-10-15): medications first, then the nutrient balance chart, vitamins, warnings, one grouped
      card of body & health gauges, hydration, nutrient rows and small bars. */
-  if (ikShow(d, "supps")) rest += ikRegItems(d).length ? ikDoseCard(d, day, "supp") : ikRegSetupCard();
   if (ikShow(d, "alerts")) rest += ikAlertsCard(d, es);
   var tiles = ikHealthCluster(d, t, week, day, es).concat(ikBodyCluster(d, t, day, isToday));
   if (tiles.length) rest += '<div class="ik-sechead">Body &amp; health</div><section class="ik-cluster">' + tiles.join("") + "</section>";
   // V5.4: hydration, then caffeine and alcohol (only when there is some), then the nutrient rows. On computers they sit in the banner.
   rest += ikExtrasCard(d, t, day) + ikDetailList(d, t, week, day);
   if (ikShow(d, "vitmin")) rest += ikMinisHtml(d, t);
-  if (ikShow(d, "tip")) {
-    var tip = ikTopTip(d, day);
-    rest += '<section class="ik-tip"><svg class="ik-tipring" width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12" fill="none" stroke="var(--ik-vit)" stroke-width="7"/></svg>' +
-      '<div class="ik-tiptext"><b>' + ikEsc(name) + ":</b> " + ikEsc(tip.text) + (tip.k ? '<br><button class="ik-link" data-ask="tip" data-k="' + ikEsc(tip.k) + '">Ask ' + ikEsc(name) + " about this</button>" : "") + "</div></section>";
-  }
   rest += '<div class="ik-row" style="justify-content:center;flex-wrap:wrap;gap:4px 14px;margin:0 0 14px"><button class="ik-link" data-act="charts">📊 Choose my charts</button><button class="ik-link" data-act="gauges">🎛️ Health &amp; other gauges</button></div>';
   // the food list, grouped by part of day; drinks and supplements together at the end
   h += '<div class="ik-todaygrid"><div>';
@@ -9896,6 +9892,12 @@ function ikRenderToday(ctx) {
   h += "</div><div>" + pre + rest + hyd + "</div></div>";
   // every nutrient, folded away
   h += '<details class="ik-card ik-more" id="ikAllN"' + (IK_UI.openAll === false ? "" : " open") + '><summary>Every nutrient ' + (isToday ? "today" : "this day") + "</summary>" + ikNutrientList(d, t, 1, day) + "</details>";
+  if (ikShow(d, "tip")) {   // 0.5.8 (Oran, 2026-10-17): DigiBot's tip lives at the very bottom now, under everything
+    var tip = ikTopTip(d, day);
+    h += '<section class="ik-tip"><svg class="ik-tipring" width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12" fill="none" stroke="var(--ik-vit)" stroke-width="7"/></svg>' +
+      '<div class="ik-tiptext"><b>' + ikEsc(name) + ":</b> " + ikEsc(tip.text) + (tip.k ? '<br><button class="ik-link" data-ask="tip" data-k="' + ikEsc(tip.k) + '">Ask ' + ikEsc(name) + " about this</button>" : "") +
+      '<br><button class="ik-link" data-go="advice" style="margin-top:8px">Get more advice →</button></div></section>';
+  }
   var host = ctx.ui.$("ikToday"), oldVis = host.querySelector(".ik-fm-vis");
   host.innerHTML = h;
   var newVis = host.querySelector(".ik-fm-vis");   // V5.5c: same picture and light? keep the running one, so nothing restarts
@@ -10713,8 +10715,7 @@ function ikFuelMap(d, t, week, day, es) {
     /* 0.5.8: Fuel in's details open in the dark panel, straight down from Fuel in */
     if (fon && U.details && !F.past) h += '<div class="ik-fm-darkdrawer">' + (F.none ? '<div class="ik-fm-drawer' + (U.justOpened ? " opening" : "") + '"><p class="ik-fm-sub" style="margin:0">No food logged in the last 3 days, so there\'s no meal to replay yet. Log what you eat and this opens up: what your body is burning right now, the last 12 hours of fuel and a look ahead, time since you ate, sugar stores, ketones and today\'s balance.</p></div>' : ikFmFuelDetails(d, F, t.v.kcal || 0)) + "</div>";
     U.justOpened = false;
-    h += '<div class="ik-fm-foot">';   // 0.5.7: a neutral light panel, so the colours never fight the person's theme
-    /* 0.5.8 (Oran: "the legend is way too large"): one small, compact legend */
+    /* 0.5.8 (Oran: "the legend is way too large"): one small, compact legend, on the dark ground */
     var dot = function (c, glow) { return '<i style="background:' + c + (glow ? ";box-shadow:0 0 5px " + c : "") + '"></i>'; };
     h += '<div class="ik-fm-legend">' +
       "<span><b>Light</b>" + dot(IK_FM_FUELC.glucose) + "sugar" + dot(IK_FM_FUELC.fat) + "fat" + dot(IK_FM_FUELC.ketones) + "ketones</span>" +
@@ -10722,6 +10723,7 @@ function ikFuelMap(d, t, week, day, es) {
       (LV ? '<span><b class="g">▲+N</b>still filling (last 2 h)</span>' : "") +
       '<span class="w">' + (N.live ? "% = last " + (N.days ? N.days + " days + " : "") + "24 h as absorbed" : N.days ? "% = average day, last " + N.days + " days" : "% = today so far") +
       ' · estimates, not medical advice · <button class="ik-fm-link" data-fm="sources">How it works</button></span></div>';
+    h += '<div class="ik-fm-foot">';   // 0.5.7: a neutral light panel, so the colours never fight the person's theme
     if (!set.fmAck) h += '<div class="ik-fm-legal first"><span>The fuel map is an estimate built from published nutrition research, not medical advice or a test.</span><button class="ik-fm-ok" data-fm="ack">Got it</button></div>';
     h += "</div></div>";   // foot, card
   }
