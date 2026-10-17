@@ -123,7 +123,12 @@
   the Fuel in colour all the way through (they're the source); the small orbs out to a system come in greater numbers
   the bigger its boost (about one per 6 points, up to 5). Tap the legend for "How to read the fuel map" (what each
   colour means, and why each part burns a different fuel), and tap "N of 9" for what the score means and which parts
-  are and aren't counted.
+  are and aren't counted. Fix: opening the legend, the score or a system no longer hides the balance chart beside the
+  map on desktop. Desktop has no Fuel map / Balance chart toggle (both show) and no separate Snap my food button:
+  ＋ Add food is the main button, and "From a photo" is the first choice inside it.
+  DigiBot's tip at the bottom is a soft tint of the Look colour instead of black.
+  Add to today: the ways-to-add buttons wrap onto a second row instead of being cut off at the edge.
+  Fuel in says "Drinking ·" for a drink and "Taking ·" for a supplement (it said "Eating · Beer").
   PLATFORM CHANGE (2026-10-17 perf): dd.menu.mount uses program.iconHtml when the program gives one.
   To make a new app, change only the parts marked PROGRAM-SPECIFIC (styles, markup, script)
   and the app name in the <head>.
@@ -848,11 +853,13 @@ select.ik-input{padding-right:30px}
 .ik-quick{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
 
 /* tip / check-in */
-.ik-tip{background:var(--ik-ink);color:#fff;border-radius:22px;padding:16px 18px;display:flex;gap:14px;align-items:flex-start;margin:0 0 14px}
-.ik-tip b{color:#fff}
+/* 0.5.8o (Oran: "black stands out way too much"): DigiBot's tip takes a soft tint of the 🎨 Look colour */
+.ik-tip{background:color-mix(in srgb,var(--dd-brand) 9%,#fff);color:var(--ik-ink);border:1px solid color-mix(in srgb,var(--dd-brand) 22%,transparent);border-radius:22px;padding:16px 18px;display:flex;gap:14px;align-items:flex-start;margin:0 0 14px}
+.ik-tip b{color:var(--dd-brand)}
 .ik-tip .ik-tiptext{font-size:15px;line-height:1.45;flex:1;min-width:0}
-.ik-tip .ik-link{color:#7cc4ff;padding-left:0}
+.ik-tip .ik-link{color:var(--dd-brand);padding-left:0}
 .ik-tipring{flex:none}
+.ik-tipring circle{stroke:var(--dd-brand)}
 
 /* setup card */
 .ik-setup{border:2px dashed #d2d2d7;background:#fff}
@@ -948,7 +955,7 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-addsearch .ik-input{padding-left:40px;padding-right:40px;min-height:50px;font-size:17px;border-color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .ik-addsearch .ik-input:focus{border-color:var(--ik-ink)}
 .ik-addclear{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;border:0;background:#e3e3e8;color:var(--ik-ink2);font-size:13px;cursor:pointer}
-.ik-addacts{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:12px -18px 2px;padding:2px 18px 4px;scroll-snap-type:x proximity}
+.ik-addacts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 4px;justify-items:center;margin:12px 0 2px;padding:2px 0 4px}   /* 0.5.8o (Oran: "the buttons are getting cut off"): wrap onto a second row instead of a hidden side-scroll */
 .ik-addacts::-webkit-scrollbar{display:none}
 .ik-addact{flex:none;display:flex;flex-direction:column;align-items:center;gap:5px;width:70px;border:0;background:none;font:inherit;font-size:11.5px;font-weight:600;line-height:1.15;color:var(--ik-ink);cursor:pointer;padding:0;text-align:center;scroll-snap-align:start}
 .ik-addact span{width:50px;height:50px;border-radius:16px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:23px;box-shadow:0 1px 2px rgba(0,0,0,.06);transition:transform .15s}
@@ -1273,7 +1280,7 @@ button.ik-fm-fed.on{border-color:#6fe7ff;box-shadow:0 0 12px rgba(111,231,255,.3
   .ik-fm-cols{display:grid;grid-template-columns:minmax(0,430px) minmax(0,1fr);gap:20px;align-items:start}
   .ik-fm-below,.ik-fm-below[data-closed]{display:block;margin-top:0}
   .ik-fm-stage{max-width:none}
-  .ik-fm-switch .ik-fm-addgrp{display:none}
+  .ik-fm-switch{display:none}   /* 0.5.8o: no Fuel map / Balance chart toggle on desktop (both show) */
 }
 
 /* V5.4: desktop Today — a full-width banner (V5.5: replaced by the fuel map; kept for reference) */
@@ -1687,9 +1694,8 @@ input[type=time].ik-input::-webkit-date-and-time-value,input[type=date].ik-input
       <button role="tab" data-go="advice" aria-selected="false">Advice</button>
     </div>
     <span class="ik-grow"></span>
-    <button class="ik-btn" data-act="photo">📷 Snap my food</button>
     <button class="ik-glass" data-act="water1" aria-label="Log a glass of water, 250 mL" title="Log a glass of water (250 mL)"><svg width="20" height="22" viewBox="0 0 20 22" aria-hidden="true"><path d="M3 2h14l-1.6 16.2a2 2 0 0 1-2 1.8H6.6a2 2 0 0 1-2-1.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M4.3 9h11.4l-.9 9.1a1.2 1.2 0 0 1-1.2 1H6.4a1.2 1.2 0 0 1-1.2-1z" fill="currentColor" opacity=".35"/></svg></button>
-    <button class="ik-btn ghost" data-act="add">＋ Add food</button>
+    <button class="ik-btn" data-act="add">＋ Add food</button>
     <button class="ik-btn ghost" data-act="helper" data-dd-helper-toggle>💬 <span data-helper-name>DigiBot</span></button>
   </nav>
 
@@ -9988,7 +9994,7 @@ function ikRenderToday(ctx) {
     var tip = ikTopTip(d, day);
     h += '<section class="ik-tip"><svg class="ik-tipring" width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12" fill="none" stroke="var(--ik-vit)" stroke-width="7"/></svg>' +
       '<div class="ik-tiptext"><b>' + ikEsc(name) + ":</b> " + ikEsc(tip.text) + (tip.k ? '<br><button class="ik-link" data-ask="tip" data-k="' + ikEsc(tip.k) + '">Ask ' + ikEsc(name) + " about this</button>" : "") +
-      '<br><button class="ik-link" data-go="advice" style="margin-top:8px">Get more advice →</button></div></section>';
+      (tip.k ? " · " : "<br>") + '<button class="ik-link" data-go="advice">Get more advice →</button></div></section>';
   }
   var host = ctx.ui.$("ikToday"), oldVis = host.querySelector(".ik-fm-vis");
   var parts = [], from = 0; cut.concat([h.length]).forEach(function (c) { parts.push(h.slice(from, c)); from = c; });
@@ -10868,8 +10874,11 @@ function ikFmLive(d, N) {
   return { day: ikToday(), at: now, R: R, Rf: Rf, t: t, tf: tf, pulse: pulse, gain: gain, fresh: fresh, abs: abs, any: Object.keys(pulse).length > 0 };
 }
 /* The whole module: the switch row, the map (or the balance chart), and the folded-away panel. */
+var IK_FM_DESK = window.matchMedia ? matchMedia("(min-width:900px)") : { matches: false };
+try { (IK_FM_DESK.addEventListener ? IK_FM_DESK.addEventListener.bind(IK_FM_DESK, "change") : IK_FM_DESK.addListener.bind(IK_FM_DESK))(function () { try { var y = window.scrollY; ikRender(ikCtx()); window.scrollTo(0, y); } catch (e) {} }); } catch (e) {}
 function ikFuelMap(d, t, week, day, es) {
   var U = ikFmUI(), set = ikSet(d), isToday = day === ikToday(), view = set.fmView === "chart" ? "chart" : "map";
+  if (IK_FM_DESK.matches) view = "map";   // 0.5.8o (Oran): on desktop the map and the balance chart are both showing, so no toggle
   var N = ikFmNourish(d, day, t, es), F = isToday ? ikFmFuel(d) : { none: true, past: true };
   var LV = isToday ? ikFmLive(d, N) : null, sys;
   IK_FM_LIVE = LV;
@@ -10993,7 +11002,7 @@ function ikFuelMap(d, t, week, day, es) {
     h += '<button class="ik-fm-fed' + (fedOn ? " on" : "") + '" data-fm="pick:fed" aria-pressed="' + fedOn + '" aria-expanded="' + fedOn + '" aria-label="' + (N.days ? "Well nourished: " : "Fed well today: ") + fed + ' of 9. Tap for what this means"><i></i>' + (N.days ? "Well nourished: " : "Fed well today: ") + fed + ' of 9<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"' + (fedOn ? ' style="transform:rotate(180deg)"' : "") + '><path d="M6 9l6 6 6-6"/></svg></button>';
     // Fuel in: 0.5.8 (Oran, 2026-10-17) docked on the map itself, so the stream of fuel visibly comes out of it
     var fon = U.open && U.pick === "fuel", AB = LV && LV.abs && LV.abs.frac < 0.98 ? LV.abs : null;
-    var fk = F.past ? "Fuel in" : AB ? (AB.mins < 30 ? "Eating · " : "Absorbing · ") + ikEntryName(AB.e, d) : "Fuel in · running on";
+    var fk = F.past ? "Fuel in" : AB ? (AB.mins < 30 ? (AB.e.kind === "drink" ? "Drinking · " : AB.e.kind === "supplement" ? "Taking · " : "Eating · ") : "Absorbing · ")   /* 0.5.8o (Oran: "it says eating beer") */ + ikEntryName(AB.e, d) : "Fuel in · running on";
     h += '<i class="ik-fm-port" style="--c:' + ST.c + '" aria-hidden="true"></i>';
     if (FAT) h += '<button class="ik-fm-fat ' + FAT.mode + '" data-fm="details" aria-label="Body fat: ' + (FAT.mode === "store" ? "storing about " + FAT.g + " g an hour" : FAT.mode === "burn" ? "burning about " + FAT.g + " g an hour" : "holding steady") + '">' +
       '<span class="ik-fm-fatico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3c3 4 5.5 7 5.5 10.2A5.5 5.5 0 0 1 6.5 13.2C6.5 10 9 7 12 3z" fill="currentColor"/></svg></span>' +
@@ -11017,7 +11026,9 @@ function ikFuelMap(d, t, week, day, es) {
     else if (pick === "fed") cardPanel = ikFmFedPanel(sys, waterPct, HY, N, fed);
     else if (pick === "legend") cardPanel = "";
     else if (pick !== "fuel") { var S = sys.filter(function (x) { return x.s.id === pick; })[0]; if (S) cardPanel = ikFmSystemPanel(d, S, F, N, t); }
-    else if (view === "map") belowPanel = ikRadarCard(d, t, week, day);
+    /* 0.5.8o fix (Oran: "click the legend and the balance chart disappears"): the balance chart is always built for the
+       map view; on desktop it always shows beside the map, on phones only under Fuel in's details (as before) */
+    if (view === "map") belowPanel = ikRadarCard(d, t, week, day);
     if (cardPanel && !(fon && U.details && !F.past)) h += '<div class="ik-fm-darkdrawer">' + cardPanel + "</div>";
     /* 0.5.8 (Oran: "the legend is way too large"): one small, compact legend, on the dark ground */
     var dot = function (c, glow) { return '<i style="background:' + c + (glow ? ";box-shadow:0 0 5px " + c : "") + '"></i>'; };
@@ -11036,7 +11047,7 @@ function ikFuelMap(d, t, week, day, es) {
   }
   h += '</div><div class="ik-fm-right">';
   // 0.5.8: the system/water panel now lives in the dark card above; only the radar card stays beside the map
-  h += '<div class="ik-fm-below"' + (U.open && belowPanel ? "" : " data-closed") + ">" + belowPanel + "</div></div></div></section>";
+  h += '<div class="ik-fm-below"' + (U.open && belowPanel && (U.pick || "fuel") === "fuel" ? "" : " data-closed") + ">" + belowPanel + "</div></div></div></section>";
   return h;
 }
 function ikFmAct(a) {
@@ -12163,7 +12174,7 @@ function ikOpenAdd(start, opts) {
   opts = opts || {};
   var d = dd.getData(), name = dd.helper ? dd.helper.name() : "DigiBot", day = IK_UI.day || ikToday(), chosen = null;
   var tab = opts.tab || IK_UI.addTab || "recent", helperOn = !!(dd.helper && dd.helper.enabled());
-  var acts = [["photo", "📷", "Photo"], ["label", "🏷️", "Label"], ["water", "💧", "Water"], ["regimen", "💊", "Meds &amp; vitamins"], ["supp", "🌿", "Supplement"], ["mine", "✏️", "My own food"]];
+  var acts = [["photo", "📷", "From a photo"], ["label", "🏷️", "Label"], ["water", "💧", "Water"], ["regimen", "💊", "Meds &amp; vitamins"], ["supp", "🌿", "Supplement"], ["mine", "✏️", "My own food"]];
   if (helperOn) acts.push(["tell", "💬", "Tell " + ikEsc(name)], ["forgot", "🕐", "Forgot a meal"]);
   var sh = dd.ui.sheet('<div class="ik-sheettop"><h2>Add to ' + ikEsc(day === ikToday() ? "today" : ikDayName(day)) + '</h2><button class="ik-x" data-close aria-label="Close">✕</button></div>' +
     '<div class="ik-addsearch"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>' +
