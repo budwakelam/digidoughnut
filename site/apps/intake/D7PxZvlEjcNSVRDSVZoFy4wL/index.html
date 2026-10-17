@@ -128,6 +128,9 @@
   ＋ Add food is the main button, and "From a photo" is the first choice inside it.
   DigiBot's tip at the bottom is a soft tint of the Look colour instead of black.
   Add to today: the ways-to-add buttons wrap onto a second row instead of being cut off at the edge.
+  0.5.8w (Bud, Oran, 2026-10-17): "Now fueling" becomes "Fueling", slightly smaller, and the badge selector is
+  strengthened so it looks identical on every element (the nutrient rows were picking up the wrong size/colour).
+  On food entries the badge sits beside Balance instead of the name, clear of the bars.
   0.5.8v (Bud, Oran, 2026-10-17): the green "in the fuel map" treatment is gone everywhere — one indicator
   replaces it: "Now fueling" in the theme colour with two orbiting orbs, on every element that had the green
   (nutrient rows, fuel-map rows, food entries).
@@ -1273,12 +1276,12 @@ button.ik-fm-fed.on{border-color:#6fe7ff;box-shadow:0 0 12px rgba(111,231,255,.3
 /* 0.5.8v (Oran): the green row glow is gone — "Now fueling" + orbs is the indicator now */
 .ik-fm-row.pulse::after,.ik-drow.pulse::after,.ik-nrow.pulse::after{display:none}
 /* 0.5.8 (Oran, 2026-10-17): the "in the fuel map" highlight is a small text badge, not a tight border */
-.ik-efuel{font-size:10.5px;font-weight:700;color:var(--dd-brand);background:var(--dd-brand-soft);   /* 0.5.8v (Oran): theme colour, was green */border-radius:99px;padding:1px 8px;margin-left:4px;white-space:nowrap}
+span.ik-efuel.ik-efuel{font-size:9.5px;font-weight:700;color:var(--dd-brand);background:var(--dd-brand-soft);border-radius:99px;padding:1px 7px;margin-left:4px;white-space:nowrap}   /* 0.5.8w (Oran): "Fueling", smaller; doubled class beats .ik-drowtx span so it looks the same everywhere */
 /* 0.5.8u (Oran): the little engine — two orbs orbiting, marking nutrients in the fuel map right now */
-.ik-eng{display:inline-block;width:14px;height:14px;position:relative;vertical-align:-3px;margin-left:5px;animation:ikEngSpin 2.6s linear infinite}
-.ik-eng b{position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:radial-gradient(closest-side,#fff,var(--dd-brand) 70%);box-shadow:0 0 6px var(--dd-brand)   /* 0.5.8v: theme colour */}
-.ik-eng b:first-child{transform:rotate(0deg) translateY(-4.5px)}
-.ik-eng b:last-child{transform:rotate(180deg) translateY(-4.5px)}
+.ik-eng{display:inline-block;width:12px;height:12px;position:relative;vertical-align:-2px;margin-left:4px;animation:ikEngSpin 2.6s linear infinite}
+.ik-eng b{position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px 0 0 -2px;border-radius:50%;background:radial-gradient(closest-side,#fff,var(--dd-brand) 70%);box-shadow:0 0 6px var(--dd-brand)   /* 0.5.8v: theme colour */}
+.ik-eng b:first-child{transform:rotate(0deg) translateY(-4px)}
+.ik-eng b:last-child{transform:rotate(180deg) translateY(-4px)}
 @keyframes ikEngSpin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.ik-eng{animation:none}}
 .ik-footnote{font-size:11.5px;line-height:1.35;color:var(--ik-ink2);opacity:.75;text-align:center;margin:10px 4px 6px}
@@ -8768,7 +8771,7 @@ function ikRadarSwitch(mode) {
 /* ---------- level 2: detail rows (one card, a line each) ---------- */
 /* 0.5.8v (Oran): the single "in the fuel map" indicator — "Now fueling" in the theme colour, two orbs orbiting */
 function ikFuelingBadge() {
-  return '<span class="ik-efuel">Now fueling<i class="ik-eng" aria-hidden="true"><b></b><b></b></i></span>';
+  return '<span class="ik-efuel">Fueling<i class="ik-eng" aria-hidden="true"><b></b><b></b></i></span>';
 }
 function ikDetailRow(d, t, week, m, day) {
   var v = m.get(t), tg = ikMacroTarget(d, m), pct = tg ? v / tg : 0, over = m.kind === "limit" && pct > 1;
@@ -9996,8 +9999,8 @@ function ikRenderToday(ctx) {
       var right = hide ? ikNum(et.v.protein, 0) + "<span> g protein</span>" : ikNum(et.v.kcal, 0) + "<span> kcal</span>";
       if (e.kind === "drink" && (et.v.kcal || 0) < 5) right = ikNum(et.drinksMl, 0) + "<span> mL</span>";   // V5.1: water and black coffee show how much
       listHtml += '<button class="ik-entry' + '" data-entry="' + ikEsc(e.id) + '"><span class="ik-ico ' + icon + '" aria-hidden="true">' + (IK_PART_ICON[icon] || "🍽️") + "</span>" +
-        '<span class="ik-grow"><span class="ik-ewhen">' + IK_PARTS[e.part] + " · " + ikNiceTime(e.time) + '</span><br><span class="ik-ename">' + ikEsc(ikEntryName(e, d)) + "</span>" + (et.est ? '<span class="ik-est">estimated</span>' : "") + (IK_FM_LIVE && IK_FM_LIVE.day === day && IK_FM_LIVE.fresh[e.id] && IK_FM_LIVE.any ? ikFuelingBadge() : "") +
-        (e.note ? '<br><span class="ik-enote">' + ikEsc(e.note) + "</span>" : "") + ikEntryBadges(e, d) + '</span>' + (ikEntryBars(e, et, d) || '<span class="ik-ekcal">' + right + "</span>") + "</button>";
+        '<span class="ik-grow"><span class="ik-ewhen">' + IK_PARTS[e.part] + " · " + ikNiceTime(e.time) + '</span><br><span class="ik-ename">' + ikEsc(ikEntryName(e, d)) + "</span>" + (et.est ? '<span class="ik-est">estimated</span>' : "") +
+        (e.note ? '<br><span class="ik-enote">' + ikEsc(e.note) + "</span>" : "") + ikEntryBadges(e, d) + (IK_FM_LIVE && IK_FM_LIVE.day === day && IK_FM_LIVE.fresh[e.id] && IK_FM_LIVE.any ? ikFuelingBadge() : "") + '</span>'   <!-- 0.5.8w (Oran): beside Balance, clear of the bars -->+ (ikEntryBars(e, et, d) || '<span class="ik-ekcal">' + right + "</span>") + "</button>";
     });
   });
   if (ikShow(d, "supps")) h += ikRegItems(d).length ? ikDoseCard(d, day, "supp") : ikRegSetupCard();   // 0.5.8 (Oran, 2026-10-17): vitamins & supplements sit above the Food section
