@@ -10344,21 +10344,6 @@ function ikFmFuelDetails(d, F, dayKcal) {
   if (F.state === "fat" && c.absorbing) sub = "Your last meal had few carbs, so insulin stayed low and your body kept burning fat, including fat from the meal.";
   if (F.state === "mixed" && c.absorbing) sub = "Your meal is still digesting, but it brought only a little sugar, so stored sugar and fat share the work.";
   var pc = Math.round(c.c * 100), pa = Math.round(c.a * 100), pf = Math.max(0, 100 - pc - pa);
-  /* the chart: the last 12 hours, then the next 4 (lighter) */
-  var W = 314, Hh = 76, x0 = F.end - 12, span = F.endF - x0, X = function (tt) { return ((tt - x0) / span * W).toFixed(1); };
-  var area = function (list, lo, hi) {
-    var top = list.map(function (q) { return X(q.t) + " " + (Hh - hi(q) * Hh).toFixed(1); });
-    var bot = list.slice().reverse().map(function (q) { return X(q.t) + " " + (Hh - lo(q) * Hh).toFixed(1); });
-    return "M" + top.join(" L") + " L" + bot.join(" L") + " Z";
-  };
-  var past = F.samples.filter(function (q) { return q.t <= F.end + 1e-6; }), fut = [F.cur].concat(F.samples.filter(function (q) { return q.t > F.end; }));
-  var layers = function (list, op) {
-    return '<g opacity="' + op + '"><path d="' + area(list, function (q) { return q.c; }, function (q) { return q.c + q.f; }) + '" fill="#ffc247" opacity=".55"/>' +
-      '<path d="' + area(list, function () { return 0; }, function (q) { return q.c; }) + '" fill="#ff3d7f" opacity=".7"/><path d="' + area(list, function (q) { return q.c + q.f; }, function () { return 1; }) + '" fill="#9aa5ff" opacity=".7"/>' +
-      '<path d="M' + list.map(function (q) { return X(q.t) + " " + (Hh - Math.min(1, (0.1 + 1.5 * q.K) / 2) * Hh).toFixed(1); }).join(" L") + '" fill="none" stroke="#d9c7ff" stroke-width="2" stroke-dasharray="4 3"/></g>';
-  };
-  var ticks = F.meals.filter(function (m) { return m.at >= x0; }).map(function (m) { return "M" + X(m.at) + " " + (Hh - 10) + " V" + Hh; }).join(" ");
-  var nx = X(F.end), mx = X(F.end + mins / 60);
   var net = c.fatOx - c.Af;
   /* 0.5.8 (Oran: "it says fat and ketones, but storing fat?"): both can be true: cells burn fat while meal fat arrives faster */
   var store = net < -1 ? ["Storing", "Burning about " + Math.round(c.fatOx) + " g an hour, but about " + Math.round(c.Af) + " g an hour of fat from your meal is arriving, so about " + Math.round(-net) + " g an hour is stored for later.", "#ffb340"]
@@ -10370,14 +10355,6 @@ function ikFmFuelDetails(d, F, dayKcal) {
     '<p class="ik-fm-sub">' + ikEsc(sub) + "</p>" +
     '<div class="ik-fm-k">Fuel mix right now</div><div class="ik-fm-mix">' + '<span style="flex:' + c.c.toFixed(3) + ' 1 0;background:#ff3d7f"></span><span style="flex:' + c.f.toFixed(3) + ' 1 0;background:#ffc247"></span>' + (c.a > 0.005 ? '<span style="flex:' + c.a.toFixed(3) + ' 1 0;background:#9aa5ff"></span>' : "") + "</div>" +
     '<div class="ik-fm-mixkey"><span style="color:#ff7aa8">Sugar ' + pc + '%</span><span style="color:#ffc247">Fat ' + pf + "%</span>" + (pa ? '<span style="color:#9aa5ff">Alcohol ' + pa + "%</span>" : "") + "</div>" +
-    '<div class="ik-fm-k" style="display:flex;justify-content:space-between;margin-top:12px"><span>Last 12 hours · next 4</span><span style="color:#c9b2ff">- - ketones</span></div>' +
-    '<svg class="ik-fm-chart" viewBox="0 0 314 90" role="img" aria-label="Fuel mix over the last 12 hours and the next 4: ' + pc + '% sugar and ' + pf + '% fat now">' +
-      '<rect width="314" height="76" rx="8" fill="rgba(255,255,255,.03)"/>' + layers(past, 1) + layers(fut, 0.38) +
-      (ticks ? '<path d="' + ticks + '" stroke="#fff" stroke-width="1.5" opacity=".75"/>' : "") +
-      '<path d="M' + nx + ' 0 V76" stroke="#fff" stroke-width="1.2" opacity=".55" stroke-dasharray="2 3"/>' +
-      '<g data-fmmark transform="translate(' + mx + ' 0)"' + (mins > 0 ? "" : ' opacity="0"') + '><path d="M0 0 V76" stroke="#fff" stroke-width="2"/><circle cx="0" cy="4" r="4" fill="#fff"/></g>' +
-      '<text x="2" y="88" font-size="10" font-weight="700" fill="#8ea3b3">12 h ago</text><text x="' + nx + '" y="88" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">now</text><text x="312" y="88" text-anchor="end" font-size="10" font-weight="700" fill="#8ea3b3">+4 h</text></svg>' +
-    '<div class="ik-fm-s" style="margin:2px 0 10px">Pink is sugar, gold is fat, blue is alcohol. White ticks are meals. The lighter part is what comes next if you don\'t eat.</div>' +
     ikFmAheadBlock(F, mins) +
     '<div class="ik-fm-tiles">' +
       tile("Since you ate", '<div class="ik-fm-big">' + (F.fs && !F.fs.none ? ikHM(F.fs.since) : "–") + "</div>", lm ? ikEsc(ikEntryName(lm, d)) + " · " + ikNiceTime(lm.time) : "") +
