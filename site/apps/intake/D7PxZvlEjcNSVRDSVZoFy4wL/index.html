@@ -128,6 +128,8 @@
   ＋ Add food is the main button, and "From a photo" is the first choice inside it.
   DigiBot's tip at the bottom is a soft tint of the Look colour instead of black.
   Add to today: the ways-to-add buttons wrap onto a second row instead of being cut off at the edge.
+  0.5.8y (Bud, Oran, 2026-10-17): on PC the fixed DigiBot button was covering the sync light — the top bar
+  now keeps 136px of right padding on desktop so the sync light stays visible.
   0.5.8x (Claude, Oran, 2026-10-17: "a long delay when you open it"): a speed pass. Nothing looks or works differently.
   The slowness grew with the log: every photo saves its foods, and each meal looked its foods up by reading the whole
   list, so a year of photos took seconds to open and redraw (2 years of photos on a simulated slower phone: the first draw took 4.4 s, now 0.3 s).
@@ -1390,6 +1392,7 @@ span.ik-efuel.ik-efuel{font-size:9.5px;font-weight:700;color:var(--dd-brand);bac
   .ik-tabbar{display:none}
   .ik-topnav{display:flex}
   .ik-topnav [data-dd-helper-toggle]{position:fixed;top:12px;right:16px;z-index:60;background:var(--dd-bg);box-shadow:0 2px 12px rgba(0,0,0,.14)}   /* 0.5.8r (Oran): ONLY the DigiBot button stays on screen while scrolling on PC */
+  .dd-top{padding-right:136px}   /* 0.5.8y (Oran): room for the fixed DigiBot button so it never covers the sync light */
   .ik h1.ik-h1{font-size:40px}
   .ik .ik-head1 h1.ik-h1{font-size:28px}
   .ik .ik-head1 h1.ik-h1.sm{font-size:17px}
