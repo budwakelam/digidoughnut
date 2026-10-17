@@ -1109,7 +1109,7 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-row>i em{display:block;height:6px;border-radius:3px}
 .ik-fm-tip{margin-top:12px;background:var(--ik-amberbg);border-radius:14px;padding:11px 13px;font-size:14px;line-height:1.4;color:#5c2e00}
 /* 0.5.8 (Oran, 2026-10-17): Fuel in docked on the map, a thicker stream of fuel, and the map reacting to a meal */
-.ik-fm-dock{position:absolute;left:50%;bottom:1.6%;transform:translateX(-50%);width:82%;height:13cqw;min-height:44px;box-sizing:border-box;margin:0;z-index:2;
+.ik-fm-dock{position:absolute;left:50%;bottom:4.6%;transform:translateX(-50%);width:82%;height:13cqw;min-height:44px;box-sizing:border-box;margin:0;z-index:2;
   gap:2cqw;padding:0 1.4cqw 0 1.8cqw;border-radius:6.5cqw;background:rgba(5,14,22,.8);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
   border:1.5px solid color-mix(in srgb,var(--c) 60%,transparent);box-shadow:0 0 22px color-mix(in srgb,var(--c) 40%,transparent),inset 0 0 14px color-mix(in srgb,var(--c) 16%,transparent);overflow:hidden}
 .ik-fm-dock.on{background:rgba(8,22,34,.9)}
@@ -1128,7 +1128,7 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-absbar{position:absolute;left:7%;right:7%;bottom:0;height:3px;border-radius:2px;background:rgba(255,255,255,.1);overflow:hidden}
 .ik-fm-absbar em{display:block;height:3px;background:var(--c);box-shadow:0 0 8px var(--c);transition:width 1s}
 .ik-fm-dock.eating .ik-fm-k{color:#fff}
-.ik-fm-port{position:absolute;left:59.18%;top:88.6%;width:11%;aspect-ratio:2.2;transform:translate(-50%,-50%);border-radius:50%;z-index:3;pointer-events:none;
+.ik-fm-port{position:absolute;left:59.18%;top:85.6%;width:11%;aspect-ratio:2.2;transform:translate(-50%,-50%);border-radius:50%;z-index:3;pointer-events:none;
   background:radial-gradient(closest-side,#fff 0%,var(--c) 38%,color-mix(in srgb,var(--c) 30%,transparent) 70%,transparent 100%);animation:ikFmPort 1.9s ease-in-out infinite}
 @keyframes ikFmPort{0%,100%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}50%{opacity:.5;transform:translate(-50%,-50%) scale(.85)}}
 @keyframes ikFmOrbGlow{0%,100%{box-shadow:0 0 10px var(--c)}50%{box-shadow:0 0 22px var(--c),0 0 4px #fff}}
@@ -1137,13 +1137,20 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 @keyframes ikFmDash{from{stroke-dashoffset:16}to{stroke-dashoffset:0}}
 .ik-fm-paused .ik-fm-orbs{display:none}
 .ik-fm-paused .ik-fm-dash,.ik-fm-paused .ik-fm-port,.ik-fm-paused .ik-fm-dock.beat,.ik-fm-paused .ik-fm-pill.boost,.ik-fm-paused .ik-fm-dock .ik-fm-orb{animation-play-state:paused}
-.ik-fm-tr{font-style:normal;font-size:.62em;margin-left:.3em;vertical-align:.18em;line-height:1}
+.ik-fm-tr{font-style:normal;font-size:.56em;margin-left:.3em;vertical-align:.18em;line-height:1;white-space:nowrap}
+.ik-fm-tr small{font-size:.92em;font-weight:800;margin-left:1px}
+.ik-fm-rowgain{font-style:normal;font-size:11.5px;font-weight:800;color:#0c8a5f;margin-left:6px}
+.ik-fm-key2{justify-content:flex-start;align-items:flex-start;gap:8px;text-align:left;padding:8px 18px 0;line-height:1.35}
+.ik-fm-keyglow{flex:none;font-size:11px;font-weight:800;color:#0c8a5f;background:#e6fbf3;border:1px solid #19c58c;border-radius:8px;padding:1px 6px;box-shadow:0 0 8px rgba(25,197,140,.5)}
+.ik-fm-pill span{white-space:nowrap}
+/* 0.5.8: on phones the dark fuel map runs edge to edge (no white strips at the sides) */
+@media (max-width:640px){.ik-fm-card{margin:0 -16px;border-radius:0}.ik-fm-foot{padding-left:16px;padding-right:16px}}
 .ik-fm-tr.up{color:#7cf2c7;text-shadow:0 0 8px #7cf2c7;animation:ikFmUp 1.6s ease-in-out infinite;display:inline-block}
 .ik-fm-tr.dn{color:#ffb340}
 @keyframes ikFmUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
 .ik-fm-pill.boost{animation:ikFmBoost 1.6s ease-in-out infinite}
 @keyframes ikFmBoost{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--c) 0%,transparent);border-color:color-mix(in srgb,var(--c) 40%,transparent)}50%{box-shadow:0 0 18px 2px color-mix(in srgb,var(--c) 70%,transparent);border-color:var(--c)}}
-.ik-fm-boostnote{display:flex;align-items:center;gap:8px;margin:12px 0 0;padding:9px 12px;border-radius:12px;background:#e6fbf3;color:#03543c;font-size:13.5px;font-weight:600}
+.ik-fm-boostnote{display:flex;align-items:flex-start;line-height:1.4;gap:8px;margin:12px 0 0;padding:9px 12px;border-radius:12px;background:#e6fbf3;color:#03543c;font-size:13.5px;font-weight:600}
 .ik-fm-boostnote i{flex:none;width:9px;height:9px;border-radius:50%;background:#19c58c;box-shadow:0 0 0 0 #19c58c;animation:ikRowPulse 1.6s ease-in-out infinite}
 .ik-fm-row.pulse,.ik-drow.pulse,.ik-nrow.pulse{animation:ikRowPulse 1.6s ease-in-out infinite;border-radius:10px}
 @keyframes ikRowPulse{0%,100%{box-shadow:0 0 0 0 rgba(25,197,140,0);background-color:transparent}50%{box-shadow:0 0 0 3px rgba(25,197,140,.28);background-color:rgba(25,197,140,.08)}}
@@ -8675,6 +8682,7 @@ function ikWaterUndo() {
     var w = dt.entries.filter(function (e) { return e.day === lw.day && e.kind === "drink" && e.items.length === 1 && e.items[0].ref === "t:water"; })[0];
     if (!w) return;
     w.items[0].g = (Number(w.items[0].g) || 0) - lw.ml;
+    if (w.sips && w.sips.length) { w.sips.pop(); if (w.sips.length) w.time = w.sips[w.sips.length - 1].time; }
     if (w.items[0].g <= 0) dt.entries = dt.entries.filter(function (e) { return e.id !== w.id; });
   });
   dd.ui.toast("Took off " + lw.ml + " mL.");
@@ -9820,7 +9828,7 @@ function ikRenderToday(ctx) {
       var et = ikTotals([e], d), icon = e.kind === "drink" ? "drink" : e.kind === "supplement" ? "supplement" : e.part;
       var right = hide ? ikNum(et.v.protein, 0) + "<span> g protein</span>" : ikNum(et.v.kcal, 0) + "<span> kcal</span>";
       if (e.kind === "drink" && (et.v.kcal || 0) < 5) right = ikNum(et.drinksMl, 0) + "<span> mL</span>";   // V5.1: water and black coffee show how much
-      listHtml += '<button class="ik-entry' + (IK_FM_LIVE && IK_FM_LIVE.day === day && IK_FM_LIVE.fresh[e.id] ? " fresh" : "") + '" data-entry="' + ikEsc(e.id) + '"><span class="ik-ico ' + icon + '" aria-hidden="true">' + (IK_PART_ICON[icon] || "🍽️") + "</span>" +
+      listHtml += '<button class="ik-entry' + (IK_FM_LIVE && IK_FM_LIVE.day === day && IK_FM_LIVE.fresh[e.id] && IK_FM_LIVE.any ? " fresh" : "") + '" data-entry="' + ikEsc(e.id) + '"><span class="ik-ico ' + icon + '" aria-hidden="true">' + (IK_PART_ICON[icon] || "🍽️") + "</span>" +
         '<span class="ik-grow"><span class="ik-ewhen">' + IK_PARTS[e.part] + " · " + ikNiceTime(e.time) + '</span><br><span class="ik-ename">' + ikEsc(ikEntryName(e, d)) + "</span>" + (et.est ? '<span class="ik-est">estimated</span>' : "") +
         (e.note ? '<br><span class="ik-enote">' + ikEsc(e.note) + "</span>" : "") + ikEntryBadges(e, d) + '</span>' + (ikEntryBars(e, et, d) || '<span class="ik-ekcal">' + right + "</span>") + "</button>";
     });
@@ -10296,10 +10304,10 @@ function ikFmSystemPanel(d, S, F, N, tToday) {
     '<div class="ik-row" style="gap:12px"><div class="ik-fm-badge" style="box-shadow:inset 0 0 0 2px ' + col + ",0 0 14px " + col + '55">' + S.pct + '%</div><div class="ik-grow"><div style="font-size:20px;font-weight:800">' + ikEsc(S.s.name) + '</div><div class="ik-small">' + ikEsc(S.s.what) + "</div></div>" +
       '<span class="ik-fm-chip ' + S.st + '">' + tag + "</span></div>" +
     (F && !F.past ? '<div class="ik-fm-now"><i style="background:' + fu.c + ";box-shadow:0 0 10px " + fu.c + '"></i><span><b>Powered right now by</b><br>' + ikEsc(fu.label) + "</span></div>" : "") +
-    (S.boost ? '<div class="ik-fm-boostnote"><i aria-hidden="true"></i>Your last meal is feeding this right now' + (S.dPct >= 1 ? ": up " + S.dPct + " points in the last 45 minutes" : "") + ".</div>" : "") +
+    (S.boost ? '<div class="ik-fm-boostnote"><i aria-hidden="true"></i><span>Filling now: what you had in the last 2 hours adds about <b>+' + S.gain + " more points</b> here as it's absorbed. The glowing rows are the nutrients it brings.</span></div>" : "") +
     '<div class="ik-fm-h">' + (N && N.live ? (N.days ? "Nourished: last " + N.days + " day" + (N.days === 1 ? "" : "s") + " + last 24 h" : "Fed: the last 24 hours, as it's absorbed") + '<span class="ik-fm-today">Today so far: ' + todayPct + "%</span>" : N && N.days ? "Nourished: your average day, last " + N.days + " day" + (N.days === 1 ? "" : "s") + '<span class="ik-fm-today">Today so far: ' + todayPct + "%</span>" : "What feeds it, today so far") + "</div>" + S.rows.map(function (r) {
-      var c = r.pct >= 80 ? "#0e8fa3" : r.pct >= 50 ? "#2a72d4" : "#c56a00", lp = IK_FM_LIVE && IK_FM_LIVE.pulse[r.k];
-      return '<div class="ik-fm-row' + (lp ? " pulse" : "") + '"><span>' + (r.k.charAt(0) === "_" ? "" : ikNIcon(r.k)) + ikEsc(r.name) + '</span><b style="color:' + c + '">' + r.pct + '%</b><i><em style="width:' + Math.max(3, r.pct) + "%;background:" + c + '"></em></i></div>';
+      var c = r.pct >= 80 ? "#0e8fa3" : r.pct >= 50 ? "#2a72d4" : "#c56a00", lp = IK_FM_LIVE && IK_FM_LIVE.pulse[r.k], lg = lp ? IK_FM_LIVE.gain[r.k] : 0;
+      return '<div class="ik-fm-row' + (lp ? " pulse" : "") + '"><span>' + (r.k.charAt(0) === "_" ? "" : ikNIcon(r.k)) + ikEsc(r.name) + (lg ? ' <em class="ik-fm-rowgain">▲+' + lg + "</em>" : "") + '</span><b style="color:' + c + '">' + r.pct + '%</b><i><em style="width:' + Math.max(3, r.pct) + "%;background:" + c + '"></em></i></div>';
     }).join("") +
     (S.foods ? '<div class="ik-fm-h">Fed most by</div><div style="font-size:14.5px">' + ikEsc(S.foods) + "</div>" : "") +
     (S.tip ? '<div class="ik-fm-tip">' + ikEsc(S.tip) + "</div>" : "") +
@@ -10332,7 +10340,7 @@ function ikFmWaterPanel(d, t, pct, HY) {
   var tr = HY.none ? "" : HY.trend >= 2 ? ' <span class="ik-fm-wtr up">▲ rising</span>' : HY.trend <= -2 ? ' <span class="ik-fm-wtr dn">▼ falling</span>' : ' <span class="ik-fm-wtr">steady</span>';
   return '<div class="ik-card ik-fm-panel"><div class="ik-row" style="gap:12px"><div class="ik-fm-badge" style="box-shadow:inset 0 0 0 2px ' + col + '">' + pct + '%</div><div class="ik-grow"><div style="font-size:20px;font-weight:800">Hydration' + tr + '</div>' +
     '<div class="ik-small">Every system runs on water: blood, digestion, focus and energy</div></div><span class="ik-fm-chip ' + st + '">' + (st === "thrive" ? "Thriving" : st === "steady" ? "Steady" : "Running low") + "</span></div>" +
-    '<p style="font-size:15px;margin:12px 0 4px">' + (HY.none ? "No drinks logged in the last day, so there's nothing to go on yet. Tap the 💧 glass beside Add when you drink." : HY.behind >= 50 ? "You're about <b>" + HY.behind + " mL behind</b> right now" + (HY.behind >= HY.onePct ? ": enough that you're probably thirsty." : ".") : "<b>Topped up</b> right now.") + "</p>" +
+    '<p style="font-size:15px;margin:12px 0 4px">' + (HY.none ? "No drinks logged in the last day, so there's nothing to go on yet. Tap the 💧 glass beside Add when you drink." : HY.behind >= 50 ? "You're about <b>" + HY.behind + " mL behind</b> right now" + (HY.behind >= HY.onePct ? ": enough that you're probably thirsty." : ".") : "<b>Topped up</b> right now.") + (HY.soaking >= 30 ? ' <span class="ik-fm-wtr up">+' + HY.soaking + " mL still soaking in (already counted)</span>" : "") + "</p>" +
     (HY.none ? "" : '<div class="ik-fm-h" style="display:flex;justify-content:space-between"><span>Last 8 hours</span><span style="text-transform:none;letter-spacing:0">💧 = a drink</span></div>' + ikFmWaterChart(HY)) +
     '<div class="ik-fm-row kv" style="margin-top:10px"><span>Today so far</span><b style="color:var(--ik-ink)">' + ikNum(today / 1000, 1) + " of " + ikNum(tg / 1000, 1) + ' L</b><i><em style="width:' + Math.min(100, Math.max(today > 0 ? 3 : 0, today / tg * 100)).toFixed(0) + '%;background:var(--ik-water)"></em></i></div>' +
     '<div class="ik-fm-row kv"><span>Last drink</span><b style="color:var(--ik-ink)">' + (HY.last ? ikHM(Date.now() - HY.last.at) + " ago · " + Math.round(HY.last.ml) + " mL" : "none logged") + "</b></div>" +
@@ -10359,11 +10367,14 @@ function ikFmHydration(d) {
     var now = Date.now(), H = 3600000, tg = ikTarget(d, "drinks") || 2200, p = ikSet(d).profile || {}, kg = p.weightKg || 70;
     var from = now - 24 * H, intakes = [], last = null, sum6 = 0, any = false;
     (d.entries || []).forEach(function (e) {
-      var at = ikEntryDate(e).getTime(); if (at < from - H || at > now) return;
-      var x = ikTotals([e], d), ml = Math.max(x.drinksMl || 0, x.v.water || 0); if (ml < 5) return;
-      intakes.push({ at: at, ml: ml, drink: (x.drinksMl || 0) > 0 }); if ((x.drinksMl || 0) > 0) any = true;
-      if ((x.drinksMl || 0) > 0 && (!last || at > last.at)) last = { at: at, ml: x.drinksMl };
-      if (now - at <= 6 * H) sum6 += ml;
+      if (ikEntryDate(e).getTime() < from - 3 * H && !e.sips) return;
+      var x = ikTotals([e], d), mlAll = Math.max(x.drinksMl || 0, x.v.water || 0); if (mlAll < 5) return;
+      ikEntryPieces(e).forEach(function (pc) {   // 0.5.8: each glass at its own time
+        var at = pc.at, ml = mlAll * pc.f, dml = (x.drinksMl || 0) * pc.f; if (at < from - H || at > now || ml < 1) return;
+        intakes.push({ at: at, ml: ml, drink: dml > 0 }); any = true;   // 0.5.8: water in food counts too
+        if (dml > 0 && (!last || at > last.at)) last = { at: at, ml: dml };
+        if (now - at <= 6 * H) sum6 += ml;
+      });
     });
     /* Losses: the day's total (drinks target plus about 20% from food) split into a fixed part (breath and skin,
        about a third) and urine. When you're behind, the kidneys hold on: urine drops toward a quarter of normal. */
@@ -10373,19 +10384,24 @@ function ikFmHydration(d) {
       var kidney = B < 0 ? Math.max(0.25, 1 + 0.75 * B / onePctMl) : 1;
       var loss = sleep * dayRate * (0.35 + 0.65 * kidney); rateNow = loss;
       var gain = 0;
-      intakes.forEach(function (w) { var x = (t - w.at) / H; if (x > 0 && x < 0.75) { var pk = 0.3, h2 = 2 * w.ml / 0.75; gain += x < pk ? h2 * x / pk : h2 * (0.75 - x) / (0.75 - pk); } });
+      /* 0.5.8: water leaves the stomach fast: about half absorbed in 10 minutes, nearly all within 45 */
+      intakes.forEach(function (w) { var x = (t - w.at) / H; if (x > 0 && x < 1.5) gain += w.ml / 0.24 * Math.exp(-x / 0.24); });
       B += (gain - loss) * dt;
       if (B > 0) B -= B * dt / 1.5;          // the kidneys pass the extra
       if (B > 600) B = 600;
       if (B < -0.06 * kg * 1000) B = -0.06 * kg * 1000;
       if (t >= from8) samples.push({ t: t, pct: Math.max(3, Math.min(100, 100 - 37.5 * Math.max(0, -B) / onePctMl)) });   // 0.5.8: for the 8-hour chart
     }
-    var onePct = onePctMl, behind = Math.max(0, -B);
+    /* 0.5.8: water you've just drunk counts straight away (it's in you, soaking in), so a glass shows at once */
+    var pending = 0; intakes.forEach(function (w) { var x = (now - w.at) / H; if (x >= 0 && x < 1.5) pending += w.ml * Math.exp(-x / 0.24); });
+    var onePct = onePctMl, behind = Math.max(0, -(B + pending));
     var pct = Math.round(Math.max(3, Math.min(100, 100 - 37.5 * behind / onePct)));
+    if (samples.length) samples[samples.length - 1] = { t: now, pct: pct };
     var drinks = intakes.filter(function (w) { return w.drink && w.at >= from8; });
     var ago = samples.filter(function (q) { return q.t <= now - 0.75 * H; }).pop(), trend = ago ? pct - Math.round(ago.pct) : 0;
+    var soaking = Math.round(pending / 10) * 10;
     if (!any) return { none: true, pct: 0, behind: 0, onePct: onePct, last: null, sum6: 0, rate: Math.round(rateNow / 10) * 10, tg: tg, samples: [], drinks: [], trend: 0, from8: from8, now: now };
-    return { pct: pct, behind: Math.round(behind / 10) * 10, onePct: onePct, last: last, sum6: sum6, rate: Math.round(rateNow / 10) * 10, tg: tg, samples: samples, drinks: drinks, trend: trend, from8: from8, now: now };
+    return { pct: pct, behind: Math.round(behind / 10) * 10, onePct: onePct, last: last, sum6: sum6, rate: Math.round(rateNow / 10) * 10, tg: tg, samples: samples, drinks: drinks, trend: trend, from8: from8, now: now, soaking: soaking };
   });
 }
 /* The body pictures as object URLs, made once: a short src instead of 40 KB of text in every redraw. */
@@ -10417,14 +10433,21 @@ function ikFmBody(d) { var s = ikSet(d), b = s.fmBody; if (b === "f" || b === "m
    older meals drop out (▼). Nutrients a meal in the last ~75 minutes brought (3% of a day's target or more) pulse,
    and light carrying them travels out to each system they feed. */
 var IK_FM_LIVE = null;
+/* 0.5.8: an entry as timed pieces: a water entry with sips is one piece per glass; anything else is one piece. */
+function ikEntryPieces(e) {
+  if (!e.sips || !e.sips.length) return [{ at: ikEntryDate(e).getTime(), f: 1 }];
+  var tot = e.sips.reduce(function (a, x) { return a + (Number(x.ml) || 0); }, 0) || 1;
+  return e.sips.map(function (x) { return { at: ikEntryDate({ day: e.day, time: x.time }).getTime(), f: (Number(x.ml) || 0) / tot }; });
+}
 function ikAbsorbFrac(h) { if (h <= 0.1) return 0; var f = 1 - Math.exp(-(h - 0.1) / 1.3); return h > 20 ? f * Math.max(0, (24 - h) / 4) : f; }
-function ikFmRecent(d, at) {
-  return ikMemo("fmr:" + Math.round(at / 60000), function () {
+function ikFmRecent(d, at, full) {
+  return ikMemo("fmr:" + Math.round(at / 60000) + (full ? ":f" + Object.keys(full).join(",") : ""), function () {
     var H = 3600000, t = { v: {}, miss: {}, items: 0, drinksMl: 0, plants: {}, plantCount: 0 }, es = [];
     IK_N.forEach(function (n) { t.v[n.k] = 0; t.miss[n.k] = 0; });
     (d.entries || []).forEach(function (e) {
-      var age = (at - ikEntryDate(e).getTime()) / H; if (age < 0 || age > 24) return;
-      var f = ikAbsorbFrac(age); if (f <= 0) return;
+      var f = 0;
+      ikEntryPieces(e).forEach(function (pc) { var age = (at - pc.at) / H; if (age < 0 || age > 24) return; f += (full && full[e.id] && age < 2 ? 1 : ikAbsorbFrac(age)) * pc.f; });
+      if (f <= 0) return;
       var x = ikTotals([e], d);
       IK_N.forEach(function (n) { t.v[n.k] += (x.v[n.k] || 0) * f; });
       t.drinksMl += (x.drinksMl || 0) * f;
@@ -10442,20 +10465,26 @@ function ikFmBlend(N, R) {
   IK_N.forEach(function (n) { t.v[n.k] = 0.6 * (N.t.v[n.k] || 0) + 0.4 * (R.t.v[n.k] || 0); t.miss[n.k] = 0; });
   return t;
 }
+/* 0.5.8 (Oran: "make it clearer what is being impacted"). One rule everywhere: anything eaten or drunk in the
+   last 2 hours is still being absorbed. For each system and nutrient, "still to come" = its % once that food is
+   fully absorbed minus its % now. If that's 1 point or more it glows and shows ▲ +N (N = points still to come).
+   The % itself climbs toward it over the next hour or two. Nothing else glows or shows an arrow. */
 function ikFmLive(d, N) {
-  var now = Date.now(), R = ikFmRecent(d, now), R45 = ikFmRecent(d, now - 45 * 60000), pulse = {}, fresh = {}, last = null;
+  var now = Date.now(), fresh = {}, last = null;
   (d.entries || []).forEach(function (e) {
-    var ms = ikEntryDate(e).getTime(), age = (now - ms) / 60000; if (age < 0 || age > 240) return;
+    var pcs = ikEntryPieces(e), ms = Math.max.apply(null, pcs.map(function (p) { return p.at; })), age = (now - ms) / 60000;
+    if (age < 0 || age > 240) return;
     var x = ikTotals([e], d);
     if ((x.v.kcal || 0) > 20 && (!last || ms > last.ms)) last = { e: e, ms: ms };
-    if (age > 75) return;
-    fresh[e.id] = 1;
-    IK_N.forEach(function (n) { var tg = n.kind === "limit" ? 0 : ikTarget(d, n.k); if (tg && (x.v[n.k] || 0) / tg >= 0.03) pulse[n.k] = 1; });
-    if ((x.drinksMl || 0) >= 100) pulse._water = 1;
-    if (Object.keys(x.plants).length) pulse._plants = 1;
+    if (age <= 120) fresh[e.id] = 1;
+  });
+  var R = ikFmRecent(d, now), Rf = ikFmRecent(d, now, fresh), t = ikFmBlend(N, R), tf = ikFmBlend(N, Rf), pulse = {}, gain = {};
+  IK_TARGETABLE.concat(["_water", "_plants"]).forEach(function (k) {
+    var a = ikFmPct(d, t, k), b = ikFmPct(d, tf, k); if (a == null || b == null) return;
+    var g = Math.round(b) - Math.round(a); if (g >= 1) { gain[k] = g; pulse[k] = 1; }
   });
   var abs = last ? { e: last.e, frac: ikAbsorbFrac((now - last.ms) / 3600000), mins: (now - last.ms) / 60000 } : null;
-  return { day: ikToday(), at: now, R: R, R45: R45, t: ikFmBlend(N, R), t45: ikFmBlend(N, R45), pulse: pulse, fresh: fresh, abs: abs, any: Object.keys(pulse).length > 0 };
+  return { day: ikToday(), at: now, R: R, Rf: Rf, t: t, tf: tf, pulse: pulse, gain: gain, fresh: fresh, abs: abs, any: Object.keys(pulse).length > 0 };
 }
 /* The whole module: the switch row, the map (or the balance chart), and the folded-away panel. */
 function ikFuelMap(d, t, week, day, es) {
@@ -10464,9 +10493,9 @@ function ikFuelMap(d, t, week, day, es) {
   var LV = isToday ? ikFmLive(d, N) : null, sys;
   IK_FM_LIVE = LV;
   if (LV) {   // 0.5.8: today's map moves with what's being absorbed now
-    sys = ikFmSystems(d, LV.t, LV.R.es.length ? LV.R.es : N.es);
-    var sys45 = ikFmSystems(d, LV.t45, []);
-    sys.forEach(function (S, i) { S.dPct = S.pct - sys45[i].pct; S.boost = S.s.n.some(function (k) { return LV.pulse[k]; }); });
+    sys = ikFmSystems(d, LV.t, LV.Rf.es.length ? LV.Rf.es : N.es);
+    var sysF = ikFmSystems(d, LV.tf, []);
+    sys.forEach(function (S, i) { S.gain = Math.max(0, sysF[i].pct - S.pct); S.boost = S.gain >= 1; });
     N.live = true;
   } else sys = ikFmSystems(d, N.t, N.es);
   var HY = ikFmHydration(d), waterPct = HY.pct, fed = sys.filter(function (x) { return x.st !== "low"; }).length + (waterPct >= 50 ? 1 : 0);
@@ -10487,7 +10516,7 @@ function ikFuelMap(d, t, week, day, es) {
        - the picture is a reusable object URL, and the whole visual layer is kept as-is across redraws (the
          once-a-minute clock redraw no longer restarts the animation or re-decodes the picture);
        - the motion pauses when the map is off screen. */
-    var body = ikFmBody(d), trunk = "M432 824 C442 740 446 640 440 530 C434 440 410 378 380 352";   // 0.5.8: starts at Fuel in, docked on the map
+    var body = ikFmBody(d), trunk = "M432 796 C442 720 446 630 440 530 C434 440 410 378 380 352";   // 0.5.8: starts at Fuel in, docked on the map
     var stomach = body === "f" ? "M363 298 C366 310 386 306 404 312 C421 320 419 352 401 364 C382 375 352 375 340 365 C332 357 337 348 346 349"
       : "M363 288 C365 302 380 300 395 306 C411 314 409 346 393 357 C376 369 350 369 340 359 C333 351 338 342 347 343";
     var still = "", flow = "", halos = "", ring = "", trunkC = ST.c;
@@ -10549,15 +10578,15 @@ function ikFuelMap(d, t, week, day, es) {
     h += '<div class="ik-fm-card"><div class="ik-fm-stage" data-fm="bg"><div class="ik-fm-vis" data-sig="' + sig + '">' + vis + "</div>" + ring;
     sys.forEach(function (S) {
       var s = S.s, col = IK_FM_COL[S.st], on = U.open && U.pick === s.id;
-      var tr = S.dPct >= 1 ? '<em class="ik-fm-tr up" aria-hidden="true">▲</em>' : S.dPct <= -1 ? '<em class="ik-fm-tr dn" aria-hidden="true">▼</em>' : "";
-      h += '<button class="ik-fm-pill' + (on ? " on" : "") + (S.boost ? " boost" : "") + '" data-fm="pick:' + s.id + '" style="' + (s.side === "L" ? "left:1.1%" : "right:1.1%") + ";top:" + s.top + "%;--c:" + col + '" aria-pressed="' + on + '" aria-label="' + ikEsc(s.name + ", " + S.pct + "%" + (S.dPct >= 1 ? ", rising" : S.dPct <= -1 ? ", easing off" : "")) + '">' +
+      var tr = S.boost ? '<em class="ik-fm-tr up" aria-hidden="true">▲<small>+' + S.gain + "</small></em>" : "";
+      h += '<button class="ik-fm-pill' + (on ? " on" : "") + (S.boost ? " boost" : "") + '" data-fm="pick:' + s.id + '" style="' + (s.side === "L" ? "left:1.1%" : "right:1.1%") + ";top:" + s.top + "%;--c:" + col + '" aria-pressed="' + on + '" aria-label="' + ikEsc(s.name + ", " + S.pct + "%" + (S.boost ? ", " + S.gain + " more points coming from what you just had" : "")) + '">' +
         '<b>' + ikEsc(s.short) + "</b><span>" + S.pct + "%" + tr + "</span></button>";
     });
     var wst = ikFmStatus(waterPct), wcol = IK_FM_COL[wst], won = U.open && U.pick === "water";
-    var wtr = !isToday || HY.none ? "" : HY.trend >= 2 ? '<em class="ik-fm-tr up" aria-hidden="true">▲</em>' : HY.trend <= -2 ? '<em class="ik-fm-tr dn" aria-hidden="true">▼</em>' : "";
-    h += '<button class="ik-fm-pill wide' + (won ? " on" : "") + (LV && LV.pulse._water ? " boost" : "") + '" data-fm="pick:water" style="right:1.1%;top:57%;--c:' + wcol + '" aria-pressed="' + won + '" aria-label="Hydration, ' + waterPct + '%">' +
+    var wsoak = isToday && !HY.none && HY.soaking >= 30, wtr = wsoak ? '<em class="ik-fm-tr up" aria-hidden="true">▲</em>' : "";
+    h += '<button class="ik-fm-pill wide' + (won ? " on" : "") + (wsoak ? " boost" : "") + '" data-fm="pick:water" style="right:1.1%;top:57%;--c:' + wcol + '" aria-pressed="' + won + '" aria-label="Hydration, ' + waterPct + '%">' +
       '<b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.2 4.2 6 7.5 6 10.8a6 6 0 0 1-12 0C6 10.5 8.8 7.2 12 3z"/></svg>Hydration</b><span>' + waterPct + "%" + wtr + '</span>' +
-      '<i><em style="width:' + Math.min(100, waterPct) + '%"></em></i><small>' + (HY.none ? "Log a drink" : HY.behind >= 50 ? HY.behind + " mL behind" : "Topped up") + "</small></button>";
+      '<i><em style="width:' + Math.min(100, waterPct) + '%"></em></i><small>' + (HY.none ? "Log a drink" : wsoak ? "+" + HY.soaking + " mL coming" : HY.behind >= 50 ? HY.behind + " mL behind" : "Topped up") + "</small></button>";
     h += '<span class="ik-fm-fed"><i></i>' + (N.days ? "Well nourished: " : "Fed well today: ") + fed + " of 9</span>";
     // Fuel in: 0.5.8 (Oran, 2026-10-17) docked on the map itself, so the stream of fuel visibly comes out of it
     var fon = U.open && U.pick === "fuel", AB = LV && LV.abs && LV.abs.frac < 0.98 ? LV.abs : null;
@@ -10575,7 +10604,8 @@ function ikFuelMap(d, t, week, day, es) {
     U.justOpened = false;
     h += '<div class="ik-fm-foot">';   // 0.5.7: a neutral light panel, so the colours never fight the person's theme
     h += '<div class="ik-fm-key"><b>Light</b> = fuel flowing now:<span><i style="background:' + IK_FM_FUELC.glucose + '"></i>sugar</span><span><i style="background:' + IK_FM_FUELC.fat + '"></i>fat</span><span><i style="background:' + IK_FM_FUELC.ketones + '"></i>ketones</span></div>' +
-      '<div class="ik-fm-key"><b>%</b> = ' + (N.live ? (N.days ? "nourished: last " + N.days + " day" + (N.days === 1 ? "" : "s") + " + the last 24 h as it's absorbed" : "fed: the last 24 h, as it's absorbed") + " · ▲ rising" : N.days ? "nourished, last " + N.days + " day" + (N.days === 1 ? "" : "s") : "fed so far today") + ':<span><i style="background:#a8f6ff;box-shadow:0 0 8px #6fe7ff"></i>thriving</span><span><i style="background:#3f8cff"></i>steady</span><span><i style="background:#ffb340"></i>low</span></div>';
+      '<div class="ik-fm-key"><b>%</b> = ' + (N.live ? (N.days ? "nourished: last " + N.days + " day" + (N.days === 1 ? "" : "s") + " + the last 24 h as it's absorbed" : "fed: the last 24 h, as it's absorbed") : N.days ? "nourished, last " + N.days + " day" + (N.days === 1 ? "" : "s") : "fed so far today") + ':<span><i style="background:#a8f6ff;box-shadow:0 0 8px #6fe7ff"></i>thriving</span><span><i style="background:#3f8cff"></i>steady</span><span><i style="background:#ffb340"></i>low</span></div>';
+    if (LV) h += '<div class="ik-fm-key ik-fm-key2"><span class="ik-fm-keyglow">▲+5</span><span>Glowing = still filling from what you ate or drank in the last 2 hours; +5 = points still to come as it\'s absorbed.' + (LV.any || (HY.soaking >= 30) ? "" : " Nothing is filling right now.") + "</span></div>";
     h += set.fmAck ? '<p class="ik-fm-legal">Estimates to help you understand your food, not medical advice. <button class="ik-fm-link" data-fm="sources">How it works &amp; sources</button></p>'
       : '<div class="ik-fm-legal first"><span>The fuel map is an estimate built from published nutrition research, not medical advice or a test. It\'s here to give you a better picture than no tool at all. <button class="ik-fm-link" data-fm="sources">How it works &amp; sources</button></span><button class="ik-fm-ok" data-fm="ack">Got it</button></div>';
     h += "</div></div>";   // foot, card
@@ -12122,7 +12152,16 @@ function ikAddWater(ml, opts) {
   var day = IK_UI.day || ikToday(), d = dd.getData();
   var w = (opts && opts.newEntry) ? null : ikEntriesOn(d, day).filter(function (e) { return e.kind === "drink" && e.items.length === 1 && e.items[0].ref === "t:water"; })[0];
   dd.update(function (dt) {
-    if (w) dt.entries.forEach(function (e) { if (e.id === w.id) { e.items[0].g = (Number(e.items[0].g) || 0) + ml; e.time = day === ikToday() ? ikNowTime() : e.time; } });
+    /* 0.5.8 (Oran, 2026-10-17: "when someone drinks water their hydration needs to increase"): adding to today's
+       water used to move the whole day's water to "now", so the map thought nothing had been drunk earlier and
+       hydration dropped. Each glass is now kept as its own sip with its own time. */
+    if (w) dt.entries.forEach(function (e) {
+      if (e.id !== w.id) return;
+      if (!e.sips) e.sips = [{ time: e.time, ml: Number(e.items[0].g) || 0 }];
+      e.items[0].g = (Number(e.items[0].g) || 0) + ml;
+      if (day === ikToday()) { e.time = ikNowTime(); e.part = ikPartOf(e.time); }
+      e.sips.push({ time: day === ikToday() ? ikNowTime() : e.time, ml: ml });
+    });
     else { var t = day === ikToday() ? ikNowTime() : "12:00"; dt.entries.push({ id: dd.ui.uid("e"), day: day, time: t, part: ikPartOf(t), kind: "drink", name: "Water", items: [{ ref: "t:water", g: ml, name: "Water" }], src: "typed" }); }
   });
   dd.ui.toast("💧 +" + ml + " mL water.");
@@ -12404,7 +12443,7 @@ function ikOpenAbout(opts) {
     '<div class="ik-card ik-about" id="ikAboutFuel"><h3 style="margin:0 0 8px;font-size:18px">The fuel map</h3>' +
     "<p><b>The light</b> flowing to each body system is the fuel it's most likely running on right now: pink for sugar, gold for fat, violet for ketones. Between meals your body runs on what it stored, so it stays lit while you fast.</p>" +
     "<p><b>The %</b> on each system is how well it's been nourished: how close your average logged day over the last 7 days came to the target for each nutrient that supports it, each capped at 100%. Vitamins, minerals and protein come from stores your body builds up over days, so one morning without food doesn't empty them. Tap a system to see which nutrients count.</p>" +
-    "<p><b>After you eat</b>, today's map moves with your meal. Eating is taken to start at the time on the entry, and food is absorbed over the next few hours: about half in the first hour, most of it by 3 to 4 hours. On today's map the % blends your last few days (60%) with the last 24 hours as it's absorbed (40%), so a system's number climbs for the hour or two after a meal (▲) and eases back as older meals fade (▼). For about 75 minutes after a meal, the systems it feeds pulse, light travels out to them from the stomach, and the nutrients it brought pulse in your lists. Fuel in shows how much of your last meal has been absorbed so far.</p>" +
+    "<p><b>After you eat or drink</b>, today's map moves with it. Food is taken to start at the time on the entry and is absorbed over the next few hours: about half in the first hour, most of it by 3 to 4 hours. Water is faster: about half in 10 minutes. On today's map the % blends your last few days (60%) with the last 24 hours as it's absorbed (40%). <b>One rule for what's lit up:</b> anything you had in the last 2 hours is still filling you up. Every system it will still raise by a point or more glows and shows <b>▲ +N</b>, where N is the points still to come; the % climbs toward that as it's absorbed, and the glow stops once it's in. Inside a system, the nutrients doing the filling glow and show their own ▲ +N. Water you've just drunk counts on Hydration straight away, with “+N mL coming” while it's absorbed.</p>" +
     "<p><b>Fuel in</b> estimates what your body is most likely burning right now. It replays your last three days of food in 6-minute steps: when you ate, and how much sugar, starch, fibre, fat, protein and alcohol was in it. It follows what research shows: carbs raise insulin, which turns sugar burning up and fat burning down while they're absorbed; fat and fibre slow that down and sugary drinks speed it up; your liver's sugar stores drain between meals; ketones rise once those stores are low; and alcohol is burned first, holding fat burning back while it clears.</p>" +
     "<p><b>Hydration</b> on the map is a running water balance for right now: drinks soak in over about 20 to 45 minutes, your body loses water all day (less while you sleep, and less again when you're behind, because your kidneys hold on), and any extra is passed within a couple of hours, so a big drink this morning doesn't cover this afternoon. About 1% of your body weight behind is when thirst usually starts; about 2% is when focus and mood measurably slip.</p>" +
     "<p><b>It's an estimate, not a measurement.</b> Real timing varies with your body size, activity, sleep, medicines and health conditions such as diabetes. It isn't medical advice or a blood test, and it isn't meant to be exact. It's here to give you a clearer picture of how your food affects your body than no tool at all.</p>" +
