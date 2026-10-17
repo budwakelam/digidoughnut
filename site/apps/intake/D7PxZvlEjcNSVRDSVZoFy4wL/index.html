@@ -2283,13 +2283,27 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
       '<span class="dd-menu-trio-ico" aria-hidden="true">' + (it.icon || "") + '</span>' +
       '<span class="dd-menu-trio-label">' + esc(it.trio || it.label) + '</span></button>';
   }
+  /* Oran, 2026-10-16: every screen opened from the menu gets a back button to the menu
+     (unless it already has one) — no more tapping the hamburger to get back. */
+  function addMenuBack() {
+    try {
+      var ov = document.querySelector("#dd-layer .dd-sheet");
+      if (!ov || ov.querySelector("[data-back],.dd-menu-back")) return;
+      var back = document.createElement("button");
+      back.className = "dd-linkbtn dd-menu-back";
+      back.textContent = "\u2039 Menu";
+      back.addEventListener("click", function () { menu.open(); });
+      ov.insertBefore(back, ov.firstChild);
+    } catch (e) {}
+  }
+
   function wire(sh, list) {
     sh.querySelectorAll("[data-item]").forEach(function (b) {
       b.addEventListener("click", function () {
         var it = list.filter(function (x) { return x.id === b.dataset.item; })[0]; if (!it) return;
-        if (it.keepOpen) { it.run(); return; }
+        if (it.keepOpen) { it.run(); addMenuBack(); return; }
         dd.ui.closeSheet();
-        try { it.run(dd.ctx ? dd.ctx() : null); } catch (e) { dd.errors.record("menu:" + it.id, e); dd.ui.toast("That didn't open. Reloading the page usually fixes it.", 4000); }
+        try { it.run(dd.ctx ? dd.ctx() : null); } catch (e) { dd.errors.record("menu:" + it.id, e); dd.ui.toast("That didn't open. Reloading the page usually fixes it.", 4000); } addMenuBack();
       });
     });
   }
