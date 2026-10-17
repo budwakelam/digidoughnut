@@ -106,6 +106,8 @@
   its own time; water counts on Hydration straight away. One rule for what glows on the map: food or drink from the
   last 2 hours that will still raise a system by a point or more (▲ +N = points still to come). Fuel in details open
   in the dark panel with a 4-hour look-ahead slider. The map runs edge to edge on phones.
+  Fat stores sits beside the fuel stream: gold light flows into it while storing and out of it while burning. Motion
+  slowed down for phones, and the legend is one small, compact block.
   To make a new app, change only the parts marked PROGRAM-SPECIFIC (styles, markup, script)
   and the app name in the <head>.
 -->
@@ -1019,15 +1021,15 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-vis svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .ik-fm-still{mix-blend-mode:screen}
 .ik-fm-flow{will-change:transform}
-.ik-fm-run path{fill:none;stroke-linecap:round;stroke-dasharray:12 100;animation:ikFmTravel 2.4s cubic-bezier(.45,.05,.55,.95) infinite}
-.ik-fm-run.trunk path{stroke-dasharray:20 100;animation-duration:1.9s}
-.ik-fm-run:nth-child(3n) path{animation-delay:-.8s}.ik-fm-run:nth-child(3n+1) path{animation-delay:-1.6s}
+.ik-fm-run path{fill:none;stroke-linecap:round;stroke-dasharray:12 100;animation:ikFmTravel 3.6s cubic-bezier(.45,.05,.55,.95) infinite}
+.ik-fm-run.trunk path{stroke-dasharray:20 100;animation-duration:3s}
+.ik-fm-run:nth-child(3n) path{animation-delay:-1.2s}.ik-fm-run:nth-child(3n+1) path{animation-delay:-2.4s}
 .ik-fm-halos{position:absolute;inset:0}
 .ik-fm-ring{position:absolute;width:4.7%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;border:2px solid var(--c);box-shadow:0 0 10px var(--c);pointer-events:none}
 .ik-fm-halo{position:absolute;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(closest-side,var(--c) 0%,color-mix(in srgb,var(--c) 45%,transparent) 35%,transparent 100%);
-  opacity:.35;will-change:opacity;animation:ikFmBreathe 3s ease-in-out infinite;mix-blend-mode:screen}
+  opacity:.35;will-change:opacity;animation:ikFmBreathe 4.6s ease-in-out infinite;mix-blend-mode:screen}
 .ik-fm-halo.dim{opacity:.18;animation:none}
-.ik-fm-halo:nth-child(2n){animation-delay:-1.5s}
+.ik-fm-halo:nth-child(2n){animation-delay:-2.3s}
 .ik-fm-paused .ik-fm-run path,.ik-fm-paused .ik-fm-halo{animation-play-state:paused}
 @keyframes ikFmTravel{from{stroke-dashoffset:14}to{stroke-dashoffset:-100}}
 @keyframes ikFmBreathe{0%,100%{opacity:.3}50%{opacity:.7}}
@@ -1065,7 +1067,30 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-ahead{margin:0 0 12px;padding:10px 12px 12px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(160,220,255,.12)}
 .ik-fm-range{width:100%;margin:8px 0 2px;accent-color:#ff8fc0;height:28px}
 .ik-fm-ticks{display:flex;justify-content:space-between;font-size:10.5px;font-weight:700;color:#7f95a6;margin:0 2px 8px}
-.ik-fm-ahead-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:14px;margin:2px 0 6px}
+.ik-fm-ahead-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:12px;color:#9fb4c4;margin:6px 0 6px}
+.ik-fm-ahead-big{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 8px}
+.ik-fm-ahead-fat{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;background:color-mix(in srgb,var(--c) 14%,transparent);border:1px solid color-mix(in srgb,var(--c) 45%,transparent);transition:background .4s,border-color .4s}
+.ik-fm-ahead-fat i{flex:none;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:800;color:#0b1520;background:var(--c);box-shadow:0 0 12px var(--c)}
+.ik-fm-ahead-fat b{display:block;color:var(--c);font-size:14px}
+.ik-fm-ahead-fat small,.ik-fm-ahead-fuel small{display:block;font-size:11px;color:#9fb4c4}
+.ik-fm-ahead-fuel{padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid color-mix(in srgb,var(--c) 40%,transparent)}
+.ik-fm-ahead-fuel b{display:block;color:var(--c);font-size:13.5px;line-height:1.2}
+.ik-fm-ahead-chg{margin:0 0 8px;padding:6px 10px;border-radius:10px;font-size:12px;font-weight:700;color:var(--c);background:color-mix(in srgb,var(--c) 12%,transparent);animation:ikFmChg .5s ease}
+@keyframes ikFmChg{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+.ik-fm-strips{position:relative;margin:12px 0 0;display:flex;flex-direction:column;gap:5px}
+.ik-fm-strip{display:grid;grid-template-columns:52px 1fr;align-items:center;gap:6px}
+.ik-fm-striplbl{white-space:nowrap;font-size:10px;font-weight:700;color:#8ea3b3;text-transform:uppercase;letter-spacing:.04em}
+.ik-fm-stripbar{position:relative;height:10px;border-radius:5px;background:rgba(255,255,255,.06);overflow:hidden}
+.ik-fm-stripbar i{position:absolute;top:0;bottom:0;opacity:.85}
+.ik-fm-slidewrap{margin-left:58px}
+.ik-fm-slidewrap .ik-fm-range{margin-top:4px}
+.ik-fm-stripmark{position:absolute;top:-4px;bottom:-4px;width:2px;transform:translateX(-1px);background:#fff;border-radius:1px;box-shadow:0 0 8px #fff;pointer-events:none;transition:left .12s}
+.ik-fm-steps{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
+.ik-fm-steps li{display:flex;align-items:center;gap:7px;font-size:12px;color:#7f95a6;transition:color .3s}
+.ik-fm-steps li.on{color:#e9f4fa}
+.ik-fm-steps li i{flex:none;width:8px;height:8px;border-radius:50%;opacity:.5}
+.ik-fm-steps li.on i{opacity:1;box-shadow:0 0 6px currentColor}
+.ik-fm-steps li b{flex:none;min-width:50px;color:inherit}
 .ik-fm-ahead-h span{font-size:12px;color:#9fb4c4;white-space:nowrap}
 .ik-fm-ahead-row{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:12px;color:#b9c8d4}
 .ik-fm-ahead-row span{display:inline-flex;align-items:center;gap:5px}
@@ -1087,6 +1112,29 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-bal{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:12px;background:rgba(255,255,255,.05);margin-top:8px;font-size:12px;font-weight:600;color:#dbe6ee;line-height:1.35}
 .ik-fm-batt{flex:none;width:26px;height:14px;border-radius:4px;border:2px solid #8ea3b3;position:relative;box-sizing:border-box}
 .ik-fm-batt i{position:absolute;left:1px;top:1px;bottom:1px;border-radius:2px}
+.ik-fm-legend{display:flex;flex-wrap:wrap;justify-content:center;gap:3px 12px;padding:8px 14px 0;font-size:10.5px;line-height:1.3;color:#6e6e73;font-weight:600}
+.ik-fm-legend span{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.ik-fm-legend span.w{display:block;white-space:normal;flex-basis:100%;color:#8e8e93;font-weight:500;text-align:center}
+.ik-fm-legend b{color:#1d1d1f;font-weight:800;margin-right:2px}
+.ik-fm-legend b.g{color:#0c8a5f;background:#e6fbf3;border-radius:5px;padding:0 4px}
+.ik-fm-legend i{width:7px;height:7px;border-radius:50%;margin-left:3px}
+.ik-fm-legend .ik-fm-link{font-size:inherit}
+.ik-fm-foot{padding:4px 0 10px!important}
+.ik-fm-foot .ik-fm-legal.first{margin:8px 12px 0;padding:7px 9px;font-size:10.5px}
+.ik-fm-foot .ik-fm-legal.first .ik-fm-ok{min-height:28px;padding:4px 10px;font-size:11px}
+.ik-fm-fat{position:absolute;left:1.1%;top:69.5%;width:31%;box-sizing:border-box;z-index:2;display:flex;align-items:center;gap:1.6cqw;text-align:left;font:inherit;cursor:pointer;
+  padding:1.3cqw 1.8cqw;border-radius:3.2cqw;background:rgba(6,16,26,.82);border:1px solid rgba(255,194,71,.35);color:#fff}
+.ik-fm-fat small{display:block;white-space:nowrap;font-size:clamp(7.5px,2.4cqw,10px);font-weight:700;color:#c9b27a;text-transform:uppercase;letter-spacing:.05em}
+.ik-fm-fat b{display:block;font-size:clamp(9px,2.9cqw,12px);font-weight:800;color:#ffc247;white-space:nowrap}
+.ik-fm-fat.burn b{color:#7cf2c7}
+.ik-fm-fat.hold b{color:#c9d6e0}
+.ik-fm-fatico{flex:none;width:clamp(18px,5.6cqw,24px);height:clamp(18px,5.6cqw,24px);border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,194,71,.18);color:#ffc247}
+.ik-fm-fatico svg{width:62%;height:62%}
+.ik-fm-fat.store,.ik-fm-fat.burn{animation:ikFmFatGlow 4s ease-in-out infinite}
+.ik-fm-fat.burn{border-color:rgba(124,242,199,.4)}
+@keyframes ikFmFatGlow{0%,100%{box-shadow:0 0 0 rgba(255,194,71,0)}50%{box-shadow:0 0 16px rgba(255,194,71,.45)}}
+.ik-fm-run.fat path{stroke-dasharray:22 100;animation-duration:4s}
+.ik-fm-paused .ik-fm-fat{animation-play-state:paused}
 .ik-fm-key{display:flex;justify-content:center;flex-wrap:wrap;gap:4px 12px;padding:8px 14px 0;font-size:11.5px;font-weight:600;color:#9fb4c4}
 .ik-fm-key b{color:#dbe6ee}
 .ik-fm-now{display:flex;gap:10px;align-items:flex-start;margin:14px 0 0;padding:11px 12px;border-radius:14px;background:#0c1722;color:#dbe6ee;font-size:13.5px;line-height:1.4}
@@ -1118,11 +1166,11 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
   gap:2cqw;padding:0 1.4cqw 0 1.8cqw;border-radius:6.5cqw;background:rgba(5,14,22,.8);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
   border:1.5px solid color-mix(in srgb,var(--c) 60%,transparent);box-shadow:0 0 22px color-mix(in srgb,var(--c) 40%,transparent),inset 0 0 14px color-mix(in srgb,var(--c) 16%,transparent);overflow:hidden}
 .ik-fm-dock.on{background:rgba(8,22,34,.9)}
-.ik-fm-dock.beat{animation:ikFmBeat 1.9s ease-in-out infinite}
+.ik-fm-dock.beat{animation:ikFmBeat 3s ease-in-out infinite}
 @keyframes ikFmBeat{0%,100%{border-color:color-mix(in srgb,var(--c) 30%,#fff);box-shadow:0 0 32px 4px color-mix(in srgb,var(--c) 80%,transparent),0 -6px 26px color-mix(in srgb,var(--c) 60%,transparent),inset 0 0 20px color-mix(in srgb,var(--c) 40%,transparent)}
   50%{border-color:color-mix(in srgb,var(--c) 40%,transparent);box-shadow:0 0 12px color-mix(in srgb,var(--c) 22%,transparent),0 0 0 transparent,inset 0 0 8px color-mix(in srgb,var(--c) 8%,transparent)}}
 .ik-fm-dock .ik-fm-fuelbtn{gap:2cqw;padding:0;height:100%}
-.ik-fm-dock .ik-fm-orb{width:clamp(26px,8.6cqw,36px);height:clamp(26px,8.6cqw,36px);animation:ikFmOrbGlow 2.2s ease-in-out infinite}
+.ik-fm-dock .ik-fm-orb{width:clamp(26px,8.6cqw,36px);height:clamp(26px,8.6cqw,36px);animation:ikFmOrbGlow 3.4s ease-in-out infinite}
 .ik-fm-dock .ik-fm-orb svg{width:52%;height:52%}
 .ik-fm-dock .ik-fm-k{font-size:clamp(8px,2.45cqw,10.5px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#9fb4c4}
 .ik-fm-dock .ik-fm-title{font-size:clamp(11.5px,3.8cqw,15px)}
@@ -1134,11 +1182,11 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-absbar em{display:block;height:3px;background:var(--c);box-shadow:0 0 8px var(--c);transition:width 1s}
 .ik-fm-dock.eating .ik-fm-k{color:#fff}
 .ik-fm-port{position:absolute;left:59.18%;top:85.6%;width:11%;aspect-ratio:2.2;transform:translate(-50%,-50%);border-radius:50%;z-index:3;pointer-events:none;
-  background:radial-gradient(closest-side,#fff 0%,var(--c) 38%,color-mix(in srgb,var(--c) 30%,transparent) 70%,transparent 100%);animation:ikFmPort 1.9s ease-in-out infinite}
+  background:radial-gradient(closest-side,#fff 0%,var(--c) 38%,color-mix(in srgb,var(--c) 30%,transparent) 70%,transparent 100%);animation:ikFmPort 3s ease-in-out infinite}
 @keyframes ikFmPort{0%,100%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}50%{opacity:.5;transform:translate(-50%,-50%) scale(.85)}}
 @keyframes ikFmOrbGlow{0%,100%{box-shadow:0 0 10px var(--c)}50%{box-shadow:0 0 22px var(--c),0 0 4px #fff}}
 .ik-fm-run.trunk path{stroke-dasharray:30 100;animation-delay:0s!important}
-.ik-fm-dash{stroke-dasharray:3 13;animation:ikFmDash .9s linear infinite;opacity:.9}
+.ik-fm-dash{stroke-dasharray:3 13;animation:ikFmDash 1.6s linear infinite;opacity:.9}
 @keyframes ikFmDash{from{stroke-dashoffset:16}to{stroke-dashoffset:0}}
 .ik-fm-paused .ik-fm-orbs{display:none}
 .ik-fm-paused .ik-fm-dash,.ik-fm-paused .ik-fm-port,.ik-fm-paused .ik-fm-dock.beat,.ik-fm-paused .ik-fm-pill.boost,.ik-fm-paused .ik-fm-dock .ik-fm-orb{animation-play-state:paused}
@@ -1150,27 +1198,27 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-pill span{white-space:nowrap}
 /* 0.5.8: on phones the dark fuel map runs edge to edge (no white strips at the sides) */
 @media (max-width:640px){.ik-fm-card{margin:0 -16px;border-radius:0}.ik-fm-foot{padding-left:16px;padding-right:16px}}
-.ik-fm-tr.up{color:#7cf2c7;text-shadow:0 0 8px #7cf2c7;animation:ikFmUp 1.6s ease-in-out infinite;display:inline-block}
+.ik-fm-tr.up{color:#7cf2c7;text-shadow:0 0 8px #7cf2c7;animation:ikFmUp 2.6s ease-in-out infinite;display:inline-block}
 .ik-fm-tr.dn{color:#ffb340}
 @keyframes ikFmUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
-.ik-fm-pill.boost{animation:ikFmBoost 1.6s ease-in-out infinite}
+.ik-fm-pill.boost{animation:ikFmBoost 2.8s ease-in-out infinite}
 @keyframes ikFmBoost{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--c) 0%,transparent);border-color:color-mix(in srgb,var(--c) 40%,transparent)}50%{box-shadow:0 0 18px 2px color-mix(in srgb,var(--c) 70%,transparent);border-color:var(--c)}}
 .ik-fm-boostnote{display:flex;align-items:flex-start;line-height:1.4;gap:8px;margin:12px 0 0;padding:9px 12px;border-radius:12px;background:#e6fbf3;color:#03543c;font-size:13.5px;font-weight:600}
-.ik-fm-boostnote i{flex:none;width:9px;height:9px;border-radius:50%;background:#19c58c;box-shadow:0 0 0 0 #19c58c;animation:ikRowPulse 1.6s ease-in-out infinite}
-.ik-fm-row.pulse,.ik-drow.pulse,.ik-nrow.pulse{animation:ikRowPulse 1.6s ease-in-out infinite;border-radius:10px}
+.ik-fm-boostnote i{flex:none;width:9px;height:9px;border-radius:50%;background:#19c58c;box-shadow:0 0 0 0 #19c58c;animation:ikRowPulse 2.8s ease-in-out infinite}
+.ik-fm-row.pulse,.ik-drow.pulse,.ik-nrow.pulse{animation:ikRowPulse 2.8s ease-in-out infinite;border-radius:10px}
 @keyframes ikRowPulse{0%,100%{box-shadow:0 0 0 0 rgba(25,197,140,0);background-color:transparent}50%{box-shadow:0 0 0 3px rgba(25,197,140,.28);background-color:rgba(25,197,140,.08)}}
 .ik-entry.fresh{border-radius:14px;box-shadow:0 0 0 2px rgba(25,197,140,.45),0 6px 18px rgba(25,197,140,.18)}
 .ik-footnote{font-size:11.5px;line-height:1.35;color:var(--ik-ink2);opacity:.75;text-align:center;margin:10px 4px 6px}
 .ik-fm-wchart{display:block;width:100%;height:auto;margin:2px 0 0}
 .ik-fm-wline{stroke-dasharray:100;animation:ikFmDraw 1.4s ease-out both}
 .ik-fm-warea{animation:ikFadeIn 1.4s ease-out both}
-.ik-fm-wnow{animation:ikFmNow 1.8s ease-in-out infinite}
+.ik-fm-wnow{animation:ikFmNow 2.8s ease-in-out infinite}
 @keyframes ikFmDraw{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
 @keyframes ikFadeIn{from{opacity:0}to{opacity:1}}
 @keyframes ikFmNow{0%,100%{r:5}50%{r:7}}
 .ik-fm-wtr{font-size:12px;font-weight:700;margin-left:6px;color:var(--ik-ink2);vertical-align:2px}
 .ik-fm-wtr.up{color:#0c8a5f}.ik-fm-wtr.dn{color:#c56a00}
-@media (prefers-reduced-motion:reduce){.ik-fm-orbs,.ik-fm-dash{display:none}.ik-fm-port,.ik-fm-dock.beat,.ik-fm-pill.boost,.ik-fm-tr.up,.ik-fm-row.pulse,.ik-drow.pulse,.ik-nrow.pulse,.ik-fm-dock .ik-fm-orb,.ik-fm-wline,.ik-fm-warea,.ik-fm-wnow{animation:none}}
+@media (prefers-reduced-motion:reduce){.ik-fm-orbs,.ik-fm-dash{display:none}.ik-fm-fat{animation:none!important}.ik-fm-port,.ik-fm-dock.beat,.ik-fm-pill.boost,.ik-fm-tr.up,.ik-fm-row.pulse,.ik-drow.pulse,.ik-nrow.pulse,.ik-fm-dock .ik-fm-orb,.ik-fm-wline,.ik-fm-warea,.ik-fm-wnow{animation:none}}
 @media (prefers-reduced-motion:reduce){.ik-fm-run{display:none}.ik-fm-halo,.ik-fm-drawer,.ik-fm-drawer.opening{animation:none}}
 @media (min-width:900px){
   .ik-fm-cols{display:grid;grid-template-columns:minmax(0,430px) minmax(0,1fr);gap:20px;align-items:start}
@@ -9858,7 +9906,7 @@ function ikRenderToday(ctx) {
 function ikFmSyncBeat(host) {
   try {
     var tp = host.querySelector(".ik-fm-run.trunk path"), an = tp && tp.getAnimations ? tp.getAnimations()[0] : null;
-    var t = an && an.currentTime != null ? an.currentTime % 1900 : 0;
+    var t = an && an.currentTime != null ? an.currentTime % 3000 : 0;
     host.querySelectorAll(".ik-fm-dock.beat,.ik-fm-port").forEach(function (el) { el.style.animationDelay = (-t).toFixed(0) + "ms"; });
   } catch (e) {}
 }
@@ -10227,16 +10275,54 @@ function ikFmAhead(F, mins) {
   F.samples.forEach(function (q) { if (q.t > F.end && Math.abs(q.t - want) < Math.abs(best.t - want)) best = q; });
   return { q: best, mins: mins };
 }
+/* 0.5.8 (Oran: "make it obvious what's happening as they slide"): the next 4 hours split into phases, for body fat
+   (storing / burning / steady) and for the fuel (sugar / stored sugar and fat / fat / ketones). */
+var IK_FAT_MODE = { store: { c: "#ffb340", t: "Storing fat", s: "↓" }, burn: { c: "#7cf2c7", t: "Burning fat", s: "↑" }, hold: { c: "#8db8ff", t: "Fat steady", s: "=" } };
+function ikFatMode(q) { var n = q.fatOx - q.Af; return n < -1 ? "store" : n > 1 ? "burn" : "hold"; }
+function ikFmPhases(F) {
+  var fut = [F.cur].concat(F.samples.filter(function (q) { return q.t > F.end; })), fat = [], fuel = [];
+  fut.forEach(function (q) {
+    var m = Math.round((q.t - F.end) * 60), fm = ikFatMode(q), st = q === F.cur ? F.state : ikFmStateOf(q), net = Math.abs(q.fatOx - q.Af);
+    var lf = fat[fat.length - 1]; if (!lf || lf.mode !== fm) fat.push({ mode: fm, from: m, to: m, g: net, n: 1 }); else { lf.to = m; lf.g += net; lf.n++; }
+    var lu = fuel[fuel.length - 1]; if (!lu || lu.st !== st) fuel.push({ st: st, from: m, to: m }); else lu.to = m;
+  });
+  var fix = function (L) { L.forEach(function (x, i) { x.to = i < L.length - 1 ? L[i + 1].from : 240; }); return L.filter(function (x) { return x.to - x.from >= 6 || L.length === 1; }); };
+  fat = fix(fat); fuel = fix(fuel);
+  fat.forEach(function (x) { x.g = Math.round(x.g / x.n); });
+  return { fat: fat, fuel: fuel };
+}
+function ikFmClock(mins) { var w = new Date(Date.now() + mins * 60000); return ikNiceTime(("0" + w.getHours()).slice(-2) + ":" + ("0" + w.getMinutes()).slice(-2)); }
 function ikFmAheadHtml(F, mins) {
   var A = ikFmAhead(F, mins), q = A.q, st = mins > 0 ? ikFmStateOf(q) : F.state, ST = IK_FM_ST[st], bhb = 0.1 + 1.5 * q.K;
   var pc = Math.round(q.c * 100), pa = Math.round(q.a * 100), pf = Math.max(0, 100 - pc - pa);
   var seg = function (share, col) { return share < 0.005 ? "" : '<span style="flex:' + share.toFixed(3) + ' 1 0;background:' + col + ';box-shadow:0 0 8px ' + col + '88"></span>'; };
-  var net = q.fatOx - q.Af, when = new Date(Date.now() + mins * 60000);
-  var store = net < -1 ? ["Storing fat", "#ffb340"] : net > 1 ? ["Burning ~" + Math.round(net) + " g fat/h", "#7cf2c7"] : ["Fat holding steady", "#8db8ff"];
-  return '<div class="ik-fm-ahead-h"><b style="color:' + ST.c + '">' + ikEsc(mins > 0 ? ST.title : "Right now: " + ST.title) + "</b><span>" + (mins > 0 ? "in " + ikHM(mins * 60000) + " · " + ikNiceTime(("0" + when.getHours()).slice(-2) + ":" + ("0" + when.getMinutes()).slice(-2)) : "now") + "</span></div>" +
+  var fm = ikFatMode(q), FM = IK_FAT_MODE[fm], g = Math.round(Math.abs(q.fatOx - q.Af)), nowFm = ikFatMode(F.cur);
+  var change = mins > 0 && fm !== nowFm ? '<div class="ik-fm-ahead-chg" style="--c:' + FM.c + '">' + (fm === "burn" ? "Switched: your body is now drawing on its fat stores" : fm === "store" ? "Switched: energy is now going into your fat stores" : "Switched: fat in and fat out are about even") + "</div>" : "";
+  return '<div class="ik-fm-ahead-h"><span>' + (mins > 0 ? "In " + ikHM(mins * 60000) + " · " + ikFmClock(mins) : "Right now") + "</span></div>" +
+    '<div class="ik-fm-ahead-big"><div class="ik-fm-ahead-fat" style="--c:' + FM.c + '"><i aria-hidden="true">' + FM.s + "</i><span><b>" + FM.t + "</b><small>" + (fm === "hold" ? "about even" : "about " + g + " g an hour") + '</small></span></div>' +
+      '<div class="ik-fm-ahead-fuel" style="--c:' + ST.c + '"><small>Running on</small><b>' + ikEsc(ST.title) + "</b></div></div>" + change +
     '<div class="ik-fm-mix">' + seg(q.c, "#ff3d7f") + seg(q.f, "#ffc247") + seg(q.a, "#9aa5ff") + "</div>" +
-    '<div class="ik-fm-mixkey"><span style="color:#ff7aa8">Sugar ' + pc + '%</span><span style="color:#ffc247">Fat ' + pf + "%</span>" + (pa ? '<span style="color:#9aa5ff">Alcohol ' + pa + "%</span>" : "") + "</div>" +
-    '<div class="ik-fm-ahead-row"><span><i style="background:#ff8fc0"></i>Liver sugar <b>' + Math.round(q.L) + '%</b></span><span><i style="background:#c9b2ff"></i>Ketones <b>' + bhb.toFixed(1) + '</b></span><span><i style="background:' + store[1] + '"></i><b>' + store[0] + "</b></span></div>";
+    '<div class="ik-fm-mixkey"><span style="color:#ff7aa8">Sugar ' + pc + '%</span><span style="color:#ffc247">Fat ' + pf + "%</span>" + (pa ? '<span style="color:#9aa5ff">Alcohol ' + pa + "%</span>" : "") +
+      '<span style="color:#ff8fc0">Liver sugar ' + Math.round(q.L) + '%</span><span style="color:#c9b2ff">Ketones ' + bhb.toFixed(1) + "</span></div>";
+}
+/* The phase strips + slider + "what happens next" list. */
+function ikFmAheadBlock(F, mins) {
+  var P = ikFmPhases(F), pct = function (m) { return (m / 240 * 100).toFixed(2); };
+  var strip = function (list, col, lbl) {
+    return '<div class="ik-fm-strip"><span class="ik-fm-striplbl">' + lbl + '</span><div class="ik-fm-stripbar">' + list.map(function (x) {
+      return '<i style="left:' + pct(x.from) + "%;width:" + pct(x.to - x.from) + "%;background:" + col(x) + '"></i>'; }).join("") + "</div></div>";
+  };
+  var steps = [];
+  P.fat.forEach(function (x, i) { steps.push({ m: x.from, c: IK_FAT_MODE[x.mode].c, t: IK_FAT_MODE[x.mode].t.toLowerCase() + (x.mode === "hold" ? "" : " (~" + x.g + " g/h)") }); });
+  P.fuel.forEach(function (x, i) { if (i) steps.push({ m: x.from, c: IK_FM_ST[x.st].c, t: "running on " + IK_FM_ST[x.st].title.toLowerCase() }); });
+  steps.sort(function (a, b) { return a.m - b.m; });
+  return '<div class="ik-fm-ahead"><div class="ik-fm-k" style="display:flex;justify-content:space-between"><span>Look ahead · if you don\'t eat</span><span data-fmaheadv style="color:#fff">' + (mins ? "+" + ikHM(mins * 60000) : "now") + "</span></div>" +
+    '<div data-fmaheadout>' + ikFmAheadHtml(F, mins) + "</div>" +
+    '<div class="ik-fm-strips">' + strip(P.fat, function (x) { return IK_FAT_MODE[x.mode].c; }, "Fat") + strip(P.fuel, function (x) { return IK_FM_ST[x.st].c; }, "Fuel") +
+      '<span class="ik-fm-stripmark" data-fmsmark style="left:calc(58px + (100% - 58px) * ' + (mins / 240).toFixed(4) + ')"></span></div>' +
+    '<div class="ik-fm-slidewrap"><input type="range" class="ik-fm-range" data-fmahead min="0" max="240" step="5" value="' + mins + '" aria-label="Look ahead up to 4 hours">' +
+    '<div class="ik-fm-ticks"><span>Now</span><span>+1 h</span><span>+2 h</span><span>+3 h</span><span>+4 h</span></div></div>' +
+    '<ol class="ik-fm-steps">' + steps.map(function (x) { return '<li data-m="' + x.m + '"' + (x.m <= mins ? ' class="on"' : "") + '><i style="background:' + x.c + '"></i><b>' + (x.m ? "+" + ikHM(x.m * 60000) : "Now") + "</b>" + ikEsc(x.t) + (x.m ? " · " + ikFmClock(x.m) : "") + "</li>"; }).join("") + "</ol></div>";
 }
 function ikFmFuelDetails(d, F, dayKcal) {
   var c = F.cur, ST = IK_FM_ST[F.state], sub = ST.sub, U = ikFmUI(), mins = Math.max(0, Math.min(240, U.ahead || 0));
@@ -10276,10 +10362,7 @@ function ikFmFuelDetails(d, F, dayKcal) {
       '<g data-fmmark transform="translate(' + mx + ' 0)"' + (mins > 0 ? "" : ' opacity="0"') + '><path d="M0 0 V76" stroke="#fff" stroke-width="2"/><circle cx="0" cy="4" r="4" fill="#fff"/></g>' +
       '<text x="2" y="88" font-size="10" font-weight="700" fill="#8ea3b3">12 h ago</text><text x="' + nx + '" y="88" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">now</text><text x="312" y="88" text-anchor="end" font-size="10" font-weight="700" fill="#8ea3b3">+4 h</text></svg>' +
     '<div class="ik-fm-s" style="margin:2px 0 10px">Pink is sugar, gold is fat, blue is alcohol. White ticks are meals. The lighter part is what comes next if you don\'t eat.</div>' +
-    '<div class="ik-fm-ahead"><div class="ik-fm-k" style="display:flex;justify-content:space-between"><span>Look ahead</span><span data-fmaheadv style="color:#fff">' + (mins ? "+" + ikHM(mins * 60000) : "now") + "</span></div>" +
-      '<input type="range" class="ik-fm-range" data-fmahead min="0" max="240" step="10" value="' + mins + '" aria-label="Look ahead up to 4 hours">' +
-      '<div class="ik-fm-ticks"><span>Now</span><span>+1 h</span><span>+2 h</span><span>+3 h</span><span>+4 h</span></div>' +
-      '<div data-fmaheadout>' + ikFmAheadHtml(F, mins) + "</div></div>" +
+    ikFmAheadBlock(F, mins) +
     '<div class="ik-fm-tiles">' +
       tile("Since you ate", '<div class="ik-fm-big">' + (F.fs && !F.fs.none ? ikHM(F.fs.since) : "–") + "</div>", lm ? ikEsc(ikEntryName(lm, d)) + " · " + ikNiceTime(lm.time) : "") +
       tile("Body fat right now", '<div class="ik-fm-big" style="color:' + store[2] + '">' + store[0] + "</div>", ikEsc(store[1]), ' style="background:' + store[2] + "1f;border:1px solid " + store[2] + '55"') +
@@ -10297,6 +10380,8 @@ function ikFmAheadInput(el) {
   var box = el.closest(".ik-fm-drawer"); if (!box) return;
   var out = box.querySelector("[data-fmaheadout]"), v = box.querySelector("[data-fmaheadv]"), mk = box.querySelector("[data-fmmark]");
   if (out) out.innerHTML = ikFmAheadHtml(F, U.ahead);
+  var sm = box.querySelector("[data-fmsmark]"); if (sm) sm.style.left = "calc(58px + (100% - 58px) * " + (U.ahead / 240).toFixed(4) + ")";
+  box.querySelectorAll(".ik-fm-steps li").forEach(function (li) { li.classList.toggle("on", +li.getAttribute("data-m") <= U.ahead); });
   if (v) v.textContent = U.ahead ? "+" + ikHM(U.ahead * 60000) : "now";
   if (mk) { var x0 = F.end - 12, x = ((F.end + U.ahead / 60 - x0) / (F.endF - x0) * 314).toFixed(1); mk.setAttribute("transform", "translate(" + x + " 0)"); mk.setAttribute("opacity", U.ahead ? "1" : "0"); }
 }
@@ -10544,7 +10629,7 @@ function ikFuelMap(d, t, week, day, es) {
       '<g class="ik-fm-run trunk"><path pathLength="100" d="' + trunk + '" stroke="' + trunkC + '" stroke-width="58" opacity=".55" filter="url(#fmPulseW)"/>' +
       '<path pathLength="100" d="' + trunk + '" stroke="#ffe6f0" stroke-width="18" opacity=".7" filter="url(#fmPulseM)"/>' +
       '<path pathLength="100" d="' + trunk + '" stroke="#fff" stroke-width="3" opacity=".5"/></g>';
-    var orbs = F.past || F.none ? "" : orb(trunk, trunkC, eating ? 15 : 11, eating ? 2.2 : 3.2, eating ? 4 : 2);
+    var orbs = F.past || F.none ? "" : orb(trunk, trunkC, eating ? 15 : 11, eating ? 3.4 : 4.8, eating ? 3 : 2);
     var halo = function (x, y, r, c, cls) { return '<i class="ik-fm-halo' + (cls || "") + '" style="left:' + (x / 7.3).toFixed(2) + "%;top:" + (y / 9.3).toFixed(2) + "%;width:" + (r * 2 / 7.3).toFixed(2) + "%;--c:" + c + '"></i>'; };
     halos += halo(374, 334, absorbing ? 46 : 30, "#ff3d7f", absorbing ? "" : " dim");
     var sysW = "", sysM = "", sysC = "", sysN = 0;
@@ -10559,17 +10644,32 @@ function ikFuelMap(d, t, week, day, es) {
         "";
       if (on) ring = '<i class="ik-fm-ring" style="left:' + (s.x / 7.3).toFixed(2) + "%;top:" + (s.y / 9.3).toFixed(2) + "%;--c:" + IK_FM_COL[st] + '"></i>';
       if (!F.past) {   // 0.5.8b: soft, blurred pulses like the main stream (one blur per layer, not per path)
-        var dl = ' style="animation-delay:-' + ((sysN++ * 0.8) % 2.4).toFixed(1) + 's"';
+        var dl = ' style="animation-delay:-' + ((sysN++ * 1.2) % 3.6).toFixed(1) + 's"';
         sysW += '<g class="ik-fm-run"><path pathLength="100" d="' + s.d + '" stroke="' + c + '" stroke-width="30" opacity=".6"' + dl + "/></g>";
         sysM += '<g class="ik-fm-run"><path pathLength="100" d="' + s.d + '" stroke="#ffeef6" stroke-width="9" opacity=".75"' + dl + "/></g>";
         sysC += '<g class="ik-fm-run"><path pathLength="100" d="' + s.d + '" stroke="#fff" stroke-width="1.6" opacity=".45"' + dl + "/></g>";
       }
       if (S.boost) {   // 0.5.8: this system is getting something from the meal you just had
         sysM += '<path class="ik-fm-dash" d="' + s.d + '" stroke="#fff" stroke-width="3.5" fill="none" stroke-linecap="round"/>';
-        orbs += orb(s.d, c, 10, 1.9, 2);
+        orbs += orb(s.d, c, 10, 3.2, 1);
       }
       halos += halo(s.x, s.y, st === "thrive" ? 40 : st === "steady" ? 31 : 22, nc, st === "low" ? " dim" : "");
     });
+    /* 0.5.8 (Oran: "show if we're taking from our fat stores or adding to them"): a fat store beside the stream.
+       Storing: gold light peels off the fuel stream into it. Burning: gold light flows out of it into the stream. */
+    var FAT = null;
+    if (!F.none && !F.past) {
+      var fnet = F.cur.fatOx - F.cur.Af;
+      FAT = { mode: fnet < -1 ? "store" : fnet > 1 ? "burn" : "hold", g: Math.round(Math.abs(fnet)) };
+      var fpath = FAT.mode === "burn" ? "M236 690 C320 690 400 698 441 698" : "M441 698 C400 698 320 690 236 690";
+      if (FAT.mode !== "hold") {
+        flow += '<defs><filter id="fmFatW" filterUnits="userSpaceOnUse" x="190" y="620" width="300" height="150"><feGaussianBlur stdDeviation="9"/></filter></defs>' +
+          '<g class="ik-fm-run fat"><path pathLength="100" d="' + fpath + '" stroke="#ffc247" stroke-width="26" opacity=".6" filter="url(#fmFatW)"/>' +
+          '<path pathLength="100" d="' + fpath + '" stroke="#fff3d1" stroke-width="3" opacity=".6"/></g>';
+        orbs += orb(fpath, "#ffc247", FAT.g >= 6 ? 12 : 9, 4, FAT.g >= 6 ? 2 : 1);
+      }
+      still += '<path d="M441 698 C400 698 320 690 236 690" stroke="#ffc247" stroke-width="' + (FAT.mode === "hold" ? 2 : 3) + '" opacity="' + (FAT.mode === "hold" ? 0.25 : 0.5) + '" fill="none" stroke-linecap="round" stroke-dasharray="' + (FAT.mode === "hold" ? "3 6" : "none") + '"/>';
+    }
     var vis = '<img src="' + ikFmImgUrl(body) + '" alt="" draggable="false">' +
       '<svg class="ik-fm-still" viewBox="0 0 730 930" aria-hidden="true"><defs>' +
         '<filter id="fmBlur" filterUnits="userSpaceOnUse" x="0" y="0" width="730" height="930"><feGaussianBlur stdDeviation="7"/></filter>' +
@@ -10597,6 +10697,9 @@ function ikFuelMap(d, t, week, day, es) {
     var fon = U.open && U.pick === "fuel", AB = LV && LV.abs && LV.abs.frac < 0.98 ? LV.abs : null;
     var fk = F.past ? "Fuel in" : AB ? (AB.mins < 30 ? "Eating · " : "Absorbing · ") + ikEntryName(AB.e, d) : "Fuel in · running on";
     h += '<i class="ik-fm-port" style="--c:' + ST.c + '" aria-hidden="true"></i>';
+    if (FAT) h += '<button class="ik-fm-fat ' + FAT.mode + '" data-fm="details" aria-label="Body fat: ' + (FAT.mode === "store" ? "storing about " + FAT.g + " g an hour" : FAT.mode === "burn" ? "burning about " + FAT.g + " g an hour" : "holding steady") + '">' +
+      '<span class="ik-fm-fatico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3c3 4 5.5 7 5.5 10.2A5.5 5.5 0 0 1 6.5 13.2C6.5 10 9 7 12 3z" fill="currentColor"/></svg></span>' +
+      '<span class="ik-grow"><small>Fat stores</small><b>' + (FAT.mode === "store" ? "Storing ↓ " + FAT.g + " g/h" : FAT.mode === "burn" ? "Burning ↑ " + FAT.g + " g/h" : "Holding steady") + "</b></span></button>";
     h += '<div class="ik-fm-fuel ik-fm-dock' + (fon ? " on" : "") + (AB ? " eating" : "") + (F.past ? "" : " beat") + '" style="--c:' + ST.c + '">' +
       '<button class="ik-fm-fuelbtn" data-fm="' + (F.past ? "pick:fuel" : "details") + '" aria-pressed="' + fon + '" aria-expanded="' + !!(fon && U.details) + '" aria-label="Fuel in: ' + ikEsc(ST.title) + (AB ? ". " + Math.round(AB.frac * 100) + "% of " + ikEntryName(AB.e, d) + " absorbed so far" : "") + '"><span class="ik-fm-orb"><svg viewBox="0 0 24 24" fill="none" stroke="#0b1520" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span>' +
         '<span class="ik-grow"><span class="ik-fm-k">' + ikEsc(fk) + '</span><span class="ik-fm-title">' + ikEsc(ST.title) + "</span></span>" +
@@ -10608,11 +10711,15 @@ function ikFuelMap(d, t, week, day, es) {
     if (fon && U.details && !F.past) h += '<div class="ik-fm-darkdrawer">' + (F.none ? '<div class="ik-fm-drawer' + (U.justOpened ? " opening" : "") + '"><p class="ik-fm-sub" style="margin:0">No food logged in the last 3 days, so there\'s no meal to replay yet. Log what you eat and this opens up: what your body is burning right now, the last 12 hours of fuel and a look ahead, time since you ate, sugar stores, ketones and today\'s balance.</p></div>' : ikFmFuelDetails(d, F, t.v.kcal || 0)) + "</div>";
     U.justOpened = false;
     h += '<div class="ik-fm-foot">';   // 0.5.7: a neutral light panel, so the colours never fight the person's theme
-    h += '<div class="ik-fm-key"><b>Light</b> = fuel flowing now:<span><i style="background:' + IK_FM_FUELC.glucose + '"></i>sugar</span><span><i style="background:' + IK_FM_FUELC.fat + '"></i>fat</span><span><i style="background:' + IK_FM_FUELC.ketones + '"></i>ketones</span></div>' +
-      '<div class="ik-fm-key"><b>%</b> = ' + (N.live ? (N.days ? "nourished: last " + N.days + " day" + (N.days === 1 ? "" : "s") + " + the last 24 h as it's absorbed" : "fed: the last 24 h, as it's absorbed") : N.days ? "nourished, last " + N.days + " day" + (N.days === 1 ? "" : "s") : "fed so far today") + ':<span><i style="background:#a8f6ff;box-shadow:0 0 8px #6fe7ff"></i>thriving</span><span><i style="background:#3f8cff"></i>steady</span><span><i style="background:#ffb340"></i>low</span></div>';
-    if (LV) h += '<div class="ik-fm-key ik-fm-key2"><span class="ik-fm-keyglow">▲+5</span><span>Glowing = still filling from what you ate or drank in the last 2 hours; +5 = points still to come as it\'s absorbed.' + (LV.any || (HY.soaking >= 30) ? "" : " Nothing is filling right now.") + "</span></div>";
-    h += set.fmAck ? '<p class="ik-fm-legal">Estimates to help you understand your food, not medical advice. <button class="ik-fm-link" data-fm="sources">How it works &amp; sources</button></p>'
-      : '<div class="ik-fm-legal first"><span>The fuel map is an estimate built from published nutrition research, not medical advice or a test. It\'s here to give you a better picture than no tool at all. <button class="ik-fm-link" data-fm="sources">How it works &amp; sources</button></span><button class="ik-fm-ok" data-fm="ack">Got it</button></div>';
+    /* 0.5.8 (Oran: "the legend is way too large"): one small, compact legend */
+    var dot = function (c, glow) { return '<i style="background:' + c + (glow ? ";box-shadow:0 0 5px " + c : "") + '"></i>'; };
+    h += '<div class="ik-fm-legend">' +
+      "<span><b>Light</b>" + dot(IK_FM_FUELC.glucose) + "sugar" + dot(IK_FM_FUELC.fat) + "fat" + dot(IK_FM_FUELC.ketones) + "ketones</span>" +
+      "<span><b>%</b>" + dot("#6fe7ff", 1) + "thriving" + dot("#3f8cff") + "steady" + dot("#ffb340") + "low</span>" +
+      (LV ? '<span><b class="g">▲+N</b>still filling (last 2 h)</span>' : "") +
+      '<span class="w">' + (N.live ? "% = last " + (N.days ? N.days + " days + " : "") + "24 h as absorbed" : N.days ? "% = average day, last " + N.days + " days" : "% = today so far") +
+      ' · estimates, not medical advice · <button class="ik-fm-link" data-fm="sources">How it works</button></span></div>';
+    if (!set.fmAck) h += '<div class="ik-fm-legal first"><span>The fuel map is an estimate built from published nutrition research, not medical advice or a test.</span><button class="ik-fm-ok" data-fm="ack">Got it</button></div>';
     h += "</div></div>";   // foot, card
   }
   h += '</div><div class="ik-fm-right">';
@@ -12495,6 +12602,7 @@ function ikOpenAbout(opts) {
     "<p><b>The %</b> on each system is how well it's been nourished: how close your average logged day over the last 7 days came to the target for each nutrient that supports it, each capped at 100%. Vitamins, minerals and protein come from stores your body builds up over days, so one morning without food doesn't empty them. Tap a system to see which nutrients count.</p>" +
     "<p><b>After you eat or drink</b>, today's map moves with it. Food is taken to start at the time on the entry and is absorbed over the next few hours: about half in the first hour, most of it by 3 to 4 hours. Water is faster: about half in 10 minutes. On today's map the % blends your last few days (60%) with the last 24 hours as it's absorbed (40%). <b>One rule for what's lit up:</b> anything you had in the last 2 hours is still filling you up. Every system it will still raise by a point or more glows and shows <b>▲ +N</b>, where N is the points still to come; the % climbs toward that as it's absorbed, and the glow stops once it's in. Inside a system, the nutrients doing the filling glow and show their own ▲ +N. Water you've just drunk counts on Hydration straight away, with “+N mL coming” while it's absorbed.</p>" +
     "<p><b>Fuel in</b> estimates what your body is most likely burning right now. It replays your last three days of food in 6-minute steps: when you ate, and how much sugar, starch, fibre, fat, protein and alcohol was in it. It follows what research shows: carbs raise insulin, which turns sugar burning up and fat burning down while they're absorbed; fat and fibre slow that down and sugary drinks speed it up; your liver's sugar stores drain between meals; ketones rise once those stores are low; and alcohol is burned first, holding fat burning back while it clears.</p>" +
+    "<p><b>Fat stores</b> (beside the fuel stream) shows whether your body is tucking energy away as fat or drawing on it right now, from the same replay as Fuel in. Storing: gold light peels off the stream into your fat stores (meal fat is stored first and burned later). Burning: gold light flows out of your fat stores into the stream. The number is roughly how many grams an hour.</p>" +
     "<p><b>Hydration</b> on the map is a running water balance for right now: drinks soak in over about 20 to 45 minutes, your body loses water all day (less while you sleep, and less again when you're behind, because your kidneys hold on), and any extra is passed within a couple of hours, so a big drink this morning doesn't cover this afternoon. About 1% of your body weight behind is when thirst usually starts; about 2% is when focus and mood measurably slip.</p>" +
     "<p><b>It's an estimate, not a measurement.</b> Real timing varies with your body size, activity, sleep, medicines and health conditions such as diabetes. It isn't medical advice or a blood test, and it isn't meant to be exact. It's here to give you a clearer picture of how your food affects your body than no tool at all.</p>" +
     '<h3 style="margin:14px 0 6px;font-size:16px" id="ikAboutSources">Sources</h3><ul class="ik-srcs">' + [
