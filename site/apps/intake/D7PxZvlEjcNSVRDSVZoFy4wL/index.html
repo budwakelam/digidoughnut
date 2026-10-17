@@ -1060,8 +1060,8 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-chev{flex:none;width:38px;height:38px;border-radius:50%;border:1px solid rgba(160,220,255,.22);background:rgba(255,255,255,.06);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
 .ik-fm-chev svg{width:16px;height:16px;transition:transform .3s}
 .ik-fm-drawer{margin:0 12px;padding:12px 14px 14px;border:1px solid rgba(160,220,255,.14);border-top:0;border-radius:0 0 20px 20px;background:rgba(255,255,255,.035)}
-.ik-fm-darkdrawer{padding:0 0 14px;color:#e9f4fa}
-.ik-fm-darkdrawer .ik-fm-drawer{margin:0 4%;border:1px solid rgba(160,220,255,.16);border-radius:18px;background:rgba(5,14,22,.55)}
+.ik-fm-darkdrawer{padding:0 0 14px;color:#e9f4fa;background:#0a1117}
+.ik-fm-darkdrawer .ik-fm-drawer{margin:0;border:0;border-radius:0;background:transparent;padding:6px 16px 4px}
 .ik-fm-drawer.opening{animation:ikFmExpand .45s cubic-bezier(.2,.8,.3,1) both;transform-origin:top;overflow:hidden}
 @keyframes ikFmExpand{from{max-height:0;opacity:0;padding-top:0;padding-bottom:0}to{max-height:1400px;opacity:1}}
 .ik-fm-ahead{margin:0 0 12px;padding:10px 12px 12px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(160,220,255,.12)}
@@ -1122,11 +1122,12 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-foot{padding:4px 0 10px!important}
 .ik-fm-foot .ik-fm-legal.first{margin:8px 12px 0;padding:7px 9px;font-size:10.5px}
 .ik-fm-foot .ik-fm-legal.first .ik-fm-ok{min-height:28px;padding:4px 10px;font-size:11px}
-.ik-fm-fat{position:absolute;left:1.1%;top:69.5%;width:31%;box-sizing:border-box;z-index:2;display:flex;align-items:center;gap:1.6cqw;text-align:left;font:inherit;cursor:pointer;
+.ik-fm-fat{position:absolute;left:1.1%;top:69.5%;width:auto;min-width:31%;max-width:52%;box-sizing:border-box;z-index:2;display:flex;align-items:center;gap:1.6cqw;text-align:left;font:inherit;cursor:pointer;
   padding:1.3cqw 1.8cqw;border-radius:3.2cqw;background:rgba(6,16,26,.82);border:1px solid rgba(255,194,71,.35);color:#fff}
 .ik-fm-fat small{display:block;white-space:nowrap;font-size:clamp(7.5px,2.4cqw,10px);font-weight:700;color:#c9b27a;text-transform:uppercase;letter-spacing:.05em}
 .ik-fm-fat b{display:block;font-size:clamp(9px,2.9cqw,12px);font-weight:800;color:#ffc247;white-space:nowrap}
 .ik-fm-fat.burn b{color:#7cf2c7}
+.ik-fm-fat em{display:block;font-style:normal;font-size:clamp(7.5px,2.3cqw,9.5px);font-weight:600;color:#9fb4c4;white-space:nowrap}
 .ik-fm-fat.hold b{color:#c9d6e0}
 .ik-fm-fatico{flex:none;width:clamp(18px,5.6cqw,24px);height:clamp(18px,5.6cqw,24px);border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,194,71,.18);color:#ffc247}
 .ik-fm-fatico svg{width:62%;height:62%}
@@ -10299,7 +10300,7 @@ function ikFmAheadHtml(F, mins) {
   var fm = ikFatMode(q), FM = IK_FAT_MODE[fm], g = Math.round(Math.abs(q.fatOx - q.Af)), nowFm = ikFatMode(F.cur);
   var change = mins > 0 && fm !== nowFm ? '<div class="ik-fm-ahead-chg" style="--c:' + FM.c + '">' + (fm === "burn" ? "Switched: your body is now drawing on its fat stores" : fm === "store" ? "Switched: energy is now going into your fat stores" : "Switched: fat in and fat out are about even") + "</div>" : "";
   return '<div class="ik-fm-ahead-h"><span>' + (mins > 0 ? "In " + ikHM(mins * 60000) + " · " + ikFmClock(mins) : "Right now") + "</span></div>" +
-    '<div class="ik-fm-ahead-big"><div class="ik-fm-ahead-fat" style="--c:' + FM.c + '"><i aria-hidden="true">' + FM.s + "</i><span><b>" + FM.t + "</b><small>" + (fm === "hold" ? "about even" : "about " + g + " g an hour") + '</small></span></div>' +
+    '<div class="ik-fm-ahead-big"><div class="ik-fm-ahead-fat" style="--c:' + FM.c + '"><i aria-hidden="true">' + FM.s + "</i><span><b>" + FM.t + "</b><small>" + (fm === "hold" ? "about even" : "about " + g + " g an hour") + (Math.round(q.Af) >= 1 ? "<br>burning " + Math.round(q.fatOx) + " · meal adds " + Math.round(q.Af) : "") + '</small></span></div>' +
       '<div class="ik-fm-ahead-fuel" style="--c:' + ST.c + '"><small>Running on</small><b>' + ikEsc(ST.title) + "</b></div></div>" + change +
     '<div class="ik-fm-mix">' + seg(q.c, "#ff3d7f") + seg(q.f, "#ffc247") + seg(q.a, "#9aa5ff") + "</div>" +
     '<div class="ik-fm-mixkey"><span style="color:#ff7aa8">Sugar ' + pc + '%</span><span style="color:#ffc247">Fat ' + pf + "%</span>" + (pa ? '<span style="color:#9aa5ff">Alcohol ' + pa + "%</span>" : "") +
@@ -10345,7 +10346,8 @@ function ikFmFuelDetails(d, F, dayKcal) {
   var ticks = F.meals.filter(function (m) { return m.at >= x0; }).map(function (m) { return "M" + X(m.at) + " " + (Hh - 10) + " V" + Hh; }).join(" ");
   var nx = X(F.end), mx = X(F.end + mins / 60);
   var net = c.fatOx - c.Af;
-  var store = net < -1 ? ["Storing", "About " + Math.round(-net) + " g an hour of the fat from your meal is being tucked away, to be burned later.", "#ffb340"]
+  /* 0.5.8 (Oran: "it says fat and ketones, but storing fat?"): both can be true: cells burn fat while meal fat arrives faster */
+  var store = net < -1 ? ["Storing", "Burning about " + Math.round(c.fatOx) + " g an hour, but about " + Math.round(c.Af) + " g an hour of fat from your meal is arriving, so about " + Math.round(-net) + " g an hour is stored for later.", "#ffb340"]
     : net > 1 ? ["Burning", "About " + Math.round(net) + " g of body fat an hour.", "#7cf2c7"] : ["Holding steady", "About as much fat coming in as being burned.", "#8db8ff"];
   var hoursToday = Math.max(0, (Date.now() - ikParseDay(ikToday()).getTime()) / 3600000 + 12) /* 0.5.8: ikParseDay is noon; count from midnight */, burned = Math.round(F.E * hoursToday), gap = burned - Math.round(dayKcal);
   var lm = F.fs && !F.fs.none ? F.fs.last.e : null;
@@ -10660,7 +10662,7 @@ function ikFuelMap(d, t, week, day, es) {
     var FAT = null;
     if (!F.none && !F.past) {
       var fnet = F.cur.fatOx - F.cur.Af;
-      FAT = { mode: fnet < -1 ? "store" : fnet > 1 ? "burn" : "hold", g: Math.round(Math.abs(fnet)) };
+      FAT = { mode: fnet < -1 ? "store" : fnet > 1 ? "burn" : "hold", g: Math.round(Math.abs(fnet)), ox: Math.round(F.cur.fatOx), inn: Math.round(F.cur.Af) };
       var fpath = FAT.mode === "burn" ? "M236 690 C320 690 400 698 441 698" : "M441 698 C400 698 320 690 236 690";
       if (FAT.mode !== "hold") {
         flow += '<defs><filter id="fmFatW" filterUnits="userSpaceOnUse" x="190" y="620" width="300" height="150"><feGaussianBlur stdDeviation="9"/></filter></defs>' +
@@ -10699,7 +10701,8 @@ function ikFuelMap(d, t, week, day, es) {
     h += '<i class="ik-fm-port" style="--c:' + ST.c + '" aria-hidden="true"></i>';
     if (FAT) h += '<button class="ik-fm-fat ' + FAT.mode + '" data-fm="details" aria-label="Body fat: ' + (FAT.mode === "store" ? "storing about " + FAT.g + " g an hour" : FAT.mode === "burn" ? "burning about " + FAT.g + " g an hour" : "holding steady") + '">' +
       '<span class="ik-fm-fatico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3c3 4 5.5 7 5.5 10.2A5.5 5.5 0 0 1 6.5 13.2C6.5 10 9 7 12 3z" fill="currentColor"/></svg></span>' +
-      '<span class="ik-grow"><small>Fat stores</small><b>' + (FAT.mode === "store" ? "Storing ↓ " + FAT.g + " g/h" : FAT.mode === "burn" ? "Burning ↑ " + FAT.g + " g/h" : "Holding steady") + "</b></span></button>";
+      '<span class="ik-grow"><small>Fat stores</small><b>' + (FAT.mode === "store" ? "Storing ↓ " + FAT.g + " g/h" : FAT.mode === "burn" ? "Burning ↑ " + FAT.g + " g/h" : "Holding steady") + "</b>" +
+      (FAT.inn >= 1 ? "<em>burning " + FAT.ox + " · meal adds " + FAT.inn + "</em>" : "") + "</span></button>";
     h += '<div class="ik-fm-fuel ik-fm-dock' + (fon ? " on" : "") + (AB ? " eating" : "") + (F.past ? "" : " beat") + '" style="--c:' + ST.c + '">' +
       '<button class="ik-fm-fuelbtn" data-fm="' + (F.past ? "pick:fuel" : "details") + '" aria-pressed="' + fon + '" aria-expanded="' + !!(fon && U.details) + '" aria-label="Fuel in: ' + ikEsc(ST.title) + (AB ? ". " + Math.round(AB.frac * 100) + "% of " + ikEntryName(AB.e, d) + " absorbed so far" : "") + '"><span class="ik-fm-orb"><svg viewBox="0 0 24 24" fill="none" stroke="#0b1520" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span>' +
         '<span class="ik-grow"><span class="ik-fm-k">' + ikEsc(fk) + '</span><span class="ik-fm-title">' + ikEsc(ST.title) + "</span></span>" +
