@@ -108,6 +108,18 @@
   in the dark panel with a 4-hour look-ahead slider. The map runs edge to edge on phones.
   Fat stores sits beside the fuel stream: gold light flows into it while storing and out of it while burning. Motion
   slowed down for phones, and the legend is one small, compact block.
+  0.5.8n (Oran, 2026-10-17: "the animations seem a little laggy"): a smoothness pass. Nothing looks different.
+  (1) The moving light on the fuel map is drawn on a canvas (ikFmCanvas) instead of SVG strokes animated under blur
+  filters: same paths, timing, colours and blur, but the blurred part is drawn small where a blur is cheap. (2) Every
+  pulsing glow (Fuel in beat, its orb, boosted systems, fat stores, pulsing rows) fades a ready-made glow in and out
+  instead of animating box-shadow, so the graphics chip does it without repainting. (3) The stomach symbol in the top
+  bar is layers on the page (iconHtml) instead of one animated picture that was repainted every frame. (4) The still
+  glow layer uses 3 blur passes instead of about 20. (5) Today's redraw (once a minute, and every tap on the map) only
+  swaps the blocks that changed, and no longer asks the browser for its running animations (that took half the time).
+  (6) Fuel in has no backdrop blur (it re-blurred the moving light every frame); its panel is a touch more solid.
+  Rules that keep it smooth: animate only transform and opacity; never animate anything under a blur filter, a
+  backdrop-filter or a box-shadow; for a pulsing glow, fade a glow layer (see ikGlowIn / ikGlowOut).
+  PLATFORM CHANGE (2026-10-17 perf): dd.menu.mount uses program.iconHtml when the program gives one.
   To make a new app, change only the parts marked PROGRAM-SPECIFIC (styles, markup, script)
   and the app name in the <head>.
 -->
@@ -1020,18 +1032,14 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-vis{position:absolute;inset:0;pointer-events:none}
 .ik-fm-vis svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .ik-fm-still{mix-blend-mode:screen}
-.ik-fm-flow{will-change:transform}
-.ik-fm-run path{fill:none;stroke-linecap:round;stroke-dasharray:12 100;animation:ikFmTravel 7.2s cubic-bezier(.45,.05,.55,.95) infinite}
-.ik-fm-run.trunk path{stroke-dasharray:20 100;animation-duration:6s}
-.ik-fm-run:nth-child(3n) path{animation-delay:-2.4s}.ik-fm-run:nth-child(3n+1) path{animation-delay:-4.8s}
+.ik-fm-vis canvas.ik-fm-flow,.ik-fm-vis canvas.ik-fm-glow{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}   /* 0.5.8n: the moving light (ikFmCanvas): soft glow, then sharp lines and orbs */
 .ik-fm-halos{position:absolute;inset:0}
 .ik-fm-ring{position:absolute;width:4.7%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;border:2px solid var(--c);box-shadow:0 0 10px var(--c);pointer-events:none}
 .ik-fm-halo{position:absolute;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(closest-side,var(--c) 0%,color-mix(in srgb,var(--c) 45%,transparent) 35%,transparent 100%);
   opacity:.35;will-change:opacity;animation:ikFmBreathe 7s ease-in-out infinite;mix-blend-mode:screen}
 .ik-fm-halo.dim{opacity:.18;animation:none}
 .ik-fm-halo:nth-child(2n){animation-delay:-2.3s}
-.ik-fm-paused .ik-fm-run path,.ik-fm-paused .ik-fm-halo{animation-play-state:paused}
-@keyframes ikFmTravel{from{stroke-dashoffset:14}to{stroke-dashoffset:-100}}
+.ik-fm-paused .ik-fm-halo{animation-play-state:paused}
 @keyframes ikFmBreathe{0%,100%{opacity:.3}50%{opacity:.7}}
 .ik-fm-pill{position:absolute;width:20.8%;box-sizing:border-box;text-align:left;font:inherit;cursor:pointer;padding:1.4cqw 2cqw;border-radius:3.2cqw;display:flex;flex-direction:column;gap:0;line-height:1.15;
   background:rgba(6,16,26,.8);border:1px solid rgba(160,220,255,.18);color:#fff;transition:background .2s,border-color .2s,transform .12s}
@@ -1144,11 +1152,13 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-fat.hold b{color:#c9d6e0}
 .ik-fm-fatico{flex:none;width:clamp(18px,5.6cqw,24px);height:clamp(18px,5.6cqw,24px);border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,194,71,.18);color:#ffc247}
 .ik-fm-fatico svg{width:62%;height:62%}
-.ik-fm-fat.store,.ik-fm-fat.burn{animation:ikFmFatGlow 7s ease-in-out infinite}
+/* 0.5.8n (performance pass): every pulsing glow is a ready-made glow layer whose opacity fades in and out. The graphics
+   chip does that on its own; animating box-shadow itself made the browser repaint (and re-blur the picture behind it) every frame. */
+@keyframes ikGlowIn{0%,100%{opacity:0}50%{opacity:1}}
+@keyframes ikGlowOut{0%,100%{opacity:1}50%{opacity:0}}
+.ik-fm-fat.store::after,.ik-fm-fat.burn::after{content:"";position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;box-shadow:0 0 16px rgba(255,194,71,.45);opacity:0;animation:ikGlowIn 7s ease-in-out infinite}
 .ik-fm-fat.burn{border-color:rgba(124,242,199,.4)}
-@keyframes ikFmFatGlow{0%,100%{box-shadow:0 0 0 rgba(255,194,71,0)}50%{box-shadow:0 0 16px rgba(255,194,71,.45)}}
-.ik-fm-run.fat path{stroke-dasharray:22 100;animation-duration:8s}
-.ik-fm-paused .ik-fm-fat{animation-play-state:paused}
+.ik-fm-paused .ik-fm-fat::after{animation-play-state:paused}
 .ik-fm-key{display:flex;justify-content:center;flex-wrap:wrap;gap:4px 12px;padding:8px 14px 0;font-size:11.5px;font-weight:600;color:#9fb4c4}
 .ik-fm-key b{color:#dbe6ee}
 .ik-fm-now{display:flex;gap:10px;align-items:flex-start;margin:14px 0 0;padding:11px 12px;border-radius:14px;background:#0c1722;color:#dbe6ee;font-size:13.5px;line-height:1.4}
@@ -1177,14 +1187,18 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-tip{margin-top:12px;background:var(--ik-amberbg);border-radius:14px;padding:11px 13px;font-size:14px;line-height:1.4;color:#5c2e00}
 /* 0.5.8 (Oran, 2026-10-17): Fuel in docked on the map, a thicker stream of fuel, and the map reacting to a meal */
 .ik-fm-dock{position:absolute;left:50%;bottom:4.6%;transform:translateX(-50%);width:82%;height:13cqw;min-height:44px;box-sizing:border-box;margin:0;z-index:2;
-  gap:2cqw;padding:0 1.4cqw 0 1.8cqw;border-radius:6.5cqw;background:rgba(5,14,22,.8);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  gap:2cqw;padding:0 1.4cqw 0 1.8cqw;border-radius:6.5cqw;background:rgba(5,14,22,.93);   /* 0.5.8n: no backdrop blur (it re-blurred the moving light behind it every frame); a touch more solid instead */
   border:1.5px solid color-mix(in srgb,var(--c) 60%,transparent);box-shadow:0 0 22px color-mix(in srgb,var(--c) 40%,transparent),inset 0 0 14px color-mix(in srgb,var(--c) 16%,transparent);overflow:hidden}
 .ik-fm-dock.on{background:rgba(8,22,34,.9)}
-.ik-fm-dock.beat{animation:ikFmBeat 6s ease-in-out infinite}
-@keyframes ikFmBeat{0%,100%{border-color:color-mix(in srgb,var(--c) 30%,#fff);box-shadow:0 0 32px 4px color-mix(in srgb,var(--c) 80%,transparent),0 -6px 26px color-mix(in srgb,var(--c) 60%,transparent),inset 0 0 20px color-mix(in srgb,var(--c) 40%,transparent)}
-  50%{border-color:color-mix(in srgb,var(--c) 40%,transparent);box-shadow:0 0 12px color-mix(in srgb,var(--c) 22%,transparent),0 0 0 transparent,inset 0 0 8px color-mix(in srgb,var(--c) 8%,transparent)}}
+/* 0.5.8n: the Fuel in beat. The dock itself holds the quiet half of the beat; .ik-fm-dockglow (the bright ring and outer
+   glow, just above the dock) and .ik-fm-dockin (the inner glow, under the dock's text) fade in and out over it. */
+.ik-fm-dock.beat{border-color:color-mix(in srgb,var(--c) 40%,transparent);box-shadow:0 0 12px color-mix(in srgb,var(--c) 22%,transparent),inset 0 0 8px color-mix(in srgb,var(--c) 8%,transparent)}
+.ik-fm-dockglow{position:absolute;left:50%;bottom:4.6%;transform:translateX(-50%);width:82%;height:13cqw;min-height:44px;box-sizing:border-box;border-radius:6.5cqw;z-index:2;pointer-events:none;
+  border:1.5px solid color-mix(in srgb,var(--c) 30%,#fff);box-shadow:0 0 32px 4px color-mix(in srgb,var(--c) 80%,transparent),0 -6px 26px color-mix(in srgb,var(--c) 60%,transparent);animation:ikGlowOut 6s ease-in-out infinite}
+.ik-fm-dockin{position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 20px color-mix(in srgb,var(--c) 40%,transparent);animation:ikGlowOut 6s ease-in-out infinite}
 .ik-fm-dock .ik-fm-fuelbtn{gap:2cqw;padding:0;height:100%}
-.ik-fm-dock .ik-fm-orb{width:clamp(26px,8.6cqw,36px);height:clamp(26px,8.6cqw,36px);animation:ikFmOrbGlow 6s ease-in-out infinite}
+.ik-fm-dock .ik-fm-orb{width:clamp(26px,8.6cqw,36px);height:clamp(26px,8.6cqw,36px);position:relative;box-shadow:0 0 10px var(--c)}
+.ik-fm-dock .ik-fm-orb::after{content:"";position:absolute;inset:0;border-radius:50%;pointer-events:none;box-shadow:0 0 22px var(--c),0 0 4px #fff;opacity:0;animation:ikGlowIn 6s ease-in-out infinite}
 .ik-fm-dock .ik-fm-orb svg{width:52%;height:52%}
 .ik-fm-dock .ik-fm-k{font-size:clamp(8px,2.45cqw,10.5px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#9fb4c4}
 .ik-fm-dock .ik-fm-title{font-size:clamp(11.5px,3.8cqw,15px)}
@@ -1198,12 +1212,7 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-port{position:absolute;left:59.18%;top:85.6%;width:11%;aspect-ratio:2.2;transform:translate(-50%,-50%);border-radius:50%;z-index:3;pointer-events:none;
   background:radial-gradient(closest-side,#fff 0%,var(--c) 38%,color-mix(in srgb,var(--c) 30%,transparent) 70%,transparent 100%);animation:ikFmPort 3s ease-in-out infinite}
 @keyframes ikFmPort{0%,100%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}50%{opacity:.5;transform:translate(-50%,-50%) scale(.85)}}
-@keyframes ikFmOrbGlow{0%,100%{box-shadow:0 0 10px var(--c)}50%{box-shadow:0 0 22px var(--c),0 0 4px #fff}}
-.ik-fm-run.trunk path{stroke-dasharray:30 100;animation-delay:0s!important}
-.ik-fm-dash{stroke-dasharray:3 13;animation:ikFmDash 3.2s linear infinite;opacity:.9}
-@keyframes ikFmDash{from{stroke-dashoffset:16}to{stroke-dashoffset:0}}
-.ik-fm-paused .ik-fm-orbs{display:none}
-.ik-fm-paused .ik-fm-dash,.ik-fm-paused .ik-fm-port,.ik-fm-paused .ik-fm-dock.beat,.ik-fm-paused .ik-fm-pill.boost,.ik-fm-paused .ik-fm-dock .ik-fm-orb{animation-play-state:paused}
+.ik-fm-paused .ik-fm-pill.boost::after,.ik-fm-paused .ik-fm-dock .ik-fm-orb::after{animation-play-state:paused}   /* the beat and port keep running so they stay in step with the light */
 .ik-fm-tr{font-style:normal;font-size:.56em;margin-left:.3em;vertical-align:.18em;line-height:1;white-space:nowrap}
 .ik-fm-tr small{font-size:.92em;font-weight:800;margin-left:1px}
 .ik-fm-rowgain{font-style:normal;font-size:11.5px;font-weight:800;color:#0c8a5f;margin-left:6px}
@@ -1215,12 +1224,13 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-tr.up{color:#7cf2c7;text-shadow:0 0 8px #7cf2c7;animation:ikFmUp 2.6s ease-in-out infinite;display:inline-block}
 .ik-fm-tr.dn{color:#ffb340}
 @keyframes ikFmUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
-.ik-fm-pill.boost{animation:ikFmBoost 5s ease-in-out infinite}
-@keyframes ikFmBoost{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--c) 0%,transparent);border-color:color-mix(in srgb,var(--c) 40%,transparent)}50%{box-shadow:0 0 18px 2px color-mix(in srgb,var(--c) 70%,transparent);border-color:var(--c)}}
+.ik-fm-pill.boost{border-color:color-mix(in srgb,var(--c) 40%,transparent)}
+.ik-fm-pill.boost::after{content:"";position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;border:1px solid var(--c);box-shadow:0 0 18px 2px color-mix(in srgb,var(--c) 70%,transparent);opacity:0;animation:ikGlowIn 5s ease-in-out infinite}
 .ik-fm-boostnote{display:flex;align-items:flex-start;line-height:1.4;gap:8px;margin:12px 0 0;padding:9px 12px;border-radius:12px;background:#e6fbf3;color:#03543c;font-size:13.5px;font-weight:600}
-.ik-fm-boostnote i{flex:none;width:9px;height:9px;border-radius:50%;background:#19c58c;box-shadow:0 0 0 0 #19c58c;animation:ikRowPulse 5s ease-in-out infinite}
-.ik-fm-row.pulse,.ik-drow.pulse,.ik-nrow.pulse{animation:ikRowPulse 5s ease-in-out infinite;border-radius:10px}
-@keyframes ikRowPulse{0%,100%{box-shadow:0 0 0 0 rgba(25,197,140,0);background-color:transparent}50%{box-shadow:0 0 0 3px rgba(25,197,140,.28);background-color:rgba(25,197,140,.08)}}
+.ik-fm-boostnote i{flex:none;width:9px;height:9px;border-radius:50%;position:relative}
+.ik-fm-row.pulse,.ik-drow.pulse,.ik-nrow.pulse{border-radius:10px;position:relative;isolation:isolate}
+.ik-fm-boostnote i::after,.ik-fm-row.pulse::after,.ik-drow.pulse::after,.ik-nrow.pulse::after{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;
+  background:rgba(25,197,140,.08);box-shadow:0 0 0 3px rgba(25,197,140,.28);opacity:0;animation:ikGlowIn 5s ease-in-out infinite}
 /* 0.5.8 (Oran, 2026-10-17): the "in the fuel map" highlight is a small text badge, not a tight border */
 .ik-efuel{font-size:10.5px;font-weight:700;color:#0c8a5f;background:#e6fbf3;border-radius:99px;padding:1px 8px;margin-left:4px;white-space:nowrap}
 .ik-footnote{font-size:11.5px;line-height:1.35;color:var(--ik-ink2);opacity:.75;text-align:center;margin:10px 4px 6px}
@@ -1233,8 +1243,9 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 @keyframes ikFmNow{0%,100%{r:5}50%{r:7}}
 .ik-fm-wtr{font-size:12px;font-weight:700;margin-left:6px;color:var(--ik-ink2);vertical-align:2px}
 .ik-fm-wtr.up{color:#0c8a5f}.ik-fm-wtr.dn{color:#c56a00}
-@media (prefers-reduced-motion:reduce){.ik-fm-orbs,.ik-fm-dash{display:none}.ik-fm-fat{animation:none!important}.ik-fm-port,.ik-fm-dock.beat,.ik-fm-pill.boost,.ik-fm-tr.up,.ik-fm-row.pulse,.ik-drow.pulse,.ik-nrow.pulse,.ik-fm-dock .ik-fm-orb,.ik-fm-wline,.ik-fm-warea,.ik-fm-wnow{animation:none}}
-@media (prefers-reduced-motion:reduce){.ik-fm-run{display:none}.ik-fm-halo,.ik-fm-drawer,.ik-fm-drawer.opening{animation:none}}
+@media (prefers-reduced-motion:reduce){.ik-fm-vis canvas.ik-fm-flow,.ik-fm-vis canvas.ik-fm-glow{display:none}.ik-fm-fat::after,.ik-fm-pill.boost::after,.ik-fm-dock .ik-fm-orb::after,.ik-fm-boostnote i::after,.ik-fm-row.pulse::after,.ik-drow.pulse::after,.ik-nrow.pulse::after,.ik-fm-dockin,.ik-fm-dockglow{animation:none!important}
+  .ik-fm-dockglow,.ik-fm-dockin{opacity:0}.ik-fm-port,.ik-fm-tr.up,.ik-fm-wline,.ik-fm-warea,.ik-fm-wnow{animation:none}}
+@media (prefers-reduced-motion:reduce){.ik-fm-halo,.ik-fm-drawer,.ik-fm-drawer.opening{animation:none}}
 @media (min-width:900px){
   .ik-fm-cols{display:grid;grid-template-columns:minmax(0,430px) minmax(0,1fr);gap:20px;align-items:start}
   .ik-fm-below,.ik-fm-below[data-closed]{display:block;margin-top:0}
@@ -1584,6 +1595,48 @@ input[type=time].ik-input::-webkit-date-and-time-value,input[type=date].ik-input
 .ik-regfill .ik-btn.soft{background:#fff;border:1.5px solid #d2d2d7}
 @media (prefers-reduced-motion:reduce){.ik-radarshape.ik-anim{animation:none}}
 
+/* 0.5.8n (performance pass): the animated stomach symbol in the top bar, as layers on the page. It used to be one animated SVG picture,
+   which the browser repainted in full on every frame (about as costly as the whole fuel map light). Same pieces, paths, keyframes and
+   timings; every piece moves by transform and opacity only, which the graphics chip does without repainting. Built from iconImg
+   (the menu and anything else still use the picture). */
+.dd-top .dd-top-icon .ik-licon{display:block;position:relative;width:56px;height:56px;margin:-6px -14px -6px -8px}
+.ik-licon>b{position:absolute;left:0;top:0;width:120px;height:120px;transform:scale(.466667);transform-origin:0 0;pointer-events:none}
+.dd-top .dd-top-icon .ik-licon img{position:absolute;left:0;top:0;width:120px;height:120px;margin:0;display:block}
+.ik-licon i{position:absolute;display:block;border-radius:50%;opacity:0}
+.ik-licon .ld{left:-7px;top:-7px;width:14px;height:14px;background:radial-gradient(circle closest-side,rgba(255,255,255,1) 0.0%,rgba(255,255,255,.8) 40.0%,rgba(255,255,255,0) 100.0%);animation:ikLdr 1.5s infinite}.ik-licon .ld2{animation-delay:-.75s}
+.ik-licon img.lr{transform-origin:60px 59.632px;animation:ikLrp 2.4s infinite}
+.ik-licon img.lg{animation:ikLgl 2s ease-in-out infinite alternate}
+.ik-licon .lp1{left:-10px;top:-10px;width:20px;height:20px;background:radial-gradient(circle closest-side,#fff 0 36%,rgba(255,255,255,0) 37%),radial-gradient(circle closest-side,rgba(255,255,255,1) 0.0%,rgba(255,255,255,.95) 28.0%,rgba(255,69,58,.75) 55.0%,rgba(255,69,58,0) 100.0%)}
+.ik-licon .lc1{width:10px;height:10px;background:radial-gradient(circle closest-side,rgba(255,255,255,1) 0.0%,rgba(255,255,255,.95) 28.0%,rgba(255,69,58,.75) 55.0%,rgba(255,69,58,0) 100.0%)}
+.ik-licon .lp2{left:-10px;top:-10px;width:20px;height:20px;background:radial-gradient(circle closest-side,#fff 0 36%,rgba(255,255,255,0) 37%),radial-gradient(circle closest-side,rgba(255,255,255,1) 0.0%,rgba(255,255,255,.95) 28.0%,rgba(255,159,10,.75) 55.0%,rgba(255,159,10,0) 100.0%)}
+.ik-licon .lc2{width:10px;height:10px;background:radial-gradient(circle closest-side,rgba(255,255,255,1) 0.0%,rgba(255,255,255,.95) 28.0%,rgba(255,159,10,.75) 55.0%,rgba(255,159,10,0) 100.0%)}
+.ik-licon .lp3{left:-10px;top:-10px;width:20px;height:20px;background:radial-gradient(circle closest-side,#fff 0 36%,rgba(255,255,255,0) 37%),radial-gradient(circle closest-side,rgba(255,255,255,1) 0.0%,rgba(255,255,255,.95) 28.0%,rgba(48,209,88,.75) 55.0%,rgba(48,209,88,0) 100.0%)}
+.ik-licon .lc3{width:10px;height:10px;background:radial-gradient(circle closest-side,rgba(255,255,255,1) 0.0%,rgba(255,255,255,.95) 28.0%,rgba(48,209,88,.75) 55.0%,rgba(48,209,88,0) 100.0%)}
+.ik-licon .lp4{left:-10px;top:-10px;width:20px;height:20px;background:radial-gradient(circle closest-side,#fff 0 36%,rgba(255,255,255,0) 37%),radial-gradient(circle closest-side,rgba(255,255,255,1) 0.0%,rgba(255,255,255,.95) 28.0%,rgba(10,132,255,.75) 55.0%,rgba(10,132,255,0) 100.0%)}
+.ik-licon .lc4{width:10px;height:10px;background:radial-gradient(circle closest-side,rgba(255,255,255,1) 0.0%,rgba(255,255,255,.95) 28.0%,rgba(10,132,255,.75) 55.0%,rgba(10,132,255,0) 100.0%)}
+.ik-licon .lp5{left:-10px;top:-10px;width:20px;height:20px;background:radial-gradient(circle closest-side,#fff 0 36%,rgba(255,255,255,0) 37%),radial-gradient(circle closest-side,rgba(255,255,255,1) 0.0%,rgba(255,255,255,.95) 28.0%,rgba(191,90,242,.75) 55.0%,rgba(191,90,242,0) 100.0%)}
+.ik-licon .lc5{width:10px;height:10px;background:radial-gradient(circle closest-side,rgba(255,255,255,1) 0.0%,rgba(255,255,255,.95) 28.0%,rgba(191,90,242,.75) 55.0%,rgba(191,90,242,0) 100.0%)}
+.ik-licon .lp6{left:-10px;top:-10px;width:20px;height:20px;background:radial-gradient(circle closest-side,#fff 0 36%,rgba(255,255,255,0) 37%),radial-gradient(circle closest-side,rgba(255,255,255,1) 0.0%,rgba(255,255,255,.95) 28.0%,rgba(100,210,255,.75) 55.0%,rgba(100,210,255,0) 100.0%)}
+.ik-licon .lc6{width:10px;height:10px;background:radial-gradient(circle closest-side,rgba(255,255,255,1) 0.0%,rgba(255,255,255,.95) 28.0%,rgba(100,210,255,.75) 55.0%,rgba(100,210,255,0) 100.0%)}
+.ik-licon .lp1{animation:ikLm1 4.1s linear -0.3s infinite}
+.ik-licon .lp2{animation:ikLm2 5.3s linear -1.9s infinite}
+.ik-licon .lp3{animation:ikLm3 4.7s linear -3.2s infinite}
+.ik-licon .lp4{animation:ikLm4 5.9s linear -0.9s infinite}
+.ik-licon .lp5{animation:ikLm5 4.4s linear -2.6s infinite}
+.ik-licon .lp6{animation:ikLm6 5.6s linear -4.4s infinite}
+.ik-licon .la,.ik-licon .lb{animation-timing-function:linear;animation-iteration-count:infinite}.ik-licon .la{animation-name:ikLsa}.ik-licon .lb{animation-name:ikLsb}
+@keyframes ikLdr{0%{transform:translate(56px,4px);opacity:0}50%{opacity:1}100%{transform:translate(56px,36px);opacity:0}}
+@keyframes ikLrp{0%{transform:scale(1);opacity:.8}100%{transform:scale(1.4);opacity:0}}
+@keyframes ikLgl{0%{opacity:.35}100%{opacity:1}}
+@keyframes ikLsa{0%,16%{opacity:0}17.5%{opacity:1}22%{opacity:.6}32%,100%{opacity:0}}
+@keyframes ikLsb{0%,30%{opacity:0}31.5%{opacity:1}36%{opacity:.6}46%,100%{opacity:0}}
+@keyframes ikLm1{0%{transform:translate(80px,58px);opacity:0}5%{transform:translate(85.2px,56.8px);opacity:1}10%{transform:translate(90.3px,55.3px);opacity:1}15%{transform:translate(95.2px,53.1px);opacity:1}20%{transform:translate(99.4px,49.8px);opacity:1}25%{transform:translate(103px,45.9px);opacity:1}30%{transform:translate(107.5px,43.1px);opacity:1}35%{transform:translate(112.7px,41.8px);opacity:0.6}40%{transform:translate(118px,42px);opacity:0.2}42%,100%{transform:translate(118px,42px);opacity:0}}
+@keyframes ikLm2{0%{transform:translate(74px,82px);opacity:0}5%{transform:translate(78px,85.7px);opacity:1}10%{transform:translate(82.1px,89.1px);opacity:1}15%{transform:translate(86.4px,92.3px);opacity:1}20%{transform:translate(90.8px,95.4px);opacity:1}25%{transform:translate(95.2px,98.4px);opacity:1}30%{transform:translate(99.6px,101.5px);opacity:1}35%{transform:translate(103.9px,104.7px);opacity:0.6}40%{transform:translate(108px,108px);opacity:0.2}42%,100%{transform:translate(108px,108px);opacity:0}}
+@keyframes ikLm3{0%{transform:translate(36px,84px);opacity:0}5%{transform:translate(32.3px,88.1px);opacity:1}10%{transform:translate(28.9px,92.4px);opacity:1}15%{transform:translate(26.1px,97.1px);opacity:1}20%{transform:translate(24px,102.1px);opacity:1}25%{transform:translate(21.1px,106.8px);opacity:1}30%{transform:translate(16.7px,109.9px);opacity:1}35%{transform:translate(11.5px,111.5px);opacity:0.6}40%{transform:translate(6px,112px);opacity:0.2}42%,100%{transform:translate(6px,112px);opacity:0}}
+@keyframes ikLm4{0%{transform:translate(44px,62px);opacity:0}5%{transform:translate(38.4px,61.1px);opacity:1}10%{transform:translate(32.7px,60.8px);opacity:1}15%{transform:translate(27.1px,60.1px);opacity:1}20%{transform:translate(21.9px,57.9px);opacity:1}25%{transform:translate(17.8px,54px);opacity:1}30%{transform:translate(14.3px,49.5px);opacity:1}35%{transform:translate(10.6px,45.2px);opacity:0.6}40%{transform:translate(6px,42px);opacity:0.2}42%,100%{transform:translate(6px,42px);opacity:0}}
+@keyframes ikLm5{0%{transform:translate(70px,40px);opacity:0}5%{transform:translate(72.6px,35.9px);opacity:1}10%{transform:translate(75.3px,31.8px);opacity:1}15%{transform:translate(78.1px,27.8px);opacity:1}20%{transform:translate(80.9px,23.9px);opacity:1}25%{transform:translate(83.7px,20px);opacity:1}30%{transform:translate(86.5px,16px);opacity:1}35%{transform:translate(89.3px,12px);opacity:0.6}40%{transform:translate(92px,8px);opacity:0.2}42%,100%{transform:translate(92px,8px);opacity:0}}
+@keyframes ikLm6{0%{transform:translate(50px,44px);opacity:0}5%{transform:translate(45.5px,39.9px);opacity:1}10%{transform:translate(40.4px,36.6px);opacity:1}15%{transform:translate(34.7px,34.5px);opacity:1}20%{transform:translate(28.6px,33.9px);opacity:1}25%{transform:translate(22.9px,32.2px);opacity:1}30%{transform:translate(18.1px,28.4px);opacity:1}35%{transform:translate(14.6px,23.4px);opacity:0.6}40%{transform:translate(12px,18px);opacity:0.2}42%,100%{transform:translate(12px,18px);opacity:0}}
+@media (prefers-reduced-motion:reduce){.ik-licon i,.ik-licon img{animation:none!important}.ik-licon img.lr{opacity:0}}
 </style>
 </head>
 <body>
@@ -2475,7 +2528,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
     var h1 = top.querySelector("h1"); if (!h1) return;
     h1.innerHTML = '<button class="dd-menu-btn" id="dd-menu-btn" aria-haspopup="dialog" aria-label="' + esc(program.name) + ' menu">' +
       '<span class="dd-menu-ico" aria-hidden="true">☰</span>' +
-      '<span class="dd-top-icon" id="dd-top-icon" aria-hidden="true">' + (program.iconImg ? '<img src="' + esc(program.iconImg) + '" alt="">' : esc(program.icon || "🍩")) + '</span>' +   // PLATFORM CHANGE (2026-10-15): iconImg
+      '<span class="dd-top-icon" id="dd-top-icon" aria-hidden="true">' + (program.iconHtml || (program.iconImg ? '<img src="' + esc(program.iconImg) + '" alt="">' : esc(program.icon || "🍩"))) + '</span>' +   // PLATFORM CHANGE (2026-10-15): iconImg. PLATFORM CHANGE (2026-10-17 perf): iconHtml, a ready-made live icon (trusted markup from the program) in place of the picture
       '<span class="dd-menu-name">' + esc(program.name) + '</span>' +
       '<span class="dd-menu-dot" id="dd-menu-dot" hidden></span></button>';
     document.getElementById("dd-menu-btn").addEventListener("click", function (e) { e.stopPropagation(); menu.open(); });
@@ -9839,7 +9892,9 @@ function ikRenderToday(ctx) {
   var subDate = (isNow || isYest ? ikParseDay(day).toLocaleDateString("en-CA", { weekday: "short" }) + ", " : "") + ikShortDate(day);
   var h = '<div class="ik-head ik-head1"><div class="ik-titleline"><h1 class="ik-h1' + (isNow ? "" : " sm") + '">' + ikEsc(plainTitle) + '</h1><span class="ik-eyebrow">' + ikEsc(subDate) + "</span></div>" +
     '<div class="ik-daynav">' + (isNow ? "" : '<button class="ik-backtoday" data-today aria-label="Back to now">Now</button>') + '<button data-day="-1" aria-label="Day before">‹</button><button data-day="1" aria-label="Next day"' + (isNow ? " disabled" : "") + ">›</button></div></div>";
+  var cut = [h.length];   // 0.5.8n: where each top-level block starts, so a redraw only swaps the blocks that changed (ikPatchBlocks)
   h += ikFuelMap(d, t, ikDaySeries(d, ikDaysBack(day, 7)), day, es);   // V5.5: the fuel map, top and centre
+  cut.push(h.length);
   var pre = "";   // 0.5.7: these cards now come after the food list
   if (ikShow(d, "meds")) pre += ikDoseCard(d, day, "med");   // V5: medications next
   if (!ikProfileReady(p)) {
@@ -9902,8 +9957,10 @@ function ikRenderToday(ctx) {
   // 0.5.7: food first (right under the fuel map), then the other cards; hydration is a folded section near the bottom
   var hyd = "";   // 0.5.8: hydration lives in the fuel map now (tap the Hydration light): a 8-hour chart, the day so far and cup sizes
   h += "</div><div>" + pre + rest + hyd + "</div></div>";
+  cut.push(h.length);
   // every nutrient, folded away
   h += '<details class="ik-card ik-more" id="ikAllN"' + (IK_UI.openAll === false ? "" : " open") + '><summary>Every nutrient ' + (isToday ? "today" : "this day") + "</summary>" + ikNutrientList(d, t, 1, day) + "</details>";
+  cut.push(h.length);
   if (ikShow(d, "tip")) {   // 0.5.8 (Oran, 2026-10-17): DigiBot's tip lives at the very bottom now, under everything
     var tip = ikTopTip(d, day);
     h += '<section class="ik-tip"><svg class="ik-tipring" width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12" fill="none" stroke="var(--ik-vit)" stroke-width="7"/></svg>' +
@@ -9911,19 +9968,48 @@ function ikRenderToday(ctx) {
       '<br><button class="ik-link" data-go="advice" style="margin-top:8px">Get more advice →</button></div></section>';
   }
   var host = ctx.ui.$("ikToday"), oldVis = host.querySelector(".ik-fm-vis");
-  host.innerHTML = h;
+  var parts = [], from = 0; cut.concat([h.length]).forEach(function (c) { parts.push(h.slice(from, c)); from = c; });
+  var swapped = ikPatchBlocks(host, parts);
   var newVis = host.querySelector(".ik-fm-vis");   // V5.5c: same picture and light? keep the running one, so nothing restarts
-  if (oldVis && newVis && oldVis.getAttribute("data-sig") === newVis.getAttribute("data-sig")) newVis.parentNode.replaceChild(oldVis, newVis);
+  if (oldVis && newVis && oldVis !== newVis && oldVis.getAttribute("data-sig") === newVis.getAttribute("data-sig")) newVis.parentNode.replaceChild(oldVis, newVis);
   ikFmWatch(host);
-  ikFmSyncBeat(host);
+  ikFmCanvas(host);
+  if (swapped[1]) ikFmSyncBeat(host);
 }
-/* 0.5.8b: the Fuel in border and port flash each time a pulse of fuel leaves, in step with the moving light. */
+/* 0.5.8n (performance pass): Today is five blocks (title line, fuel map, food and cards, every nutrient, tip).
+   A redraw (the once-a-minute clock, a tap on the map) builds them all as before but only swaps the blocks whose
+   HTML changed, so the long food list and nutrient list aren't rebuilt and laid out again for nothing.
+   The page wires its taps on #ikApp (event delegation), so a kept block keeps working. */
+function ikPatchBlocks(host, parts) {
+  var st = host.__ikBlocks, changed = [];
+  if (!st || st.length !== parts.length || !st.every(function (b) { return b.nodes.every(function (n) { return n.parentNode === host; }); })) {
+    host.textContent = "";
+    host.__ikBlocks = parts.map(function (html) {   // remember which nodes belong to which block
+      var tpl = document.createElement("template"); tpl.innerHTML = html;
+      var nodes = Array.prototype.slice.call(tpl.content.childNodes); host.appendChild(tpl.content); changed.push(true);
+      return { html: html, nodes: nodes };
+    });
+    return changed;
+  }
+  for (var i = parts.length - 1; i >= 0; i--) {   // from the bottom up, so each new block goes in front of the next one
+    var b = st[i];
+    if (b.html === parts[i]) { changed[i] = false; continue; }
+    changed[i] = true;
+    var next = null; for (var j = i + 1; j < st.length && !next; j++) if (st[j].nodes.length) next = st[j].nodes[0];
+    var tpl = document.createElement("template"); tpl.innerHTML = parts[i];
+    var nodes = Array.prototype.slice.call(tpl.content.childNodes);
+    b.nodes.forEach(function (n) { host.removeChild(n); });
+    host.insertBefore(tpl.content, next);
+    st[i] = { html: parts[i], nodes: nodes };
+  }
+  return changed;
+}
+/* 0.5.8b: the Fuel in border and port flash each time a pulse of fuel leaves, in step with the moving light.
+   0.5.8n: the light runs on performance.now() (ikFmCanvas), and a pulse leaves every 6 s, so no need to ask the
+   browser for its running animations (that call took about half of every redraw). */
 function ikFmSyncBeat(host) {
-  try {
-    var tp = host.querySelector(".ik-fm-run.trunk path"), an = tp && tp.getAnimations ? tp.getAnimations()[0] : null;
-    var t = an && an.currentTime != null ? an.currentTime % 3000 : 0;
-    host.querySelectorAll(".ik-fm-dock.beat,.ik-fm-port").forEach(function (el) { el.style.animationDelay = (-t).toFixed(0) + "ms"; });
-  } catch (e) {}
+  var t = (window.performance ? performance.now() : Date.now()) % 6000;
+  host.querySelectorAll(".ik-fm-dockglow,.ik-fm-dockin,.ik-fm-port").forEach(function (el) { el.style.animationDelay = (-t).toFixed(0) + "ms"; });
 }
 /* V5.1 (Oran, 2026-10-15): what each meal brought. Small bars, anchored on the right edge, growing to the left:
    energy, protein, carbs and fat (fibre when calories are hidden). A full bar is the whole day's target, so a bar
@@ -10507,6 +10593,140 @@ function ikFmWatch(root) {
   if (!IK_FM_IO) IK_FM_IO = new IntersectionObserver(function (es) { es.forEach(function (e) { e.target.classList.toggle("ik-fm-paused", !e.isIntersecting); }); }, { rootMargin: "80px" });
   IK_FM_IO.disconnect(); IK_FM_IO.observe(st);
 }
+/* 0.5.8n (Oran, 2026-10-17: "the animations seem a little laggy"). The moving light on one canvas.
+   Why: the light used to be SVG strokes animated underneath Gaussian blur filters, so the browser re-blurred a big
+   part of the screen on every frame (and repainted the blurred picture behind it too). Now:
+   - the blurred pulses are drawn on their own small canvas (one pixel per screen point, where a blur is cheap) and
+     the screen stretches it over the map for free; a blur has no fine detail, so it looks the same;
+   - the sharp cores and the orbs are drawn at full sharpness on top;
+   - each orb is a ready-made glowing dot (made once per colour and size), just stamped in place;
+   - paths are measured once; at most 60 frames a second (30 if the phone can't keep up); nothing is drawn while
+     the map is off screen, the app is in the background, or the phone asks for less motion.
+   The clock is performance.now(), so a redraw of Today never restarts the light, and the Fuel in beat
+   (ikFmSyncBeat) stays in step with it. Blur strengths are the same numbers as the old SVG filters
+   (a canvas shadow blur of 2 x the SVG stdDeviation is the same Gaussian). */
+var IK_FM_SCENES = {}, IK_FM_GEO = {};
+var IK_FM_REDUCE = window.matchMedia ? matchMedia("(prefers-reduced-motion: reduce)") : { matches: false };
+function ikBezier(x1, y1, x2, y2) {   // a CSS cubic-bezier() as a quick lookup table
+  var lut = new Float32Array(257);
+  var bx = function (t) { var u = 1 - t; return 3 * u * u * t * x1 + 3 * u * t * t * x2 + t * t * t; };
+  var by = function (t) { var u = 1 - t; return 3 * u * u * t * y1 + 3 * u * t * t * y2 + t * t * t; };
+  for (var i = 0; i <= 256; i++) { var x = i / 256, lo = 0, hi = 1, t = x; for (var k = 0; k < 30; k++) { t = (lo + hi) / 2; if (bx(t) < x) lo = t; else hi = t; } lut[i] = by(t); }
+  return function (x) { if (x <= 0) return 0; if (x >= 1) return 1; var f = x * 256, i = f | 0; return lut[i] + (lut[i + 1] - lut[i]) * (f - i); };
+}
+var IK_EASE_RUN = ikBezier(0.45, 0.05, 0.55, 0.95), IK_EASE_ORB = ikBezier(0.4, 0, 0.6, 1);
+function ikFmGeo(d, pts) {   // a path's length, a Path2D to stroke it, and (for orbs) 97 evenly spaced points along it
+  var g = IK_FM_GEO[d]; if (g && (g.pts || !pts)) return g;
+  var ns = "http://www.w3.org/2000/svg", box = document.getElementById("ikFmMeasure");
+  if (!box) {
+    box = document.createElementNS(ns, "svg"); box.id = "ikFmMeasure"; box.setAttribute("aria-hidden", "true");
+    box.setAttribute("style", "position:absolute;left:0;top:0;width:0;height:0;overflow:hidden;pointer-events:none"); document.body.appendChild(box);
+  }
+  var p = document.createElementNS(ns, "path"); p.setAttribute("d", d); box.appendChild(p);
+  var L = 0, N = 96, P = null;
+  try { L = p.getTotalLength(); } catch (e) {}
+  if (pts) { P = new Float32Array((N + 1) * 2); for (var i = 0; i <= N; i++) { var q = { x: 0, y: 0 }; try { q = p.getPointAtLength(L * i / N); } catch (e) {} P[i * 2] = q.x; P[i * 2 + 1] = q.y; } }
+  box.removeChild(p);
+  var p2 = g ? g.p2 : null; if (!g) try { p2 = new Path2D(d); } catch (e) {}
+  return (IK_FM_GEO[d] = { len: L || 1, pts: P, N: N, p2: p2 });
+}
+function ikFmColor(c, a) {   // any CSS colour with a new alpha (for the clear edge of an orb's glow)
+  var x = document.createElement("canvas").getContext("2d"); x.fillStyle = "#000"; x.fillStyle = c; var s = x.fillStyle;
+  if (s.charAt(0) === "#") return "rgba(" + parseInt(s.slice(1, 3), 16) + "," + parseInt(s.slice(3, 5), 16) + "," + parseInt(s.slice(5, 7), 16) + "," + a + ")";
+  var m = s.match(/[\d.]+/g) || [0, 0, 0]; return "rgba(" + m[0] + "," + m[1] + "," + m[2] + "," + a + ")";
+}
+function ikFmOrbSprite(S, c, rpx) {   // a glowing ball: white middle, the colour at 35%, clear at the edge
+  var key = c + "|" + rpx.toFixed(1); if (S.sprites[key]) return S.sprites[key];
+  var n = Math.max(2, Math.ceil(rpx * 2) + 2), cv = document.createElement("canvas"); cv.width = cv.height = n;
+  var x = cv.getContext("2d"), g = x.createRadialGradient(n / 2, n / 2, 0, n / 2, n / 2, rpx);
+  g.addColorStop(0, "#fff"); g.addColorStop(0.35, c); g.addColorStop(1, ikFmColor(c, 0));
+  x.fillStyle = g; x.beginPath(); x.arc(n / 2, n / 2, rpx, 0, Math.PI * 2); x.fill();
+  return (S.sprites[key] = cv);
+}
+/* How this browser blurs on a canvas, checked once on a tiny test canvas: "shadow" (the off-to-the-side shadow
+   trick, every browser), else "filter" (canvas blur filter), else "none" (a wider, fainter stroke, so the light never
+   disappears even if neither works). */
+var IK_FM_BLUR = null;
+function ikFmBlurMode() {
+  if (IK_FM_BLUR) return IK_FM_BLUR;
+  try {
+    var c = document.createElement("canvas"); c.width = c.height = 16; var x = c.getContext("2d");
+    x.shadowColor = "#fff"; x.shadowBlur = 4; x.shadowOffsetX = 100; x.fillStyle = "#fff"; x.fillRect(-96, 4, 8, 8);
+    if (x.getImageData(8, 8, 1, 1).data[3] > 0) return (IK_FM_BLUR = "shadow");
+    if ("filter" in CanvasRenderingContext2D.prototype) {
+      x.clearRect(0, 0, 16, 16); x.shadowColor = "transparent"; x.shadowOffsetX = 0; x.filter = "blur(2px)"; x.fillRect(4, 4, 8, 8);
+      if (x.getImageData(2, 8, 1, 1).data[3] > 0) return (IK_FM_BLUR = "filter");
+    }
+  } catch (e) {}
+  return (IK_FM_BLUR = "none");
+}
+function ikFmDashAt(c, op, t) {   // where the pulse is along its path at time t (seconds)
+  if (op.t === "dash") { c.setLineDash([3, 13]); c.lineDashOffset = 16 * (1 - (t % op.dur) / op.dur); return; }
+  var k = op.g.len / 100, ph = ((t + op.at) % op.dur) / op.dur;
+  c.setLineDash([op.len * k, 100 * k]); c.lineDashOffset = (14 - 114 * IK_EASE_RUN(ph)) * k;
+}
+function ikFmDraw(S, now) {
+  var cv = S.cv, cw = cv.clientWidth, ch = cv.clientHeight; if (!cw || !ch) return;
+  var dpr = Math.min(window.devicePixelRatio || 1, 2), W = Math.round(cw * dpr), H = Math.round(ch * dpr);
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; S.b.width = Math.max(1, Math.round(cw)); S.b.height = Math.max(1, Math.round(ch)); S.sprites = {}; }
+  if (!S.ctx) return;
+  var t = now / 1000, b = S.bctx, bw = S.b.width, bh = S.b.height, bx = bw / 730, by = bh / 930, OFF = bw + 64, mode = ikFmBlurMode();
+  // 1. the soft glows, small: each stroke is drawn off to the side and only its blurred shadow lands on the canvas
+  b.setTransform(1, 0, 0, 1, 0, 0); b.globalAlpha = 1; b.shadowColor = "transparent"; b.clearRect(0, 0, bw, bh);
+  b.lineCap = "round"; b.shadowOffsetX = mode === "shadow" ? OFF : 0; b.shadowOffsetY = 0; b.setTransform(bx, 0, 0, by, mode === "shadow" ? -OFF : 0, 0);
+  for (var i = 0; i < S.ops.length; i++) {
+    var op = S.ops[i]; if (op.t === "orb" || !op.blur || !op.g.p2) continue;
+    b.globalAlpha = op.o; b.strokeStyle = op.c; b.lineWidth = op.w;
+    if (mode === "shadow") { b.shadowBlur = 2 * op.blur * bx; b.shadowColor = op.c; }
+    else if (mode === "filter") b.filter = "blur(" + (op.blur * bx).toFixed(2) + "px)";
+    else {   // last resort: a few wide, faint strokes stacked into a soft edge
+      ikFmDashAt(b, op, t);
+      for (var k = 0; k < 4; k++) { b.lineWidth = op.w + op.blur * [3.2, 2.2, 1.3, 0.5][k]; b.globalAlpha = op.o * [0.12, 0.16, 0.2, 0.26][k]; b.stroke(op.g.p2); }
+      continue;
+    }
+    ikFmDashAt(b, op, t); b.stroke(op.g.p2);
+  }
+  if (mode === "filter") b.filter = "none";
+  // 2. the sharp cores and the orbs, full sharpness, on the canvas above
+  var c = S.ctx, sx = W / 730, sy = H / 930;
+  c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.clearRect(0, 0, W, H);
+  c.setTransform(sx, 0, 0, sy, 0, 0); c.lineCap = "round";
+  for (i = 0; i < S.ops.length; i++) {
+    op = S.ops[i]; if (op.t === "orb" || op.blur || !op.g.p2) continue;
+    c.globalAlpha = op.o; c.strokeStyle = op.c; c.lineWidth = op.w; ikFmDashAt(c, op, t); c.stroke(op.g.p2);
+  }
+  c.setLineDash([]); c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1;
+  for (i = 0; i < S.ops.length; i++) {
+    op = S.ops[i]; if (op.t !== "orb") continue;
+    var u = IK_EASE_ORB(((t + op.at) % op.dur) / op.dur) * op.g.N, j = Math.min(op.g.N - 1, u | 0), f = u - j, P = op.g.pts;
+    var px = (P[j * 2] + (P[j * 2 + 2] - P[j * 2]) * f) * sx, py = (P[j * 2 + 1] + (P[j * 2 + 3] - P[j * 2 + 1]) * f) * sy;
+    var spr = ikFmOrbSprite(S, op.c, op.r * sx); c.drawImage(spr, px - spr.width / 2, py - spr.height / 2);
+  }
+}
+function ikFmCanvas(host) {
+  var cv = host && host.querySelector("canvas.ik-fm-flow"); if (!cv) return;
+  var S = cv.__fm;
+  if (!S) {
+    var ops = IK_FM_SCENES[cv.getAttribute("data-scene")], glow = cv.previousElementSibling, ctx = cv.getContext && cv.getContext("2d");
+    if (!ops || !ctx || !glow || glow.tagName !== "CANVAS") return;
+    S = cv.__fm = { cv: cv, ops: ops, ctx: ctx, b: glow, bctx: glow.getContext("2d"), sprites: {}, running: false, last: 0, gap: 15, n: 0, sum: 0 };
+    if (!S.bctx) return;
+    ops.forEach(function (o) { o.g = ikFmGeo(o.d, o.t === "orb"); });
+  }
+  if (S.running) return;
+  S.running = true;
+  var frame = function (now) {
+    if (!cv.isConnected) { S.running = false; return; }
+    var stage = cv.closest(".ik-fm-stage");
+    if (document.hidden || IK_FM_REDUCE.matches || (stage && stage.classList.contains("ik-fm-paused"))) { setTimeout(function () { requestAnimationFrame(frame); }, 300); return; }
+    if (now - S.last >= S.gap) {   // at most about 60 a second, even on 120 Hz screens
+      if (S.last && now - S.last < 100) { S.sum += now - S.last; if (++S.n === 90) { if (S.sum / S.n > 24) S.gap = 31; S.n = 0; S.sum = 0; } }   // falling behind: 30 a second
+      S.last = now; try { ikFmDraw(S, now); } catch (e) { S.running = false; return; }
+    }
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+}
 /* Which body to draw: the person's choice in My profile, else the sex in their profile (male when not set). */
 function ikFmBody(d) { var s = ikSet(d), b = s.fmBody; if (b === "f" || b === "m") return b; return ((s.profile || {}).sex === "f") ? "f" : "m"; }
 /* 0.5.8 (Oran, 2026-10-17: "logging food changes nothing on the fuel map"). What a meal does after you eat it:
@@ -10601,52 +10821,55 @@ function ikFuelMap(d, t, week, day, es) {
     var body = ikFmBody(d), trunk = "M432 796 C442 720 446 630 440 530 C434 440 410 378 380 352";   // 0.5.8: starts at Fuel in, docked on the map
     var stomach = body === "f" ? "M363 298 C366 310 386 306 404 312 C421 320 419 352 401 364 C382 375 352 375 340 365 C332 357 337 348 346 349"
       : "M363 288 C365 302 380 300 395 306 C411 314 409 346 393 357 C376 369 350 369 340 359 C333 351 338 342 347 343";
-    var still = "", flow = "", halos = "", ring = "", trunkC = ST.c;
+    /* 0.5.8n (performance pass): the still layer is drawn as three groups, one blur each (it used to run a separate
+       full-size blur for every path, about 20 of them, every time the layer was painted). Blurred glows go under,
+       sharp lines and dots on top. */
+    var stillWide = "", stillBlur = "", stillSoft = "", stillSharp = "", halos = "", ring = "", trunkC = ST.c;
     var eating = LV && LV.abs && LV.abs.frac < 0.9;   // 0.5.8: a meal is still being absorbed
-    still += '<path d="' + trunk + '" stroke="' + trunkC + '" stroke-width="44" opacity="' + (absorbing || eating ? 0.6 : 0.3) + '" filter="url(#fmBlurWide)" fill="none" stroke-linecap="round"/>' +
-      '<path d="' + trunk + '" stroke="' + trunkC + '" stroke-width="14" opacity=".5" fill="none" stroke-linecap="round" filter="url(#fmBlur)"/>' +
-      '<path d="' + trunk + '" stroke="#fff" stroke-width="2.5" opacity=".55" fill="none" stroke-linecap="round" filter="url(#fmSoft)"/>' +
-      '<path d="' + stomach + '" stroke="#ff3d7f" stroke-width="12" opacity="' + (absorbing ? 0.55 : 0.15) + '" filter="url(#fmBlur)" fill="none" stroke-linecap="round"/>' +
-      '<path d="' + stomach + '" stroke="#ffc2d8" stroke-width="3" opacity="' + (absorbing ? 0.95 : 0.3) + '" fill="none" stroke-linecap="round" filter="url(#fmSoft)"/>';
-    var grads = {}, orb = function (path, c, r, dur, n) {   // 0.5.8: glowing orbs that travel along a path
-      var id = "fmOrb" + c.replace(/[^0-9a-z]/gi, ""); grads[id] = c; var o = "";
-      for (var oi = 0; oi < n; oi++) o += '<circle r="' + r + '" fill="url(#' + id + ')"><animateMotion dur="' + dur + 's" begin="-' + (dur * oi / n).toFixed(2) + 's" repeatCount="indefinite" calcMode="spline" keyTimes="0;1" keySplines=".4 0 .6 1" path="' + path + '"/></circle>';
-      return o;
+    stillWide += '<path d="' + trunk + '" stroke="' + trunkC + '" stroke-width="44" opacity="' + (absorbing || eating ? 0.6 : 0.3) + '" fill="none" stroke-linecap="round"/>';
+    stillBlur += '<path d="' + trunk + '" stroke="' + trunkC + '" stroke-width="14" opacity=".5" fill="none" stroke-linecap="round"/>' +
+      '<path d="' + stomach + '" stroke="#ff3d7f" stroke-width="12" opacity="' + (absorbing ? 0.55 : 0.15) + '" fill="none" stroke-linecap="round"/>';
+    stillSoft += '<path d="' + trunk + '" stroke="#fff" stroke-width="2.5" opacity=".55" fill="none" stroke-linecap="round"/>' +
+      '<path d="' + stomach + '" stroke="#ffc2d8" stroke-width="3" opacity="' + (absorbing ? 0.95 : 0.3) + '" fill="none" stroke-linecap="round"/>';
+    /* 0.5.8n (performance pass): the moving light is a list of drawing steps for one canvas (ikFmCanvas), not animated
+       SVG under blur filters (those re-blurred a large area on every frame, the main cause of lag on phones).
+       Same paths, timing, easing, dash lengths, colours and blur strengths as 0.5.8b.
+       run:  a soft pulse travelling along a path (len = % of the path, like stroke-dasharray with pathLength 100)
+       dash: the dotted "boost" line (3 on, 13 off), creeping toward the system
+       orb:  a glowing ball riding along a path (like animateMotion with keySplines .4 0 .6 1) */
+    var ops = [], orb = function (path, c, r, dur, n) {   // 0.5.8: glowing orbs that travel along a path
+      for (var oi = 0; oi < n; oi++) ops.push({ t: "orb", d: path, c: c, r: r, dur: dur, at: +(dur * oi / n).toFixed(2) });
     };
     /* 0.5.8b (Oran: "it looks like a white sausage"): the pulse is a soft blurred glow with a faint core, not a hard capsule */
-    flow += '<defs><filter id="fmPulseW" filterUnits="userSpaceOnUse" x="330" y="300" width="180" height="580"><feGaussianBlur stdDeviation="16"/></filter>' +
-      '<filter id="fmPulseM" filterUnits="userSpaceOnUse" x="330" y="300" width="180" height="580"><feGaussianBlur stdDeviation="6"/></filter>' +
-      '<filter id="fmSysW" filterUnits="userSpaceOnUse" x="190" y="20" width="380" height="640"><feGaussianBlur stdDeviation="10"/></filter>' +
-      '<filter id="fmSysM" filterUnits="userSpaceOnUse" x="190" y="20" width="380" height="640"><feGaussianBlur stdDeviation="3.5"/></filter></defs>' +
-      '<g class="ik-fm-run trunk"><path pathLength="100" d="' + trunk + '" stroke="' + trunkC + '" stroke-width="58" opacity=".55" filter="url(#fmPulseW)"/>' +
-      '<path pathLength="100" d="' + trunk + '" stroke="#ffe6f0" stroke-width="18" opacity=".7" filter="url(#fmPulseM)"/>' +
-      '<path pathLength="100" d="' + trunk + '" stroke="#fff" stroke-width="3" opacity=".5"/></g>';
-    var orbs = F.past || F.none ? "" : orb(trunk, trunkC, eating ? 15 : 11, eating ? 6.8 : 9.6, eating ? 3 : 2);
+    ops.push({ t: "run", d: trunk, c: trunkC, w: 58, o: 0.55, blur: 16, len: 30, dur: 6, at: 0 },
+      { t: "run", d: trunk, c: "#ffe6f0", w: 18, o: 0.7, blur: 6, len: 30, dur: 6, at: 0 },
+      { t: "run", d: trunk, c: "#fff", w: 3, o: 0.5, blur: 0, len: 30, dur: 6, at: 0 });
+    if (!(F.past || F.none)) orb(trunk, trunkC, eating ? 15 : 11, eating ? 6.8 : 9.6, eating ? 3 : 2);
     var halo = function (x, y, r, c, cls) { return '<i class="ik-fm-halo' + (cls || "") + '" style="left:' + (x / 7.3).toFixed(2) + "%;top:" + (y / 9.3).toFixed(2) + "%;width:" + (r * 2 / 7.3).toFixed(2) + "%;--c:" + c + '"></i>'; };
     halos += halo(374, 334, absorbing ? 46 : 30, "#ff3d7f", absorbing ? "" : " dim");
-    var sysW = "", sysM = "", sysC = "", sysN = 0;
+    var sysW = [], sysM = [], sysC = [], sysO = [], sysN = 0;
     sys.forEach(function (S) {
       var st = S.st, s = S.s, on = U.open && U.pick === s.id, fu = ikFmSysFuel(s.id, F), c = F.past ? "#5d7387" : fu.c;
       var nc = st === "thrive" ? "#6fe7ff" : st === "steady" ? "#3f8cff" : "#5d7387";
       var lx = (s.side === "L" ? 21.9 : 77.9) / 100 * 730, ly = (s.top + 4.6) / 100 * 930;
-      still += '<path d="' + s.d + '" stroke="' + c + '" stroke-width="14" opacity="' + (F.past ? 0.25 : 0.62) + '" filter="url(#fmBlur)" fill="none" stroke-linecap="round"/>' +
-        '<path d="' + s.d + '" stroke="' + c + '" stroke-width="2.5" opacity="' + (F.past ? 0.4 : 0.9) + '" fill="none" stroke-linecap="round"/>' +
-        '<path d="M' + s.x + " " + s.y + " L" + lx.toFixed(0) + " " + ly.toFixed(0) + '" stroke="#bfefff" stroke-width="1.2" opacity=".28"/>' +
-        '<circle cx="' + s.x + '" cy="' + s.y + '" r="7" fill="' + (st === "low" ? "#ffb340" : st === "thrive" ? "#e9fdff" : "#9cc4ff") + '" filter="url(#fmSoft)"/>' +
-        "";
+      stillBlur += '<path d="' + s.d + '" stroke="' + c + '" stroke-width="14" opacity="' + (F.past ? 0.25 : 0.62) + '" fill="none" stroke-linecap="round"/>';
+      stillSharp += '<path d="' + s.d + '" stroke="' + c + '" stroke-width="2.5" opacity="' + (F.past ? 0.4 : 0.9) + '" fill="none" stroke-linecap="round"/>' +
+        '<path d="M' + s.x + " " + s.y + " L" + lx.toFixed(0) + " " + ly.toFixed(0) + '" stroke="#bfefff" stroke-width="1.2" opacity=".28"/>';
+      stillSoft += '<circle cx="' + s.x + '" cy="' + s.y + '" r="7" fill="' + (st === "low" ? "#ffb340" : st === "thrive" ? "#e9fdff" : "#9cc4ff") + '"/>';
       if (on) ring = '<i class="ik-fm-ring" style="left:' + (s.x / 7.3).toFixed(2) + "%;top:" + (s.y / 9.3).toFixed(2) + "%;--c:" + IK_FM_COL[st] + '"></i>';
-      if (!F.past) {   // 0.5.8b: soft, blurred pulses like the main stream (one blur per layer, not per path)
-        var dl = ' style="animation-delay:-' + ((sysN++ * 2.4) % 7.2).toFixed(1) + 's"';
-        sysW += '<g class="ik-fm-run"><path pathLength="100" d="' + s.d + '" stroke="' + c + '" stroke-width="30" opacity=".6"' + dl + "/></g>";
-        sysM += '<g class="ik-fm-run"><path pathLength="100" d="' + s.d + '" stroke="#ffeef6" stroke-width="9" opacity=".75"' + dl + "/></g>";
-        sysC += '<g class="ik-fm-run"><path pathLength="100" d="' + s.d + '" stroke="#fff" stroke-width="1.6" opacity=".45"' + dl + "/></g>";
+      if (!F.past) {   // 0.5.8b: soft, blurred pulses like the main stream
+        var at = +((sysN++ * 2.4) % 7.2).toFixed(1);
+        sysW.push({ t: "run", d: s.d, c: c, w: 30, o: 0.6, blur: 10, len: 12, dur: 7.2, at: at });
+        sysM.push({ t: "run", d: s.d, c: "#ffeef6", w: 9, o: 0.75, blur: 3.5, len: 12, dur: 7.2, at: at });
+        sysC.push({ t: "run", d: s.d, c: "#fff", w: 1.6, o: 0.45, blur: 0, len: 12, dur: 7.2, at: at });
       }
       if (S.boost) {   // 0.5.8: this system is getting something from the meal you just had
-        sysM += '<path class="ik-fm-dash" d="' + s.d + '" stroke="#fff" stroke-width="3.5" fill="none" stroke-linecap="round"/>';
-        orbs += orb(s.d, c, 10, 6.4, 1);
+        sysM.push({ t: "dash", d: s.d, c: "#fff", w: 3.5, o: 0.9, blur: 3.5, dur: 3.2 });
+        sysO.push([s.d, c]);
       }
       halos += halo(s.x, s.y, st === "thrive" ? 40 : st === "steady" ? 31 : 22, nc, st === "low" ? " dim" : "");
     });
+    sysO.forEach(function (x) { orb(x[0], x[1], 10, 6.4, 1); });
     /* 0.5.8 (Oran: "show if we're taking from our fat stores or adding to them"): a fat store beside the stream.
        Storing: gold light peels off the fuel stream into it. Burning: gold light flows out of it into the stream. */
     var FAT = null;
@@ -10655,23 +10878,24 @@ function ikFuelMap(d, t, week, day, es) {
       FAT = { mode: fnet < -1 ? "store" : fnet > 1 ? "burn" : "hold", g: Math.round(Math.abs(fnet)), ox: Math.round(F.cur.fatOx), inn: Math.round(F.cur.Af) };
       var fpath = FAT.mode === "burn" ? "M236 690 C320 690 400 698 441 698" : "M441 698 C400 698 320 690 236 690";
       if (FAT.mode !== "hold") {
-        flow += '<defs><filter id="fmFatW" filterUnits="userSpaceOnUse" x="190" y="620" width="300" height="150"><feGaussianBlur stdDeviation="9"/></filter></defs>' +
-          '<g class="ik-fm-run fat"><path pathLength="100" d="' + fpath + '" stroke="#ffc247" stroke-width="26" opacity=".6" filter="url(#fmFatW)"/>' +
-          '<path pathLength="100" d="' + fpath + '" stroke="#fff3d1" stroke-width="3" opacity=".6"/></g>';
-        orbs += orb(fpath, "#ffc247", FAT.g >= 6 ? 12 : 9, 8, FAT.g >= 6 ? 2 : 1);
+        ops.push({ t: "run", d: fpath, c: "#ffc247", w: 26, o: 0.6, blur: 9, len: 22, dur: 8, at: 0 },
+          { t: "run", d: fpath, c: "#fff3d1", w: 3, o: 0.6, blur: 0, len: 22, dur: 8, at: 0 });
+        orb(fpath, "#ffc247", FAT.g >= 6 ? 12 : 9, 8, FAT.g >= 6 ? 2 : 1);
       }
-      still += '<path d="M441 698 C400 698 320 690 236 690" stroke="#ffc247" stroke-width="' + (FAT.mode === "hold" ? 2 : 3) + '" opacity="' + (FAT.mode === "hold" ? 0.25 : 0.5) + '" fill="none" stroke-linecap="round" stroke-dasharray="' + (FAT.mode === "hold" ? "3 6" : "none") + '"/>';
+      stillSharp += '<path d="M441 698 C400 698 320 690 236 690" stroke="#ffc247" stroke-width="' + (FAT.mode === "hold" ? 2 : 3) + '" opacity="' + (FAT.mode === "hold" ? 0.25 : 0.5) + '" fill="none" stroke-linecap="round" stroke-dasharray="' + (FAT.mode === "hold" ? "3 6" : "none") + '"/>';
     }
-    var vis = '<img src="' + ikFmImgUrl(body) + '" alt="" draggable="false">' +
+    ops = ops.concat(sysW, sysM, sysC);
+    var vis = '<img src="' + ikFmImgUrl(body) + '" alt="" draggable="false" decoding="async">' +
       '<svg class="ik-fm-still" viewBox="0 0 730 930" aria-hidden="true"><defs>' +
         '<filter id="fmBlur" filterUnits="userSpaceOnUse" x="0" y="0" width="730" height="930"><feGaussianBlur stdDeviation="7"/></filter>' +
         '<filter id="fmBlurWide" filterUnits="userSpaceOnUse" x="0" y="0" width="730" height="930"><feGaussianBlur stdDeviation="18"/></filter>' +
-        '<filter id="fmSoft" filterUnits="userSpaceOnUse" x="0" y="0" width="730" height="930"><feGaussianBlur in="SourceGraphic" stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>' + still + "</svg>" +
-      '<div class="ik-fm-halos" aria-hidden="true">' + halos + "</div>" +
-      '<svg class="ik-fm-flow" viewBox="0 0 730 930" aria-hidden="true"><defs>' + Object.keys(grads).map(function (id) {
-        return '<radialGradient id="' + id + '"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="' + grads[id] + '"/><stop offset="1" stop-color="' + grads[id] + '" stop-opacity="0"/></radialGradient>'; }).join("") +
-        "</defs>" + flow + '<g filter="url(#fmSysW)">' + sysW + '</g><g filter="url(#fmSysM)">' + sysM + "</g>" + sysC + '<g class="ik-fm-orbs">' + orbs + "</g></svg>";
-    var sig = 0; for (var si = 0; si < vis.length; si += 7) sig = (sig * 31 + vis.charCodeAt(si)) | 0;
+        '<filter id="fmSoft" filterUnits="userSpaceOnUse" x="0" y="0" width="730" height="930"><feGaussianBlur in="SourceGraphic" stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>' +
+        '<g filter="url(#fmBlurWide)">' + stillWide + '</g><g filter="url(#fmBlur)">' + stillBlur + "</g>" + stillSharp + '<g filter="url(#fmSoft)">' + stillSoft + "</g></svg>" +
+      '<div class="ik-fm-halos" aria-hidden="true">' + halos + "</div>";
+    var sceneJson = JSON.stringify(ops), sigSrc = vis + sceneJson;
+    var sig = 0; for (var si = 0; si < sigSrc.length; si += 7) sig = (sig * 31 + sigSrc.charCodeAt(si)) | 0;
+    IK_FM_SCENES = {}; IK_FM_SCENES[sig] = ops;   // 0.5.8n: picked up by ikFmCanvas after the redraw
+    vis += '<canvas class="ik-fm-glow" aria-hidden="true"></canvas><canvas class="ik-fm-flow" data-scene="' + sig + '" aria-hidden="true"></canvas>';
     h += '<div class="ik-fm-card"><div class="ik-fm-stage" data-fm="bg"><div class="ik-fm-vis" data-sig="' + sig + '">' + vis + "</div>" + ring;
     sys.forEach(function (S) {
       var s = S.s, col = IK_FM_COL[S.st], on = U.open && U.pick === s.id;
@@ -10694,11 +10918,13 @@ function ikFuelMap(d, t, week, day, es) {
       '<span class="ik-grow"><small>Fat stores</small><b>' + (FAT.mode === "store" ? "Storing ↓ " + FAT.g + " g/h" : FAT.mode === "burn" ? "Burning ↑ " + FAT.g + " g/h" : "Holding steady") + "</b>" +
       (FAT.inn >= 1 ? "<em>burning " + FAT.ox + " · meal adds " + FAT.inn + "</em>" : "") + "</span></button>";
     h += '<div class="ik-fm-fuel ik-fm-dock' + (fon ? " on" : "") + (AB ? " eating" : "") + (F.past ? "" : " beat") + '" style="--c:' + ST.c + '">' +
+      (F.past ? "" : '<i class="ik-fm-dockin" aria-hidden="true"></i>') +   // 0.5.8n: the beat's inner glow, faded in and out (see CSS)
       '<button class="ik-fm-fuelbtn" data-fm="' + (F.past ? "pick:fuel" : "details") + '" aria-pressed="' + fon + '" aria-expanded="' + !!(fon && U.details) + '" aria-label="Fuel in: ' + ikEsc(ST.title) + (AB ? ". " + Math.round(AB.frac * 100) + "% of " + ikEntryName(AB.e, d) + " absorbed so far" : "") + '"><span class="ik-fm-orb"><svg viewBox="0 0 24 24" fill="none" stroke="#0b1520" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span>' +
         '<span class="ik-grow"><span class="ik-fm-k">' + ikEsc(fk) + '</span><span class="ik-fm-title">' + ikEsc(ST.title) + "</span></span>" +
         (F.none ? "" : AB ? '<span class="ik-fm-since"><b>' + Math.round(AB.frac * 100) + "%</b><small>absorbed</small></span>" : '<span class="ik-fm-since"><b>' + (F.fs && !F.fs.none ? ikHM(F.fs.since) : "–") + "</b><small>since you ate</small></span>") + "</button>" +
       (F.past ? "" : '<button class="ik-fm-chev" data-fm="details" aria-expanded="' + !!(fon && U.details) + '" aria-label="' + (fon && U.details ? "Hide" : "Show") + ' fuel details"><svg viewBox="0 0 24 24" fill="none" stroke="#dff6ff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"' + (fon && U.details ? ' style="transform:rotate(180deg)"' : "") + '><path d="M6 9l6 6 6-6"/></svg></button>') +
-      (AB ? '<i class="ik-fm-absbar" aria-hidden="true"><em style="width:' + Math.round(AB.frac * 100) + '%"></em></i>' : "") + "</div>";
+      (AB ? '<i class="ik-fm-absbar" aria-hidden="true"><em style="width:' + Math.round(AB.frac * 100) + '%"></em></i>' : "") + "</div>" +
+      (F.past ? "" : '<i class="ik-fm-dockglow" style="--c:' + ST.c + '" aria-hidden="true"></i>');   // 0.5.8n: the beat's bright ring and outer glow
     h += "</div>";   // stage
     /* 0.5.8: Fuel in's details open in the dark panel, straight down from Fuel in */
     if (fon && U.details && !F.past) h += '<div class="ik-fm-darkdrawer">' + (F.none ? '<div class="ik-fm-drawer' + (U.justOpened ? " opening" : "") + '"><p class="ik-fm-sub" style="margin:0">No food logged in the last 3 days, so there\'s no meal to replay yet. Log what you eat and this opens up: what your body is burning right now, the last 12 hours of fuel and a look ahead, time since you ate, sugar stores, ketones and today\'s balance.</p></div>' : ikFmFuelDetails(d, F, t.v.kcal || 0)) + "</div>";
@@ -12691,6 +12917,7 @@ const DD_PROGRAM = {
   version: "0.5.8",
   barTagline: false,
   iconImg: "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20120%20120%22%3E%3Cstyle%3E*%7Banimation-timing-function:linear;animation-iteration-count:infinite%7D.p,.s,.d%7Bopacity:0%7D.d%7Banimation:dr%201.5s%20infinite%7D.d2%7Banimation-delay:-.75s%7D%40keyframes%20dr%7B0%25%7Btransform:translate(56px,4px);opacity:0%7D50%25%7Bopacity:1%7D100%25%7Btransform:translate(56px,36px);opacity:0%7D%7D.r%7Btransform-box:fill-box;transform-origin:center;animation:rp%202.4s%20infinite%7D%40keyframes%20rp%7B0%25%7Btransform:scale(1);opacity:.8%7D100%25%7Btransform:scale(1.4);opacity:0%7D%7D.gl%7Banimation:gl%202s%20ease-in-out%20infinite%20alternate%7D%40keyframes%20gl%7B0%25%7Bopacity:.35%7D100%25%7Bopacity:1%7D%7D.s0%7Banimation-name:sa%7D.s1%7Banimation-name:sb%7D%40keyframes%20sa%7B0%25,16%25%7Bopacity:0%7D17.5%25%7Bopacity:1%7D22%25%7Bopacity:.6%7D32%25,100%25%7Bopacity:0%7D%7D%40keyframes%20sb%7B0%25,30%25%7Bopacity:0%7D31.5%25%7Bopacity:1%7D36%25%7Bopacity:.6%7D46%25,100%25%7Bopacity:0%7D%7D%40keyframes%20m1%7B0%25%7Btransform:translate(80px,58px);opacity:0%7D5%25%7Btransform:translate(85.2px,56.8px);opacity:1%7D10%25%7Btransform:translate(90.3px,55.3px);opacity:1%7D15%25%7Btransform:translate(95.2px,53.1px);opacity:1%7D20%25%7Btransform:translate(99.4px,49.8px);opacity:1%7D25%25%7Btransform:translate(103px,45.9px);opacity:1%7D30%25%7Btransform:translate(107.5px,43.1px);opacity:1%7D35%25%7Btransform:translate(112.7px,41.8px);opacity:0.6%7D40%25%7Btransform:translate(118px,42px);opacity:0.2%7D42%25,100%25%7Btransform:translate(118px,42px);opacity:0%7D%7D.p1%7Banimation:m1%204.1s%20linear%20-0.3s%20infinite%7D%40keyframes%20m2%7B0%25%7Btransform:translate(74px,82px);opacity:0%7D5%25%7Btransform:translate(78px,85.7px);opacity:1%7D10%25%7Btransform:translate(82.1px,89.1px);opacity:1%7D15%25%7Btransform:translate(86.4px,92.3px);opacity:1%7D20%25%7Btransform:translate(90.8px,95.4px);opacity:1%7D25%25%7Btransform:translate(95.2px,98.4px);opacity:1%7D30%25%7Btransform:translate(99.6px,101.5px);opacity:1%7D35%25%7Btransform:translate(103.9px,104.7px);opacity:0.6%7D40%25%7Btransform:translate(108px,108px);opacity:0.2%7D42%25,100%25%7Btransform:translate(108px,108px);opacity:0%7D%7D.p2%7Banimation:m2%205.3s%20linear%20-1.9s%20infinite%7D%40keyframes%20m3%7B0%25%7Btransform:translate(36px,84px);opacity:0%7D5%25%7Btransform:translate(32.3px,88.1px);opacity:1%7D10%25%7Btransform:translate(28.9px,92.4px);opacity:1%7D15%25%7Btransform:translate(26.1px,97.1px);opacity:1%7D20%25%7Btransform:translate(24px,102.1px);opacity:1%7D25%25%7Btransform:translate(21.1px,106.8px);opacity:1%7D30%25%7Btransform:translate(16.7px,109.9px);opacity:1%7D35%25%7Btransform:translate(11.5px,111.5px);opacity:0.6%7D40%25%7Btransform:translate(6px,112px);opacity:0.2%7D42%25,100%25%7Btransform:translate(6px,112px);opacity:0%7D%7D.p3%7Banimation:m3%204.7s%20linear%20-3.2s%20infinite%7D%40keyframes%20m4%7B0%25%7Btransform:translate(44px,62px);opacity:0%7D5%25%7Btransform:translate(38.4px,61.1px);opacity:1%7D10%25%7Btransform:translate(32.7px,60.8px);opacity:1%7D15%25%7Btransform:translate(27.1px,60.1px);opacity:1%7D20%25%7Btransform:translate(21.9px,57.9px);opacity:1%7D25%25%7Btransform:translate(17.8px,54px);opacity:1%7D30%25%7Btransform:translate(14.3px,49.5px);opacity:1%7D35%25%7Btransform:translate(10.6px,45.2px);opacity:0.6%7D40%25%7Btransform:translate(6px,42px);opacity:0.2%7D42%25,100%25%7Btransform:translate(6px,42px);opacity:0%7D%7D.p4%7Banimation:m4%205.9s%20linear%20-0.9s%20infinite%7D%40keyframes%20m5%7B0%25%7Btransform:translate(70px,40px);opacity:0%7D5%25%7Btransform:translate(72.6px,35.9px);opacity:1%7D10%25%7Btransform:translate(75.3px,31.8px);opacity:1%7D15%25%7Btransform:translate(78.1px,27.8px);opacity:1%7D20%25%7Btransform:translate(80.9px,23.9px);opacity:1%7D25%25%7Btransform:translate(83.7px,20px);opacity:1%7D30%25%7Btransform:translate(86.5px,16px);opacity:1%7D35%25%7Btransform:translate(89.3px,12px);opacity:0.6%7D40%25%7Btransform:translate(92px,8px);opacity:0.2%7D42%25,100%25%7Btransform:translate(92px,8px);opacity:0%7D%7D.p5%7Banimation:m5%204.4s%20linear%20-2.6s%20infinite%7D%40keyframes%20m6%7B0%25%7Btransform:translate(50px,44px);opacity:0%7D5%25%7Btransform:translate(45.5px,39.9px);opacity:1%7D10%25%7Btransform:translate(40.4px,36.6px);opacity:1%7D15%25%7Btransform:translate(34.7px,34.5px);opacity:1%7D20%25%7Btransform:translate(28.6px,33.9px);opacity:1%7D25%25%7Btransform:translate(22.9px,32.2px);opacity:1%7D30%25%7Btransform:translate(18.1px,28.4px);opacity:1%7D35%25%7Btransform:translate(14.6px,23.4px);opacity:0.6%7D40%25%7Btransform:translate(12px,18px);opacity:0.2%7D42%25,100%25%7Btransform:translate(12px,18px);opacity:0%7D%7D.p6%7Banimation:m6%205.6s%20linear%20-4.4s%20infinite%7D%40media%20(prefers-reduced-motion:reduce)%7B*%7Banimation:none!important%7D.r%7Bopacity:0%7D%7D%3C/style%3E%3Cdefs%3E%3CradialGradient%20id=%22f%22%20cx=%22.6%22%20cy=%22.55%22%20r=%22.6%22%3E%3Cstop%20offset=%220%22%20stop-color=%22%23fff6d6%22/%3E%3Cstop%20offset=%22.5%22%20stop-color=%22%23ffb36b%22/%3E%3Cstop%20offset=%221%22%20stop-color=%22%23ff4f7a%22/%3E%3C/radialGradient%3E%3CradialGradient%20id=%22w%22%3E%3Cstop%20offset=%220%22%20stop-color=%22%23fff%22/%3E%3Cstop%20offset=%22.4%22%20stop-color=%22%23fff%22%20stop-opacity=%22.8%22/%3E%3Cstop%20offset=%221%22%20stop-color=%22%23fff%22%20stop-opacity=%220%22/%3E%3C/radialGradient%3E%3CradialGradient%20id=%22g1%22%3E%3Cstop%20offset=%220%22%20stop-color=%22%23fff%22/%3E%3Cstop%20offset=%22.28%22%20stop-color=%22%23fff%22%20stop-opacity=%22.95%22/%3E%3Cstop%20offset=%22.55%22%20stop-color=%22%23ff453a%22%20stop-opacity=%22.75%22/%3E%3Cstop%20offset=%221%22%20stop-color=%22%23ff453a%22%20stop-opacity=%220%22/%3E%3C/radialGradient%3E%3CradialGradient%20id=%22g2%22%3E%3Cstop%20offset=%220%22%20stop-color=%22%23fff%22/%3E%3Cstop%20offset=%22.28%22%20stop-color=%22%23fff%22%20stop-opacity=%22.95%22/%3E%3Cstop%20offset=%22.55%22%20stop-color=%22%23ff9f0a%22%20stop-opacity=%22.75%22/%3E%3Cstop%20offset=%221%22%20stop-color=%22%23ff9f0a%22%20stop-opacity=%220%22/%3E%3C/radialGradient%3E%3CradialGradient%20id=%22g3%22%3E%3Cstop%20offset=%220%22%20stop-color=%22%23fff%22/%3E%3Cstop%20offset=%22.28%22%20stop-color=%22%23fff%22%20stop-opacity=%22.95%22/%3E%3Cstop%20offset=%22.55%22%20stop-color=%22%2330d158%22%20stop-opacity=%22.75%22/%3E%3Cstop%20offset=%221%22%20stop-color=%22%2330d158%22%20stop-opacity=%220%22/%3E%3C/radialGradient%3E%3CradialGradient%20id=%22g4%22%3E%3Cstop%20offset=%220%22%20stop-color=%22%23fff%22/%3E%3Cstop%20offset=%22.28%22%20stop-color=%22%23fff%22%20stop-opacity=%22.95%22/%3E%3Cstop%20offset=%22.55%22%20stop-color=%22%230a84ff%22%20stop-opacity=%22.75%22/%3E%3Cstop%20offset=%221%22%20stop-color=%22%230a84ff%22%20stop-opacity=%220%22/%3E%3C/radialGradient%3E%3CradialGradient%20id=%22g5%22%3E%3Cstop%20offset=%220%22%20stop-color=%22%23fff%22/%3E%3Cstop%20offset=%22.28%22%20stop-color=%22%23fff%22%20stop-opacity=%22.95%22/%3E%3Cstop%20offset=%22.55%22%20stop-color=%22%23bf5af2%22%20stop-opacity=%22.75%22/%3E%3Cstop%20offset=%221%22%20stop-color=%22%23bf5af2%22%20stop-opacity=%220%22/%3E%3C/radialGradient%3E%3CradialGradient%20id=%22g6%22%3E%3Cstop%20offset=%220%22%20stop-color=%22%23fff%22/%3E%3Cstop%20offset=%22.28%22%20stop-color=%22%23fff%22%20stop-opacity=%22.95%22/%3E%3Cstop%20offset=%22.55%22%20stop-color=%22%2364d2ff%22%20stop-opacity=%22.75%22/%3E%3Cstop%20offset=%221%22%20stop-color=%22%2364d2ff%22%20stop-opacity=%220%22/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle%20class=%22d%22%20r=%227%22%20fill=%22url(%23w)%22/%3E%3Ccircle%20class=%22d%20d2%22%20r=%227%22%20fill=%22url(%23w)%22/%3E%3Cg%20transform=%22translate(12%2012.4)%20scale(.8)%22%20stroke=%22%23fff%22%20stroke-linejoin=%22round%22%3E%3Cpath%20class=%22r%22%20d=%22M52%2028L58%2028L58%2040C64%2036%2080%2036%2086%2048C92%2062%2084%2082%2068%2088C58%2092%2048%2090%2042%2084L36%2088L32%2082L38%2076C46%2080%2056%2078%2062%2072C68%2066%2066%2058%2060%2056C55%2054%2052%2050%2052%2044Z%22%20fill=%22none%22%20stroke-width=%222.5%22/%3E%3Cg%20class=%22gl%22%20fill=%22none%22%3E%3Cpath%20d=%22M52%2028L58%2028L58%2040C64%2036%2080%2036%2086%2048C92%2062%2084%2082%2068%2088C58%2092%2048%2090%2042%2084L36%2088L32%2082L38%2076C46%2080%2056%2078%2062%2072C68%2066%2066%2058%2060%2056C55%2054%2052%2050%2052%2044Z%22%20stroke-width=%2213%22%20stroke-opacity=%22.12%22/%3E%3Cpath%20d=%22M52%2028L58%2028L58%2040C64%2036%2080%2036%2086%2048C92%2062%2084%2082%2068%2088C58%2092%2048%2090%2042%2084L36%2088L32%2082L38%2076C46%2080%2056%2078%2062%2072C68%2066%2066%2058%2060%2056C55%2054%2052%2050%2052%2044Z%22%20stroke-width=%228.5%22%20stroke-opacity=%22.22%22/%3E%3C/g%3E%3Cpath%20d=%22M52%2028L58%2028L58%2040C64%2036%2080%2036%2086%2048C92%2062%2084%2082%2068%2088C58%2092%2048%2090%2042%2084L36%2088L32%2082L38%2076C46%2080%2056%2078%2062%2072C68%2066%2066%2058%2060%2056C55%2054%2052%2050%2052%2044Z%22%20fill=%22url(%23f)%22%20stroke-width=%224.5%22/%3E%3Cpath%20d=%22M66%2046C74%2046%2080%2052%2081%2060%22%20fill=%22none%22%20stroke-opacity=%22.6%22%20stroke-width=%222.5%22%20stroke-linecap=%22round%22/%3E%3C/g%3E%3Cg%20class=%22p%20p1%22%3E%3Ccircle%20r=%2210%22%20fill=%22url(%23g1)%22/%3E%3Ccircle%20r=%223.6%22%20fill=%22%23fff%22/%3E%3C/g%3E%3Ccircle%20class=%22s%20s0%22%20style=%22animation-duration:4.1s;animation-delay:-0.3s%22%20cx=%2296.1%22%20cy=%2252.5%22%20r=%225%22%20fill=%22url(%23g1)%22/%3E%3Ccircle%20class=%22s%20s1%22%20style=%22animation-duration:4.1s;animation-delay:-0.3s%22%20cx=%22107.5%22%20cy=%2243.1%22%20r=%225%22%20fill=%22url(%23g1)%22/%3E%3Cg%20class=%22p%20p2%22%3E%3Ccircle%20r=%2210%22%20fill=%22url(%23g2)%22/%3E%3Ccircle%20r=%223.6%22%20fill=%22%23fff%22/%3E%3C/g%3E%3Ccircle%20class=%22s%20s0%22%20style=%22animation-duration:5.3s;animation-delay:-1.9s%22%20cx=%2287.3%22%20cy=%2292.9%22%20r=%225%22%20fill=%22url(%23g2)%22/%3E%3Ccircle%20class=%22s%20s1%22%20style=%22animation-duration:5.3s;animation-delay:-1.9s%22%20cx=%2299.6%22%20cy=%22101.5%22%20r=%225%22%20fill=%22url(%23g2)%22/%3E%3Cg%20class=%22p%20p3%22%3E%3Ccircle%20r=%2210%22%20fill=%22url(%23g3)%22/%3E%3Ccircle%20r=%223.6%22%20fill=%22%23fff%22/%3E%3C/g%3E%3Ccircle%20class=%22s%20s0%22%20style=%22animation-duration:4.7s;animation-delay:-3.2s%22%20cx=%2225.6%22%20cy=%2298.1%22%20r=%225%22%20fill=%22url(%23g3)%22/%3E%3Ccircle%20class=%22s%20s1%22%20style=%22animation-duration:4.7s;animation-delay:-3.2s%22%20cx=%2216.7%22%20cy=%22109.9%22%20r=%225%22%20fill=%22url(%23g3)%22/%3E%3Cg%20class=%22p%20p4%22%3E%3Ccircle%20r=%2210%22%20fill=%22url(%23g4)%22/%3E%3Ccircle%20r=%223.6%22%20fill=%22%23fff%22/%3E%3C/g%3E%3Ccircle%20class=%22s%20s0%22%20style=%22animation-duration:5.9s;animation-delay:-0.9s%22%20cx=%2226%22%20cy=%2259.8%22%20r=%225%22%20fill=%22url(%23g4)%22/%3E%3Ccircle%20class=%22s%20s1%22%20style=%22animation-duration:5.9s;animation-delay:-0.9s%22%20cx=%2214.3%22%20cy=%2249.5%22%20r=%225%22%20fill=%22url(%23g4)%22/%3E%3Cg%20class=%22p%20p5%22%3E%3Ccircle%20r=%2210%22%20fill=%22url(%23g5)%22/%3E%3Ccircle%20r=%223.6%22%20fill=%22%23fff%22/%3E%3C/g%3E%3Ccircle%20class=%22s%20s0%22%20style=%22animation-duration:4.4s;animation-delay:-2.6s%22%20cx=%2278.6%22%20cy=%2227%22%20r=%225%22%20fill=%22url(%23g5)%22/%3E%3Ccircle%20class=%22s%20s1%22%20style=%22animation-duration:4.4s;animation-delay:-2.6s%22%20cx=%2286.5%22%20cy=%2216%22%20r=%225%22%20fill=%22url(%23g5)%22/%3E%3Cg%20class=%22p%20p6%22%3E%3Ccircle%20r=%2210%22%20fill=%22url(%23g6)%22/%3E%3Ccircle%20r=%223.6%22%20fill=%22%23fff%22/%3E%3C/g%3E%3Ccircle%20class=%22s%20s0%22%20style=%22animation-duration:5.6s;animation-delay:-4.4s%22%20cx=%2233.5%22%20cy=%2234.3%22%20r=%225%22%20fill=%22url(%23g6)%22/%3E%3Ccircle%20class=%22s%20s1%22%20style=%22animation-duration:5.6s;animation-delay:-4.4s%22%20cx=%2218.1%22%20cy=%2228.4%22%20r=%225%22%20fill=%22url(%23g6)%22/%3E%3C/svg%3E",   // V5.1: Oran's app icon (shown in the top bar and menu)     // V5 (Oran, 2026-10-15): no tagline line in the top bar
+  iconHtml: "<span class=\"ik-licon\"><b><i class=\"ld\"></i><i class=\"ld ld2\"></i><img class=\"lr\" alt=\"\" src=\"data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20120%20120'%3E%3Cg%20transform='translate(12%2012.4)%20scale(.8)'%20stroke='%23fff'%20stroke-linejoin='round'%3E%3Cpath%20d='M52%2028L58%2028L58%2040C64%2036%2080%2036%2086%2048C92%2062%2084%2082%2068%2088C58%2092%2048%2090%2042%2084L36%2088L32%2082L38%2076C46%2080%2056%2078%2062%2072C68%2066%2066%2058%2060%2056C55%2054%2052%2050%2052%2044Z'%20fill='none'%20stroke-width='2.5'/%3E%3C/g%3E%3C/svg%3E\"><img class=\"lg\" alt=\"\" src=\"data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20120%20120'%3E%3Cg%20transform='translate(12%2012.4)%20scale(.8)'%20stroke='%23fff'%20stroke-linejoin='round'%3E%3Cg%20fill='none'%3E%3Cpath%20d='M52%2028L58%2028L58%2040C64%2036%2080%2036%2086%2048C92%2062%2084%2082%2068%2088C58%2092%2048%2090%2042%2084L36%2088L32%2082L38%2076C46%2080%2056%2078%2062%2072C68%2066%2066%2058%2060%2056C55%2054%2052%2050%2052%2044Z'%20stroke-width='13'%20stroke-opacity='.12'/%3E%3Cpath%20d='M52%2028L58%2028L58%2040C64%2036%2080%2036%2086%2048C92%2062%2084%2082%2068%2088C58%2092%2048%2090%2042%2084L36%2088L32%2082L38%2076C46%2080%2056%2078%2062%2072C68%2066%2066%2058%2060%2056C55%2054%2052%2050%2052%2044Z'%20stroke-width='8.5'%20stroke-opacity='.22'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\"><img alt=\"\" src=\"data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20120%20120'%3E%3Cdefs%3E%3CradialGradient%20id='f'%20cx='.6'%20cy='.55'%20r='.6'%3E%3Cstop%20offset='0'%20stop-color='%23fff6d6'/%3E%3Cstop%20offset='.5'%20stop-color='%23ffb36b'/%3E%3Cstop%20offset='1'%20stop-color='%23ff4f7a'/%3E%3C/radialGradient%3E%3C/defs%3E%3Cg%20transform='translate(12%2012.4)%20scale(.8)'%20stroke='%23fff'%20stroke-linejoin='round'%3E%3Cpath%20d='M52%2028L58%2028L58%2040C64%2036%2080%2036%2086%2048C92%2062%2084%2082%2068%2088C58%2092%2048%2090%2042%2084L36%2088L32%2082L38%2076C46%2080%2056%2078%2062%2072C68%2066%2066%2058%2060%2056C55%2054%2052%2050%2052%2044Z'%20fill='url(%23f)'%20stroke-width='4.5'/%3E%3Cpath%20d='M66%2046C74%2046%2080%2052%2081%2060'%20fill='none'%20stroke-opacity='.6'%20stroke-width='2.5'%20stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E\"><i class=\"lp1\"></i><i class=\"lc1 la\" style=\"left:91.1px;top:47.5px;animation-duration:4.1s;animation-delay:-0.3s\"></i><i class=\"lc1 lb\" style=\"left:102.5px;top:38.1px;animation-duration:4.1s;animation-delay:-0.3s\"></i><i class=\"lp2\"></i><i class=\"lc2 la\" style=\"left:82.3px;top:87.9px;animation-duration:5.3s;animation-delay:-1.9s\"></i><i class=\"lc2 lb\" style=\"left:94.6px;top:96.5px;animation-duration:5.3s;animation-delay:-1.9s\"></i><i class=\"lp3\"></i><i class=\"lc3 la\" style=\"left:20.6px;top:93.1px;animation-duration:4.7s;animation-delay:-3.2s\"></i><i class=\"lc3 lb\" style=\"left:11.7px;top:104.9px;animation-duration:4.7s;animation-delay:-3.2s\"></i><i class=\"lp4\"></i><i class=\"lc4 la\" style=\"left:21px;top:54.8px;animation-duration:5.9s;animation-delay:-0.9s\"></i><i class=\"lc4 lb\" style=\"left:9.3px;top:44.5px;animation-duration:5.9s;animation-delay:-0.9s\"></i><i class=\"lp5\"></i><i class=\"lc5 la\" style=\"left:73.6px;top:22px;animation-duration:4.4s;animation-delay:-2.6s\"></i><i class=\"lc5 lb\" style=\"left:81.5px;top:11px;animation-duration:4.4s;animation-delay:-2.6s\"></i><i class=\"lp6\"></i><i class=\"lc6 la\" style=\"left:28.5px;top:29.3px;animation-duration:5.6s;animation-delay:-4.4s\"></i><i class=\"lc6 lb\" style=\"left:13.1px;top:23.4px;animation-duration:5.6s;animation-delay:-4.4s\"></i></b></span>",   // 0.5.8n (performance pass): the same symbol as iconImg, as layers that animate without repainting (see .ik-licon)
   schemaVersion: 1,
   brandPlace: "bar",     // 2026-10-13: no banner card on the page; tagline and 🎨 live in the top bar
   accent: "#ff2d55",
