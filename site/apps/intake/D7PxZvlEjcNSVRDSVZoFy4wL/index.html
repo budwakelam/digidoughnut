@@ -1353,7 +1353,8 @@ button.ik-fm-fed.on{border-color:#6fe7ff;box-shadow:0 0 12px rgba(111,231,255,.3
 .ik-topnav .ik-seg{grid-template-columns:repeat(3,minmax(0,1fr));min-width:330px}
 @media (min-width:900px){
   .ik-tabbar{display:none}
-  .ik-topnav{display:flex;position:sticky;top:0;z-index:60;background:var(--dd-bg);margin:0;padding:8px 0}   /* 0.5.8p (Oran): DigiBot stays visible while scrolling on PC */
+  .ik-topnav{display:flex}
+  .ik-topnav [data-dd-helper-toggle]{position:fixed;top:12px;right:16px;z-index:60;background:var(--dd-bg);box-shadow:0 2px 12px rgba(0,0,0,.14)}   /* 0.5.8r (Oran): ONLY the DigiBot button stays on screen while scrolling on PC */
   .ik h1.ik-h1{font-size:40px}
   .ik .ik-head1 h1.ik-h1{font-size:28px}
   .ik .ik-head1 h1.ik-h1.sm{font-size:17px}
