@@ -1113,7 +1113,7 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-batt{flex:none;width:26px;height:14px;border-radius:4px;border:2px solid #8ea3b3;position:relative;box-sizing:border-box}
 .ik-fm-batt i{position:absolute;left:1px;top:1px;bottom:1px;border-radius:2px}
 /* 0.5.8 (Oran, 2026-10-17): the legend sits on the dark ground now, not a white strip */
-.ik-fm-legend{display:flex;flex-wrap:wrap;justify-content:center;gap:3px 12px;padding:10px 14px 12px;font-size:10.5px;line-height:1.3;color:#8ea3b3;font-weight:600}
+.ik-fm-legend{display:flex;flex-wrap:wrap;justify-content:center;gap:3px 12px;padding:10px 14px 12px;font-size:10.5px;line-height:1.3;color:#8ea3b3;font-weight:600;background:#0a1117}  /* 0.5.8 (Oran, 2026-10-17): plain dark, no theme colour */
 .ik-fm-legend span{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
 .ik-fm-legend span.w{display:block;white-space:normal;flex-basis:100%;color:#7f95a6;font-weight:500;text-align:center}
 .ik-fm-legend b{color:#e9f4fa;font-weight:800;margin-right:2px}
@@ -1209,7 +1209,8 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-boostnote i{flex:none;width:9px;height:9px;border-radius:50%;background:#19c58c;box-shadow:0 0 0 0 #19c58c;animation:ikRowPulse 2.8s ease-in-out infinite}
 .ik-fm-row.pulse,.ik-drow.pulse,.ik-nrow.pulse{animation:ikRowPulse 2.8s ease-in-out infinite;border-radius:10px}
 @keyframes ikRowPulse{0%,100%{box-shadow:0 0 0 0 rgba(25,197,140,0);background-color:transparent}50%{box-shadow:0 0 0 3px rgba(25,197,140,.28);background-color:rgba(25,197,140,.08)}}
-.ik-entry.fresh{border-radius:14px;box-shadow:0 0 0 2px rgba(25,197,140,.45),0 6px 18px rgba(25,197,140,.18)}
+/* 0.5.8 (Oran, 2026-10-17): the "in the fuel map" highlight is a small text badge, not a tight border */
+.ik-efuel{font-size:10.5px;font-weight:700;color:#0c8a5f;background:#e6fbf3;border-radius:99px;padding:1px 8px;margin-left:4px;white-space:nowrap}
 .ik-footnote{font-size:11.5px;line-height:1.35;color:var(--ik-ink2);opacity:.75;text-align:center;margin:10px 4px 6px}
 .ik-fm-wchart{display:block;width:100%;height:auto;margin:2px 0 0}
 .ik-fm-wline{stroke-dasharray:100;animation:ikFmDraw 1.4s ease-out both}
@@ -9878,8 +9879,8 @@ function ikRenderToday(ctx) {
       var et = ikTotals([e], d), icon = e.kind === "drink" ? "drink" : e.kind === "supplement" ? "supplement" : e.part;
       var right = hide ? ikNum(et.v.protein, 0) + "<span> g protein</span>" : ikNum(et.v.kcal, 0) + "<span> kcal</span>";
       if (e.kind === "drink" && (et.v.kcal || 0) < 5) right = ikNum(et.drinksMl, 0) + "<span> mL</span>";   // V5.1: water and black coffee show how much
-      listHtml += '<button class="ik-entry' + (IK_FM_LIVE && IK_FM_LIVE.day === day && IK_FM_LIVE.fresh[e.id] && IK_FM_LIVE.any ? " fresh" : "") + '" data-entry="' + ikEsc(e.id) + '"><span class="ik-ico ' + icon + '" aria-hidden="true">' + (IK_PART_ICON[icon] || "🍽️") + "</span>" +
-        '<span class="ik-grow"><span class="ik-ewhen">' + IK_PARTS[e.part] + " · " + ikNiceTime(e.time) + '</span><br><span class="ik-ename">' + ikEsc(ikEntryName(e, d)) + "</span>" + (et.est ? '<span class="ik-est">estimated</span>' : "") +
+      listHtml += '<button class="ik-entry' + '" data-entry="' + ikEsc(e.id) + '"><span class="ik-ico ' + icon + '" aria-hidden="true">' + (IK_PART_ICON[icon] || "🍽️") + "</span>" +
+        '<span class="ik-grow"><span class="ik-ewhen">' + IK_PARTS[e.part] + " · " + ikNiceTime(e.time) + '</span><br><span class="ik-ename">' + ikEsc(ikEntryName(e, d)) + "</span>" + (et.est ? '<span class="ik-est">estimated</span>' : "") + (IK_FM_LIVE && IK_FM_LIVE.day === day && IK_FM_LIVE.fresh[e.id] && IK_FM_LIVE.any ? '<span class="ik-efuel">In your fuel map now</span>' : "") +
         (e.note ? '<br><span class="ik-enote">' + ikEsc(e.note) + "</span>" : "") + ikEntryBadges(e, d) + '</span>' + (ikEntryBars(e, et, d) || '<span class="ik-ekcal">' + right + "</span>") + "</button>";
     });
   });
