@@ -2294,6 +2294,22 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
       back.textContent = "\u2039 Menu";
       back.addEventListener("click", function () { menu.open(); });
       ov.insertBefore(back, ov.firstChild);
+      /* Oran, 2026-10-16: next to each Save/Done button, a small text link that
+         saves and returns straight to the menu — quick when changing several things. */
+      Array.prototype.forEach.call(ov.querySelectorAll("button"), function (sb) {
+        var t = (sb.textContent || "").trim().toLowerCase();
+        if ((t !== "save" && t !== "done") || sb.dataset.ddSaveBack) return;
+        sb.dataset.ddSaveBack = "1";
+        var link = document.createElement("button");
+        link.className = "dd-linkbtn";
+        link.style.fontSize = ".8rem";
+        link.textContent = "Save and back";
+        link.addEventListener("click", function () {
+          sb.click();
+          setTimeout(function () { menu.open(); }, 400);
+        });
+        sb.parentNode.insertBefore(link, sb.nextSibling);
+      });
     } catch (e) {}
   }
 
