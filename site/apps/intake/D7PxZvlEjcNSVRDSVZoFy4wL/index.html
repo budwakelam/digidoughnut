@@ -994,7 +994,7 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-intro span{flex:1}
 .ik-fm-intro .ik-x{width:30px;height:30px;font-size:15px;flex:none}
 /* the panel takes a deep shade of the app's own colours (🎨 Look); the status lights stay fixed so they always mean the same thing */
-.ik-fm-card{--fmbg:color-mix(in srgb,var(--dd-brand) 42%,#04090f);background:var(--fmbg);border-radius:30px;padding:0 0 12px;overflow:hidden;box-shadow:0 14px 34px rgba(4,13,22,.3);color:#e9f4fa}
+.ik-fm-card{--fmbg:color-mix(in srgb,var(--dd-brand) 42%,#04090f);background:var(--fmbg);border-radius:30px;padding:14px 0 12px;   /* 0.5.8 (Oran, 2026-10-17): more dark above the map */overflow:hidden;box-shadow:0 14px 34px rgba(4,13,22,.3);color:#e9f4fa}
 .ik-fm-card{padding-bottom:0!important}
 .ik-fm-foot{background:#f5f5f7;color:#1d1d1f;padding:12px 0 12px;margin-top:0}
 .ik-fm-foot .ik-fm-fuel{margin-top:0;background:#fff;border-color:#e0e0e6}
@@ -1021,13 +1021,13 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-vis svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .ik-fm-still{mix-blend-mode:screen}
 .ik-fm-flow{will-change:transform}
-.ik-fm-run path{fill:none;stroke-linecap:round;stroke-dasharray:12 100;animation:ikFmTravel 3.6s cubic-bezier(.45,.05,.55,.95) infinite}
-.ik-fm-run.trunk path{stroke-dasharray:20 100;animation-duration:3s}
-.ik-fm-run:nth-child(3n) path{animation-delay:-1.2s}.ik-fm-run:nth-child(3n+1) path{animation-delay:-2.4s}
+.ik-fm-run path{fill:none;stroke-linecap:round;stroke-dasharray:12 100;animation:ikFmTravel 7.2s cubic-bezier(.45,.05,.55,.95) infinite}
+.ik-fm-run.trunk path{stroke-dasharray:20 100;animation-duration:6s}
+.ik-fm-run:nth-child(3n) path{animation-delay:-2.4s}.ik-fm-run:nth-child(3n+1) path{animation-delay:-4.8s}
 .ik-fm-halos{position:absolute;inset:0}
 .ik-fm-ring{position:absolute;width:4.7%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;border:2px solid var(--c);box-shadow:0 0 10px var(--c);pointer-events:none}
 .ik-fm-halo{position:absolute;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(closest-side,var(--c) 0%,color-mix(in srgb,var(--c) 45%,transparent) 35%,transparent 100%);
-  opacity:.35;will-change:opacity;animation:ikFmBreathe 4.6s ease-in-out infinite;mix-blend-mode:screen}
+  opacity:.35;will-change:opacity;animation:ikFmBreathe 7s ease-in-out infinite;mix-blend-mode:screen}
 .ik-fm-halo.dim{opacity:.18;animation:none}
 .ik-fm-halo:nth-child(2n){animation-delay:-2.3s}
 .ik-fm-paused .ik-fm-run path,.ik-fm-paused .ik-fm-halo{animation-play-state:paused}
@@ -1036,13 +1036,13 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-pill{position:absolute;width:20.8%;box-sizing:border-box;text-align:left;font:inherit;cursor:pointer;padding:1.4cqw 2cqw;border-radius:3.2cqw;display:flex;flex-direction:column;gap:0;line-height:1.15;
   background:rgba(6,16,26,.8);border:1px solid rgba(160,220,255,.18);color:#fff;transition:background .2s,border-color .2s,transform .12s}
 .ik-fm-pill:active{transform:scale(.96)}
-.ik-fm-pill b{font-size:clamp(8px,3cqw,12px);font-weight:800;color:var(--c);text-shadow:0 0 10px var(--c);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px}
+.ik-fm-pill b{font-size:clamp(8px,3cqw,12px);font-weight:800;color:var(--c);text-shadow:0 0 6px var(--c);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px}
 .ik-fm-pill b svg{width:1em;height:1em;flex:none}
 .ik-fm-pill span{font-size:clamp(11px,4.1cqw,16px);font-weight:800;font-variant-numeric:tabular-nums}
-.ik-fm-pill.on{background:rgba(20,46,66,.9);border-color:var(--c);box-shadow:0 0 16px color-mix(in srgb,var(--c) 45%,transparent)}
+.ik-fm-pill.on{background:rgba(20,46,66,.9);border-color:var(--c);box-shadow:0 0 10px color-mix(in srgb,var(--c) 30%,transparent)}
 .ik-fm-pill.wide{width:25.5%}
 .ik-fm-pill i{display:block;height:3px;border-radius:2px;background:rgba(160,220,255,.18);margin-top:1cqw;overflow:hidden}
-.ik-fm-pill i em{display:block;height:3px;background:var(--c);box-shadow:0 0 6px var(--c)}
+.ik-fm-pill i em{display:block;height:3px;background:var(--c);box-shadow:0 0 3px var(--c)}
 .ik-fm-pill small{font-size:clamp(8px,2.6cqw,10.5px);font-weight:600;color:#9fb4c4;margin-top:.6cqw;white-space:nowrap}
 .ik-fm-fed{position:absolute;right:1.1%;top:.5%;display:flex;align-items:center;gap:1.5cqw;padding:1cqw 2.4cqw;border-radius:99px;background:rgba(6,18,28,.62);border:1px solid rgba(160,220,255,.18);font-size:clamp(8px,2.8cqw,11px);font-weight:700;color:#dff6ff;white-space:nowrap;pointer-events:none}
 .ik-fm-fed i{width:7px;height:7px;border-radius:50%;background:#6fe7ff;box-shadow:0 0 8px #6fe7ff}
@@ -1144,10 +1144,10 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-fat.hold b{color:#c9d6e0}
 .ik-fm-fatico{flex:none;width:clamp(18px,5.6cqw,24px);height:clamp(18px,5.6cqw,24px);border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,194,71,.18);color:#ffc247}
 .ik-fm-fatico svg{width:62%;height:62%}
-.ik-fm-fat.store,.ik-fm-fat.burn{animation:ikFmFatGlow 4s ease-in-out infinite}
+.ik-fm-fat.store,.ik-fm-fat.burn{animation:ikFmFatGlow 7s ease-in-out infinite}
 .ik-fm-fat.burn{border-color:rgba(124,242,199,.4)}
-@keyframes ikFmFatGlow{0%,100%{box-shadow:0 0 0 rgba(255,194,71,0)}50%{box-shadow:0 0 16px rgba(255,194,71,.45)}}
-.ik-fm-run.fat path{stroke-dasharray:22 100;animation-duration:4s}
+@keyframes ikFmFatGlow{0%,100%{box-shadow:0 0 0 rgba(255,194,71,0)}50%{box-shadow:0 0 9px rgba(255,194,71,.3)}}
+.ik-fm-run.fat path{stroke-dasharray:22 100;animation-duration:8s}
 .ik-fm-paused .ik-fm-fat{animation-play-state:paused}
 .ik-fm-key{display:flex;justify-content:center;flex-wrap:wrap;gap:4px 12px;padding:8px 14px 0;font-size:11.5px;font-weight:600;color:#9fb4c4}
 .ik-fm-key b{color:#dbe6ee}
@@ -1180,11 +1180,11 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
   gap:2cqw;padding:0 1.4cqw 0 1.8cqw;border-radius:6.5cqw;background:rgba(5,14,22,.8);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
   border:1.5px solid color-mix(in srgb,var(--c) 60%,transparent);box-shadow:0 0 22px color-mix(in srgb,var(--c) 40%,transparent),inset 0 0 14px color-mix(in srgb,var(--c) 16%,transparent);overflow:hidden}
 .ik-fm-dock.on{background:rgba(8,22,34,.9)}
-.ik-fm-dock.beat{animation:ikFmBeat 3s ease-in-out infinite}
-@keyframes ikFmBeat{0%,100%{border-color:color-mix(in srgb,var(--c) 30%,#fff);box-shadow:0 0 32px 4px color-mix(in srgb,var(--c) 80%,transparent),0 -6px 26px color-mix(in srgb,var(--c) 60%,transparent),inset 0 0 20px color-mix(in srgb,var(--c) 40%,transparent)}
+.ik-fm-dock.beat{animation:ikFmBeat 6s ease-in-out infinite}
+@keyframes ikFmBeat{0%,100%{border-color:color-mix(in srgb,var(--c) 30%,#fff);box-shadow:0 0 18px 2px color-mix(in srgb,var(--c) 50%,transparent),0 -3px 14px color-mix(in srgb,var(--c) 40%,transparent),inset 0 0 20px color-mix(in srgb,var(--c) 40%,transparent)}
   50%{border-color:color-mix(in srgb,var(--c) 40%,transparent);box-shadow:0 0 12px color-mix(in srgb,var(--c) 22%,transparent),0 0 0 transparent,inset 0 0 8px color-mix(in srgb,var(--c) 8%,transparent)}}
 .ik-fm-dock .ik-fm-fuelbtn{gap:2cqw;padding:0;height:100%}
-.ik-fm-dock .ik-fm-orb{width:clamp(26px,8.6cqw,36px);height:clamp(26px,8.6cqw,36px);animation:ikFmOrbGlow 3.4s ease-in-out infinite}
+.ik-fm-dock .ik-fm-orb{width:clamp(26px,8.6cqw,36px);height:clamp(26px,8.6cqw,36px);animation:ikFmOrbGlow 6s ease-in-out infinite}
 .ik-fm-dock .ik-fm-orb svg{width:52%;height:52%}
 .ik-fm-dock .ik-fm-k{font-size:clamp(8px,2.45cqw,10.5px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#9fb4c4}
 .ik-fm-dock .ik-fm-title{font-size:clamp(11.5px,3.8cqw,15px)}
@@ -1198,9 +1198,9 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-port{position:absolute;left:59.18%;top:85.6%;width:11%;aspect-ratio:2.2;transform:translate(-50%,-50%);border-radius:50%;z-index:3;pointer-events:none;
   background:radial-gradient(closest-side,#fff 0%,var(--c) 38%,color-mix(in srgb,var(--c) 30%,transparent) 70%,transparent 100%);animation:ikFmPort 3s ease-in-out infinite}
 @keyframes ikFmPort{0%,100%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}50%{opacity:.5;transform:translate(-50%,-50%) scale(.85)}}
-@keyframes ikFmOrbGlow{0%,100%{box-shadow:0 0 10px var(--c)}50%{box-shadow:0 0 22px var(--c),0 0 4px #fff}}
+@keyframes ikFmOrbGlow{0%,100%{box-shadow:0 0 10px var(--c)}50%{box-shadow:0 0 12px var(--c),0 0 2px #fff}}
 .ik-fm-run.trunk path{stroke-dasharray:30 100;animation-delay:0s!important}
-.ik-fm-dash{stroke-dasharray:3 13;animation:ikFmDash 1.6s linear infinite;opacity:.9}
+.ik-fm-dash{stroke-dasharray:3 13;animation:ikFmDash 3.2s linear infinite;opacity:.9}
 @keyframes ikFmDash{from{stroke-dashoffset:16}to{stroke-dashoffset:0}}
 .ik-fm-paused .ik-fm-orbs{display:none}
 .ik-fm-paused .ik-fm-dash,.ik-fm-paused .ik-fm-port,.ik-fm-paused .ik-fm-dock.beat,.ik-fm-paused .ik-fm-pill.boost,.ik-fm-paused .ik-fm-dock .ik-fm-orb{animation-play-state:paused}
@@ -1215,11 +1215,11 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-tr.up{color:#7cf2c7;text-shadow:0 0 8px #7cf2c7;animation:ikFmUp 2.6s ease-in-out infinite;display:inline-block}
 .ik-fm-tr.dn{color:#ffb340}
 @keyframes ikFmUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
-.ik-fm-pill.boost{animation:ikFmBoost 2.8s ease-in-out infinite}
-@keyframes ikFmBoost{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--c) 0%,transparent);border-color:color-mix(in srgb,var(--c) 40%,transparent)}50%{box-shadow:0 0 18px 2px color-mix(in srgb,var(--c) 70%,transparent);border-color:var(--c)}}
+.ik-fm-pill.boost{animation:ikFmBoost 5s ease-in-out infinite}
+@keyframes ikFmBoost{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--c) 0%,transparent);border-color:color-mix(in srgb,var(--c) 40%,transparent)}50%{box-shadow:0 0 10px 1px color-mix(in srgb,var(--c) 45%,transparent);border-color:var(--c)}}
 .ik-fm-boostnote{display:flex;align-items:flex-start;line-height:1.4;gap:8px;margin:12px 0 0;padding:9px 12px;border-radius:12px;background:#e6fbf3;color:#03543c;font-size:13.5px;font-weight:600}
-.ik-fm-boostnote i{flex:none;width:9px;height:9px;border-radius:50%;background:#19c58c;box-shadow:0 0 0 0 #19c58c;animation:ikRowPulse 2.8s ease-in-out infinite}
-.ik-fm-row.pulse,.ik-drow.pulse,.ik-nrow.pulse{animation:ikRowPulse 2.8s ease-in-out infinite;border-radius:10px}
+.ik-fm-boostnote i{flex:none;width:9px;height:9px;border-radius:50%;background:#19c58c;box-shadow:0 0 0 0 #19c58c;animation:ikRowPulse 5s ease-in-out infinite}
+.ik-fm-row.pulse,.ik-drow.pulse,.ik-nrow.pulse{animation:ikRowPulse 5s ease-in-out infinite;border-radius:10px}
 @keyframes ikRowPulse{0%,100%{box-shadow:0 0 0 0 rgba(25,197,140,0);background-color:transparent}50%{box-shadow:0 0 0 3px rgba(25,197,140,.28);background-color:rgba(25,197,140,.08)}}
 /* 0.5.8 (Oran, 2026-10-17): the "in the fuel map" highlight is a small text badge, not a tight border */
 .ik-efuel{font-size:10.5px;font-weight:700;color:#0c8a5f;background:#e6fbf3;border-radius:99px;padding:1px 8px;margin-left:4px;white-space:nowrap}
@@ -1227,7 +1227,7 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-wchart{display:block;width:100%;height:auto;margin:2px 0 0}
 .ik-fm-wline{stroke-dasharray:100;animation:ikFmDraw 1.4s ease-out both}
 .ik-fm-warea{animation:ikFadeIn 1.4s ease-out both}
-.ik-fm-wnow{animation:ikFmNow 2.8s ease-in-out infinite}
+.ik-fm-wnow{animation:ikFmNow 5s ease-in-out infinite}
 @keyframes ikFmDraw{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
 @keyframes ikFadeIn{from{opacity:0}to{opacity:1}}
 @keyframes ikFmNow{0%,100%{r:5}50%{r:7}}
@@ -10588,7 +10588,6 @@ function ikFuelMap(d, t, week, day, es) {
   h += '<div class="ik-fm-switch"><div class="ik-fm-views" role="tablist" aria-label="Top of Today">' +
     '<button role="tab" data-fm="view:map" aria-selected="' + (view === "map") + '">Fuel map</button><button role="tab" data-fm="view:chart" aria-selected="' + (view === "chart") + '">Balance chart</button></div>' +
     '<span class="ik-fm-addgrp">' + ikGlassBtn() + '<button class="ik-fm-add" data-act="add" aria-label="Add food or a drink">＋ Add</button></span></div>';
-  if (!set.fmIntro && view === "map") h += '<div class="ik-fm-intro"><span>Where your food is going. Each system lights up as it gets what it needs. Tap one to see what feeds it.</span><button class="ik-x" data-fm="intro" aria-label="Close this note">✕</button></div>';
   h += '<div class="ik-fm-cols"><div class="ik-fm-left">';
   if (view === "chart") h += ikRadarCard(d, t, week, day);
   else {
@@ -10615,14 +10614,14 @@ function ikFuelMap(d, t, week, day, es) {
       return o;
     };
     /* 0.5.8b (Oran: "it looks like a white sausage"): the pulse is a soft blurred glow with a faint core, not a hard capsule */
-    flow += '<defs><filter id="fmPulseW" filterUnits="userSpaceOnUse" x="330" y="300" width="180" height="580"><feGaussianBlur stdDeviation="16"/></filter>' +
-      '<filter id="fmPulseM" filterUnits="userSpaceOnUse" x="330" y="300" width="180" height="580"><feGaussianBlur stdDeviation="6"/></filter>' +
-      '<filter id="fmSysW" filterUnits="userSpaceOnUse" x="190" y="20" width="380" height="640"><feGaussianBlur stdDeviation="10"/></filter>' +
-      '<filter id="fmSysM" filterUnits="userSpaceOnUse" x="190" y="20" width="380" height="640"><feGaussianBlur stdDeviation="3.5"/></filter></defs>' +
+    flow += '<defs><filter id="fmPulseW" filterUnits="userSpaceOnUse" x="330" y="300" width="180" height="580"><feGaussianBlur stdDeviation="10"/></filter>' +
+      '<filter id="fmPulseM" filterUnits="userSpaceOnUse" x="330" y="300" width="180" height="580"><feGaussianBlur stdDeviation="3.5"/></filter>' +
+      '<filter id="fmSysW" filterUnits="userSpaceOnUse" x="190" y="20" width="380" height="640"><feGaussianBlur stdDeviation="6"/></filter>' +
+      '<filter id="fmSysM" filterUnits="userSpaceOnUse" x="190" y="20" width="380" height="640"><feGaussianBlur stdDeviation="2"/></filter></defs>' +
       '<g class="ik-fm-run trunk"><path pathLength="100" d="' + trunk + '" stroke="' + trunkC + '" stroke-width="58" opacity=".55" filter="url(#fmPulseW)"/>' +
       '<path pathLength="100" d="' + trunk + '" stroke="#ffe6f0" stroke-width="18" opacity=".7" filter="url(#fmPulseM)"/>' +
       '<path pathLength="100" d="' + trunk + '" stroke="#fff" stroke-width="3" opacity=".5"/></g>';
-    var orbs = F.past || F.none ? "" : orb(trunk, trunkC, eating ? 15 : 11, eating ? 3.4 : 4.8, eating ? 3 : 2);
+    var orbs = F.past || F.none ? "" : orb(trunk, trunkC, eating ? 15 : 11, eating ? 6.8 : 9.6, eating ? 3 : 2);
     var halo = function (x, y, r, c, cls) { return '<i class="ik-fm-halo' + (cls || "") + '" style="left:' + (x / 7.3).toFixed(2) + "%;top:" + (y / 9.3).toFixed(2) + "%;width:" + (r * 2 / 7.3).toFixed(2) + "%;--c:" + c + '"></i>'; };
     halos += halo(374, 334, absorbing ? 46 : 30, "#ff3d7f", absorbing ? "" : " dim");
     var sysW = "", sysM = "", sysC = "", sysN = 0;
@@ -10637,14 +10636,14 @@ function ikFuelMap(d, t, week, day, es) {
         "";
       if (on) ring = '<i class="ik-fm-ring" style="left:' + (s.x / 7.3).toFixed(2) + "%;top:" + (s.y / 9.3).toFixed(2) + "%;--c:" + IK_FM_COL[st] + '"></i>';
       if (!F.past) {   // 0.5.8b: soft, blurred pulses like the main stream (one blur per layer, not per path)
-        var dl = ' style="animation-delay:-' + ((sysN++ * 1.2) % 3.6).toFixed(1) + 's"';
+        var dl = ' style="animation-delay:-' + ((sysN++ * 2.4) % 7.2).toFixed(1) + 's"';
         sysW += '<g class="ik-fm-run"><path pathLength="100" d="' + s.d + '" stroke="' + c + '" stroke-width="30" opacity=".6"' + dl + "/></g>";
         sysM += '<g class="ik-fm-run"><path pathLength="100" d="' + s.d + '" stroke="#ffeef6" stroke-width="9" opacity=".75"' + dl + "/></g>";
         sysC += '<g class="ik-fm-run"><path pathLength="100" d="' + s.d + '" stroke="#fff" stroke-width="1.6" opacity=".45"' + dl + "/></g>";
       }
       if (S.boost) {   // 0.5.8: this system is getting something from the meal you just had
         sysM += '<path class="ik-fm-dash" d="' + s.d + '" stroke="#fff" stroke-width="3.5" fill="none" stroke-linecap="round"/>';
-        orbs += orb(s.d, c, 10, 3.2, 1);
+        orbs += orb(s.d, c, 10, 6.4, 1);
       }
       halos += halo(s.x, s.y, st === "thrive" ? 40 : st === "steady" ? 31 : 22, nc, st === "low" ? " dim" : "");
     });
@@ -10656,18 +10655,18 @@ function ikFuelMap(d, t, week, day, es) {
       FAT = { mode: fnet < -1 ? "store" : fnet > 1 ? "burn" : "hold", g: Math.round(Math.abs(fnet)), ox: Math.round(F.cur.fatOx), inn: Math.round(F.cur.Af) };
       var fpath = FAT.mode === "burn" ? "M236 690 C320 690 400 698 441 698" : "M441 698 C400 698 320 690 236 690";
       if (FAT.mode !== "hold") {
-        flow += '<defs><filter id="fmFatW" filterUnits="userSpaceOnUse" x="190" y="620" width="300" height="150"><feGaussianBlur stdDeviation="9"/></filter></defs>' +
+        flow += '<defs><filter id="fmFatW" filterUnits="userSpaceOnUse" x="190" y="620" width="300" height="150"><feGaussianBlur stdDeviation="5.5"/></filter></defs>' +
           '<g class="ik-fm-run fat"><path pathLength="100" d="' + fpath + '" stroke="#ffc247" stroke-width="26" opacity=".6" filter="url(#fmFatW)"/>' +
           '<path pathLength="100" d="' + fpath + '" stroke="#fff3d1" stroke-width="3" opacity=".6"/></g>';
-        orbs += orb(fpath, "#ffc247", FAT.g >= 6 ? 12 : 9, 4, FAT.g >= 6 ? 2 : 1);
+        orbs += orb(fpath, "#ffc247", FAT.g >= 6 ? 12 : 9, 8, FAT.g >= 6 ? 2 : 1);
       }
       still += '<path d="M441 698 C400 698 320 690 236 690" stroke="#ffc247" stroke-width="' + (FAT.mode === "hold" ? 2 : 3) + '" opacity="' + (FAT.mode === "hold" ? 0.25 : 0.5) + '" fill="none" stroke-linecap="round" stroke-dasharray="' + (FAT.mode === "hold" ? "3 6" : "none") + '"/>';
     }
     var vis = '<img src="' + ikFmImgUrl(body) + '" alt="" draggable="false">' +
       '<svg class="ik-fm-still" viewBox="0 0 730 930" aria-hidden="true"><defs>' +
-        '<filter id="fmBlur" filterUnits="userSpaceOnUse" x="0" y="0" width="730" height="930"><feGaussianBlur stdDeviation="7"/></filter>' +
-        '<filter id="fmBlurWide" filterUnits="userSpaceOnUse" x="0" y="0" width="730" height="930"><feGaussianBlur stdDeviation="18"/></filter>' +
-        '<filter id="fmSoft" filterUnits="userSpaceOnUse" x="0" y="0" width="730" height="930"><feGaussianBlur in="SourceGraphic" stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>' + still + "</svg>" +
+        '<filter id="fmBlur" filterUnits="userSpaceOnUse" x="0" y="0" width="730" height="930"><feGaussianBlur stdDeviation="4"/></filter>' +
+        '<filter id="fmBlurWide" filterUnits="userSpaceOnUse" x="0" y="0" width="730" height="930"><feGaussianBlur stdDeviation="11"/></filter>' +
+        '<filter id="fmSoft" filterUnits="userSpaceOnUse" x="0" y="0" width="730" height="930"><feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>' + still + "</svg>" +
       '<div class="ik-fm-halos" aria-hidden="true">' + halos + "</div>" +
       '<svg class="ik-fm-flow" viewBox="0 0 730 930" aria-hidden="true"><defs>' + Object.keys(grads).map(function (id) {
         return '<radialGradient id="' + id + '"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="' + grads[id] + '"/><stop offset="1" stop-color="' + grads[id] + '" stop-opacity="0"/></radialGradient>'; }).join("") +
