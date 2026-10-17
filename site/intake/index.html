@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Intake — your food log, with an AI helper · DigiDoughnut</title>
+<meta name="description" content="Intake is a friendly food log that runs in your browser, with DigiBot — a built-in AI helper that logs meals, answers questions, and makes sense of your week.">
+<!-- PLACEHOLDERS TO FILL IN:
+     1. Price ("$XX" below) — set the real price when the Etsy listing goes live.
+     2. Etsy buttons currently point at the shop (https://www.etsy.com/shop/DigiDoughnut) —
+        swap in the direct Intake listing URL when it exists.
+     3. Feature copy was written from the working app; adjust wording as you like.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#f6f7fb; --ink:#151a2a; --muted:#5a6377; --line:#e1e5ee; --card:#ffffff;
+  --hero:#eaf0ff; --accent:#2563eb; --accent-d:#1d4ed8;
+  --display:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --body:"Figtree",-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){ :root{ --bg:#0f1320; --ink:#eef1f8; --muted:#a3abbd; --line:#273047; --card:#171d2e; --hero:#16203d; color-scheme:dark } }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55;margin:0;padding:0 16px}
+.wrap{max-width:920px;margin:0 auto;padding:24px 0 64px;display:flex;flex-direction:column;gap:36px}
+.nav{display:flex;align-items:center;gap:10px}
+.nav a{color:var(--muted);text-decoration:none;font-weight:600;font-size:.95rem}
+.nav a:hover{color:var(--ink)}
+.hero{background:var(--hero);border-radius:28px;padding:40px 24px;text-align:center;display:flex;flex-direction:column;gap:14px;align-items:center;overflow:hidden}
+.tag{display:inline-block;font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);
+  background:color-mix(in srgb,var(--accent) 10%,transparent);border-radius:99px;padding:4px 12px}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(2.2rem,8vw,3.6rem);line-height:1.02;margin:0;letter-spacing:-.02em;text-wrap:balance}
+.lede{margin:0;max-width:46ch;color:var(--muted);font-size:1.1rem;text-wrap:balance}
+.price{font-family:var(--display);font-weight:800;font-size:1.8rem}
+.price small{font-family:var(--body);font-weight:500;font-size:.85rem;color:var(--muted);display:block}
+.cta-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;font-weight:700;border-radius:14px;
+  background:var(--accent);color:#fff;font-size:1.05rem;padding:14px 26px;min-height:56px;transition:transform .15s,background .15s}
+.btn:hover{background:var(--accent-d);transform:translateY(-2px)}
+.btn.ghost{background:transparent;color:var(--accent);border:2px solid color-mix(in srgb,var(--accent) 35%,transparent)}
+.btn.ghost:hover{background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.shot{width:100%;max-width:720px;border-radius:18px;border:1px solid var(--line);box-shadow:0 18px 44px rgba(20,30,60,.16);margin-top:10px}
+.section-h{font-family:var(--display);font-weight:600;font-size:1.4rem;margin:0;text-align:center}
+.feats{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+.feat{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:8px}
+.feat .ico{font-size:1.6rem}
+.feat b{font-size:1.05rem}
+.feat span{color:var(--muted);font-size:.93rem}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:24px;padding:28px}
+@media (max-width:700px){.split{grid-template-columns:1fr}}
+.split img{width:100%;max-width:300px;justify-self:center;border-radius:18px;box-shadow:0 14px 34px rgba(20,30,60,.16)}
+.split h2{font-family:var(--display);font-size:1.5rem;margin:0 0 8px}
+.split p{margin:0 0 10px;color:var(--muted)}
+.split ul{margin:0;padding-left:20px;color:var(--muted);display:flex;flex-direction:column;gap:6px}
+.how{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;counter-reset:s}
+@media (max-width:640px){.how{grid-template-columns:1fr}}
+.how li{counter-increment:s;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:6px}
+.how li::before{content:counter(s);font-family:var(--display);font-weight:800;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;
+  background:color-mix(in srgb,var(--accent) 12%,var(--card));color:var(--accent)}
+.how b{font-size:1.02rem}.how span{color:var(--muted);font-size:.92rem}
+.faq{display:flex;flex-direction:column;gap:12px;max-width:680px;margin:0 auto;width:100%}
+.faq details{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 18px}
+.faq summary{font-weight:700;cursor:pointer}
+.faq p{margin:8px 0 0;color:var(--muted);font-size:.95rem}
+.final{background:var(--hero);border-radius:28px;padding:40px 24px;text-align:center;display:flex;flex-direction:column;gap:14px;align-items:center}
+.final h2{font-family:var(--display);font-size:clamp(1.6rem,5vw,2.4rem);margin:0}
+footer{text-align:center;color:var(--muted);font-size:.85rem}
+footer a{color:inherit}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav class="nav"><a href="/">← DigiDoughnut</a></nav>
+
+  <section class="hero">
+    <span class="tag">First app</span>
+    <h1>Intake</h1>
+    <p class="lede">Your food log. Snap a photo of your meal and see the nutrients, or just ask DigiBot — the built-in AI helper — to log it, answer a question, or make sense of your week.</p>
+    <div class="price">$XX<small>one-time purchase · yours to keep</small></div>
+    <div class="cta-row">
+      <a class="btn" href="https://www.etsy.com/shop/DigiDoughnut">Get it on Etsy</a>
+      <a class="btn ghost" href="#how">How it works</a>
+    </div>
+    <img class="shot" src="/assets/intake-laptop.webp" alt="Intake food log running on a laptop">
+  </section>
+
+  <h2 class="section-h">What it does</h2>
+  <div class="feats">
+    <div class="feat"><span class="ico">📷</span><b>Snap my food</b><span>Take a photo of your plate and Intake breaks it into foods, amounts, and nutrients. No typing, no searching.</span></div>
+    <div class="feat"><span class="ico">💬</span><b>Ask DigiBot</b><span>Your built-in AI helper logs meals for you, answers nutrition questions, and spots patterns in your week.</span></div>
+    <div class="feat"><span class="ico">🎯</span><b>Fuel map &amp; water</b><span>See your day at a glance — macros, calories, and one-tap water logging that follows your theme.</span></div>
+    <div class="feat"><span class="ico">⚡</span><b>Quick adds &amp; label scan</b><span>One-tap logging for your regulars, plus snap-a-photo reading of any Nutrition Facts label.</span></div>
+    <div class="feat"><span class="ico">📊</span><b>Targets &amp; trends</b><span>Set your own targets, watch charts and gauges on your home screen, and export everything any time.</span></div>
+    <div class="feat"><span class="ico">🔄</span><b>Sync &amp; privacy</b><span>Runs in your browser on any device — no account, no install. Optional sync keeps a safe copy in the cloud.</span></div>
+  </div>
+
+  <div class="split">
+    <img src="/assets/intake-phone.webp" alt="Intake food log on a phone">
+    <div>
+      <h2>Made for real life</h2>
+      <p>Intake lives in your browser, so it works on your phone, tablet, or computer — wherever you eat.</p>
+      <ul>
+        <li>No account to create, nothing to install</li>
+        <li>Your data stays yours — export it whenever you like</li>
+        <li>Make it yours: themes, charts, and a home screen you arrange</li>
+        <li>The AI helper connects with a free key and walks you through it</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2 class="section-h" id="how">How it works</h2>
+  <ol class="how">
+    <li><b>Buy on Etsy</b><span>Grab Intake from our Etsy shop. You'll get your own thank-you page with everything in one place.</span></li>
+    <li><b>Open it</b><span>Your copy runs in the browser on any device. No account, no install — it works straight away.</span></li>
+    <li><b>Make it yours</b><span>DigiBot walks you through setup in a couple of minutes. Everything you enter stays yours.</span></li>
+  </ol>
+
+  <h2 class="section-h">Good to know</h2>
+  <div class="faq">
+    <details><summary>What do I need to run it?</summary><p>A modern browser on any phone, tablet, or computer. The AI helper uses a free key from Google — Intake walks you through getting one in about two minutes.</p></details>
+    <details><summary>Is my food data private?</summary><p>Yes. Everything is stored on your own device. An optional sync feature can keep a backup copy in the cloud if you want it — your call.</p></details>
+    <details><summary>Do I need the AI helper?</summary><p>No — Intake works fine as a plain food log. The helper just makes logging faster and answers questions when you want it.</p></details>
+    <details><summary>Is this medical advice?</summary><p>No. Intake shows where its numbers come from, but it's a logbook, not a clinician. Talk to a professional about health decisions.</p></details>
+  </div>
+
+  <section class="final">
+    <h2>Start logging in minutes</h2>
+    <div class="price">$XX</div>
+    <div class="cta-row"><a class="btn" href="https://www.etsy.com/shop/DigiDoughnut">Get Intake on Etsy</a></div>
+  </section>
+
+  <footer>DigiDoughnut · made with care<br><a href="/">Home</a> · <a href="https://www.etsy.com/shop/DigiDoughnut">Etsy shop</a></footer>
+
+</div>
+</body>
+</html>
