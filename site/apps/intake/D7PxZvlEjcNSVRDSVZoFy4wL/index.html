@@ -128,10 +128,9 @@
   ＋ Add food is the main button, and "From a photo" is the first choice inside it.
   DigiBot's tip at the bottom is a soft tint of the Look colour instead of black.
   Add to today: the ways-to-add buttons wrap onto a second row instead of being cut off at the edge.
-  0.5.8t (Bud, Oran, 2026-10-17): the fuel-coloured bands along each system overlapped and looked messy, so they're
-  gone — each system's point is now "the body's engine": a soft glow in the fuel colour (like the blurry lights on the
-  logo) with three little lights orbiting it, fuelling the body's engine. Carbs and fibre get a blue / green flame on
-  the "In your fuel map now" badge to show they're being used.
+  0.5.8u (Bud, Oran, 2026-10-17): the 0.5.8t fuel-map redesign is reverted (Oran: the map stays as it was).
+  The little engine (two orbs orbiting) now marks the green-highlighted nutrient rows instead: each gets
+  "In your fuel map now" with the engine beside it.
   0.5.8p (Bud, Oran, 2026-10-17): on PC the top bar keeps only DigiBot (water glass and ＋ Add food removed;
   both live in the page already), DigiBot gets the Profit Calculator's animated circle, the top bar sticks while
   scrolling, and the fuel map column is wider (520px) to match the balance chart's size.
@@ -1060,17 +1059,6 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-fm-halo:nth-child(2n){animation-delay:-2.3s}
 .ik-fm-paused .ik-fm-halo{animation-play-state:paused}
 @keyframes ikFmBreathe{0%,100%{opacity:.3}50%{opacity:.7}}
-/* 0.5.8t (Oran): the body's engine — three lights orbiting each system's node, like it's fuelling the body's engine */
-.ik-fm-engine{position:absolute;width:6%;aspect-ratio:1;transform:translate(-50%,-50%);pointer-events:none;mix-blend-mode:screen;animation:ikFmSpin 7s linear infinite;will-change:transform}
-.ik-fm-engine b{position:absolute;left:50%;top:50%;width:20%;aspect-ratio:1;border-radius:50%;background:radial-gradient(closest-side,#fff 0%,var(--c) 65%,transparent 100%);box-shadow:0 0 8px var(--c)}
-.ik-fm-engine b:nth-child(1){transform:translate(-50%,-50%) rotate(0deg) translateY(-170%)}
-.ik-fm-engine b:nth-child(2){transform:translate(-50%,-50%) rotate(120deg) translateY(-170%)}
-.ik-fm-engine b:nth-child(3){transform:translate(-50%,-50%) rotate(240deg) translateY(-170%)}
-.ik-fm-engine.dim{opacity:.25;animation:none}
-.ik-fm-paused .ik-fm-engine{animation-play-state:paused}
-@keyframes ikFmSpin{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){.ik-fm-engine{animation:none}}
-.ik-eflame{width:11px;height:11px;vertical-align:-2px;margin-left:3px}
 .ik-fm-pill{position:absolute;width:20.8%;box-sizing:border-box;text-align:left;font:inherit;cursor:pointer;padding:1.4cqw 2cqw;border-radius:3.2cqw;display:flex;flex-direction:column;gap:0;line-height:1.15;
   background:rgba(6,16,26,.8);border:1px solid rgba(160,220,255,.18);color:#fff;transition:background .2s,border-color .2s,transform .12s}
 .ik-fm-pill:active{transform:scale(.96)}
@@ -1281,6 +1269,13 @@ button.ik-fm-fed.on{border-color:#6fe7ff;box-shadow:0 0 12px rgba(111,231,255,.3
   background:rgba(25,197,140,.08);box-shadow:0 0 0 3px rgba(25,197,140,.28);opacity:0;animation:ikGlowIn 5s ease-in-out infinite}
 /* 0.5.8 (Oran, 2026-10-17): the "in the fuel map" highlight is a small text badge, not a tight border */
 .ik-efuel{font-size:10.5px;font-weight:700;color:#0c8a5f;background:#e6fbf3;border-radius:99px;padding:1px 8px;margin-left:4px;white-space:nowrap}
+/* 0.5.8u (Oran): the little engine — two orbs orbiting, marking nutrients in the fuel map right now */
+.ik-eng{display:inline-block;width:14px;height:14px;position:relative;vertical-align:-3px;margin-left:5px;animation:ikEngSpin 2.6s linear infinite}
+.ik-eng b{position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:radial-gradient(closest-side,#fff,#3f8cff 70%);box-shadow:0 0 6px #3f8cff}
+.ik-eng b:first-child{transform:rotate(0deg) translateY(-4.5px)}
+.ik-eng b:last-child{transform:rotate(180deg) translateY(-4.5px)}
+@keyframes ikEngSpin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.ik-eng{animation:none}}
 .ik-footnote{font-size:11.5px;line-height:1.35;color:var(--ik-ink2);opacity:.75;text-align:center;margin:10px 4px 6px}
 .ik-fm-wchart{display:block;width:100%;height:auto;margin:2px 0 0}
 .ik-fm-wline{stroke-dasharray:100;animation:ikFmDraw 1.4s ease-out both}
@@ -8772,7 +8767,7 @@ function ikDetailRow(d, t, week, m, day) {
   var lp = IK_FM_LIVE && IK_FM_LIVE.day === day && IK_FM_LIVE.pulse[m.k];   // 0.5.8: brought by the meal you just had
   return '<button class="ik-drow' + (lp ? " pulse" : "") + '" data-act="nutrients" aria-label="' + ikEsc(m.label + " " + ikNum(v, m.dp) + (tg ? " of " + ikNum(tg, m.dp) : "") + " " + m.unit) + '">' +
     ikRingSvg([{ label: m.label, pct: allMissing ? 0 : pct, color: over ? "var(--ik-amber)" : m.color, soft: m.soft }], 34, 6, 0) +
-    '<span class="ik-drowtx"><b>' + ikNIcon(m.k) + ikEsc(m.label) + "</b><span>" + (allMissing ? "not measured" : ikNum(v, m.dp) + (tg ? " / " + ikNum(tg, m.dp) : "") + " " + m.unit + (m.kind === "limit" ? " max" : "")) + "</span></span>" +
+    '<span class="ik-drowtx"><b>' + ikNIcon(m.k) + ikEsc(m.label) + (lp ? ' <span class="ik-efuel">In your fuel map now<i class="ik-eng" aria-hidden="true"><b></b><b></b></i></span>' : "") + "</b><span>" + (allMissing ? "not measured" : ikNum(v, m.dp) + (tg ? " / " + ikNum(tg, m.dp) : "") + " " + m.unit + (m.kind === "limit" ? " max" : "")) + "</span></span>" +
     ikSpark(week, m.k, tg, m.color, day, function (s) { return m.get(s.t); }) +
     '<span class="ik-drowpct' + (over ? " over" : pct >= 1 && m.kind !== "limit" ? " done" : "") + '">' + (!tg ? "–" : pct >= 1 && m.kind !== "limit" ? "✓" : Math.round(pct * 100) + "%") + "</span></button>";
 }
@@ -9927,16 +9922,6 @@ function ikOpenGauges() {
 }
 
 /* ---------- Today ---------- */
-/* 0.5.8t (Oran): carbs and fibre have no fuel circle on the map — a little flame on the badge shows they're being used */
-function ikFlameSvg(col, tip) {
-  return '<svg class="ik-eflame" viewBox="0 0 24 24" aria-hidden="true"><title>' + tip + '</title><path d="M12 1.8c1 3.8-1.5 5.8-3 8C7.6 11.6 6.5 13.4 6.5 16a5.5 5.5 0 0011 0c0-1.7-.8-3.2-1.6-4.6-.3 1.2-1 2.2-2 3 .4-3.1-.2-7.4-1.9-12.6z" fill="' + col + '"/></svg>';
-}
-function ikFuelBadge(et) {
-  var f = "";
-  if ((et.v.carb || 0) >= 5) f += ikFlameSvg("#3f8cff", "Carbs being used for fuel");
-  if ((et.v.fibre || 0) >= 2) f += ikFlameSvg("#22b573", "Fibre being put to work");
-  return '<span class="ik-efuel">In your fuel map now' + f + '</span>';
-}
 function ikRenderToday(ctx) {
   var d = ctx.data, day = IK_UI.day || ikToday(), isToday = day === ikToday();
   var es = ikEntriesOn(d, day).slice().sort(function (a, b) { return String(a.time).localeCompare(String(b.time)); });
@@ -10002,7 +9987,7 @@ function ikRenderToday(ctx) {
       var right = hide ? ikNum(et.v.protein, 0) + "<span> g protein</span>" : ikNum(et.v.kcal, 0) + "<span> kcal</span>";
       if (e.kind === "drink" && (et.v.kcal || 0) < 5) right = ikNum(et.drinksMl, 0) + "<span> mL</span>";   // V5.1: water and black coffee show how much
       listHtml += '<button class="ik-entry' + '" data-entry="' + ikEsc(e.id) + '"><span class="ik-ico ' + icon + '" aria-hidden="true">' + (IK_PART_ICON[icon] || "🍽️") + "</span>" +
-        '<span class="ik-grow"><span class="ik-ewhen">' + IK_PARTS[e.part] + " · " + ikNiceTime(e.time) + '</span><br><span class="ik-ename">' + ikEsc(ikEntryName(e, d)) + "</span>" + (et.est ? '<span class="ik-est">estimated</span>' : "") + (IK_FM_LIVE && IK_FM_LIVE.day === day && IK_FM_LIVE.fresh[e.id] && IK_FM_LIVE.any ? ikFuelBadge(et) : "") +
+        '<span class="ik-grow"><span class="ik-ewhen">' + IK_PARTS[e.part] + " · " + ikNiceTime(e.time) + '</span><br><span class="ik-ename">' + ikEsc(ikEntryName(e, d)) + "</span>" + (et.est ? '<span class="ik-est">estimated</span>' : "") + (IK_FM_LIVE && IK_FM_LIVE.day === day && IK_FM_LIVE.fresh[e.id] && IK_FM_LIVE.any ? '<span class="ik-efuel">In your fuel map now</span>' : "") +
         (e.note ? '<br><span class="ik-enote">' + ikEsc(e.note) + "</span>" : "") + ikEntryBadges(e, d) + '</span>' + (ikEntryBars(e, et, d) || '<span class="ik-ekcal">' + right + "</span>") + "</button>";
     });
   });
@@ -10552,10 +10537,9 @@ function ikFmLegendPanel(sys, F, LV, FAT) {
     '<div class="ik-fm-lrow">' + dot(IK_FM_FUELC.mixed) + '<span><b>Light pink: a mix.</b> Stored sugar and fat together, the usual state between meals.</span></div>' +
     '<div class="ik-fm-lrow">' + dot(IK_FM_FUELC.fat) + '<span><b>Gold: fat.</b> Insulin is low, so fat from your stores is the main fuel.</span></div>' +
     '<div class="ik-fm-lrow">' + dot(IK_FM_FUELC.ketones) + '<span><b>Violet: ketones.</b> After a long gap (or very low carb), your liver turns fat into ketones, a fuel the brain can use.</span></div>' +
-    '<div class="ik-fm-lrow">' + dot(IK_FM_FUELC.alc) + '<span><b>Blue-violet: alcohol.</b> Your body clears alcohol first, so fat burning waits.</span></div>' +
-    '<div class="ik-fm-lrow">' + ikFlameSvg("#3f8cff", "Carbs") + ikFlameSvg("#22b573", "Fibre") + '<span><b>Flames on "In your fuel map now".</b> A blue flame means the food\'s carbs are being used for fuel; a green flame means its fibre is being put to work.</span></div>';
-  h += '<div class="ik-fm-h">Each glowing point: what it is burning   <!-- 0.5.8t --></div>' +
-    '<p class="ik-small" style="margin:0 0 8px">Your blood carries sugar, fat and ketones to every part of you at the same time, and each part takes the fuel it\'s built to use. That\'s why the glows can be different colours: red blood cells can only use sugar, your brain runs on sugar (and ketones when there are enough) but can\'t burn fat directly, your heart prefers fat, and muscles switch between sugar and fat depending on whether you\'ve just eaten carbs.' + (live ? " Right now:" : "") + "</p>";
+    '<div class="ik-fm-lrow">' + dot(IK_FM_FUELC.alc) + '<span><b>Blue-violet: alcohol.</b> Your body clears alcohol first, so fat burning waits.</span></div>';
+  h += '<div class="ik-fm-h">The lines out to each part: what it burns</div>' +
+    '<p class="ik-small" style="margin:0 0 8px">Your blood carries sugar, fat and ketones to every part of you at the same time, and each part takes the fuel it\'s built to use. That\'s why the lines can be different colours: red blood cells can only use sugar, your brain runs on sugar (and ketones when there are enough) but can\'t burn fat directly, your heart prefers fat, and muscles switch between sugar and fat depending on whether you\'ve just eaten carbs.' + (live ? " Right now:" : "") + "</p>";
   if (live) h += sys.map(function (S) { var fu = ikFmSysFuel(S.s.id, F); return '<div class="ik-fm-lrow">' + dot(fu.c) + "<span><b>" + ikEsc(S.s.short) + ":</b> " + ikEsc(fu.label) + "</span></div>"; }).join("");
   h += '<div class="ik-fm-h">Small orbs on a line: a boost on the way</div>' +
     '<div class="ik-fm-lrow">' + dot("#fff") + '<span>When something you ate in the last 2 hours is still being absorbed and it feeds a part of the body, small orbs travel out to that part along a dotted line, and its % shows <b class="ik-fm-g">▲+N</b>. <b>More orbs means a bigger boost</b> (about one orb for every 6 points it\'s gaining). The orbs take the colour of that part\'s fuel.</span></div>';
@@ -10969,10 +10953,9 @@ function ikFuelMap(d, t, week, day, es) {
       var st = S.st, s = S.s, on = U.open && U.pick === s.id, fu = ikFmSysFuel(s.id, F), c = F.past ? "#5d7387" : fu.c;
       var nc = st === "thrive" ? "#6fe7ff" : st === "steady" ? "#3f8cff" : "#5d7387";
       var lx = (s.side === "L" ? 21.9 : 77.9) / 100 * 730, ly = (s.top + 4.6) / 100 * 930;
-      /* 0.5.8t (Oran): the fuel-coloured bands along each system overlapped and looked messy — the "burning now"
-         signal is now the glowing engine node at the system's point, so the static bands are gone (the travelling
-         light pulses along the paths stay) */
-      stillSharp += '<path d="M' + s.x + " " + s.y + " L" + lx.toFixed(0) + " " + ly.toFixed(0) + '" stroke="#bfefff" stroke-width="1.2" opacity=".28"/>';
+      stillBlur += '<path d="' + s.d + '" stroke="' + c + '" stroke-width="14" opacity="' + (F.past ? 0.25 : 0.62) + '" fill="none" stroke-linecap="round"/>';
+      stillSharp += '<path d="' + s.d + '" stroke="' + c + '" stroke-width="2.5" opacity="' + (F.past ? 0.4 : 0.9) + '" fill="none" stroke-linecap="round"/>' +
+        '<path d="M' + s.x + " " + s.y + " L" + lx.toFixed(0) + " " + ly.toFixed(0) + '" stroke="#bfefff" stroke-width="1.2" opacity=".28"/>';
       stillSoft += '<circle cx="' + s.x + '" cy="' + s.y + '" r="7" fill="' + (st === "low" ? "#ffb340" : st === "thrive" ? "#e9fdff" : "#9cc4ff") + '"/>';
       if (on) ring = '<i class="ik-fm-ring" style="left:' + (s.x / 7.3).toFixed(2) + "%;top:" + (s.y / 9.3).toFixed(2) + "%;--c:" + IK_FM_COL[st] + '"></i>';
       if (!F.past) {   // 0.5.8b: soft, blurred pulses like the main stream
@@ -10985,8 +10968,7 @@ function ikFuelMap(d, t, week, day, es) {
         sysM.push({ t: "dash", d: s.d, c: "#fff", w: 3.5, o: 0.9, blur: 3.5, dur: 3.2 });
         sysO.push([s.d, c, S.gain]);
       }
-      halos += halo(s.x, s.y, st === "thrive" ? 40 : st === "steady" ? 31 : 22, c, st === "low" ? " dim" : "");   /* 0.5.8t: the glow is the fuel colour now */
-      if (!F.past && !F.none) halos += '<i class="ik-fm-engine" style="left:' + (s.x / 7.3).toFixed(2) + "%;top:" + (s.y / 9.3).toFixed(2) + '%;--c:' + c + '"><b></b><b></b><b></b></i>';   /* 0.5.8t (Oran): the body's engine */
+      halos += halo(s.x, s.y, st === "thrive" ? 40 : st === "steady" ? 31 : 22, nc, st === "low" ? " dim" : "");
     });
     /* 0.5.8o: smaller than the source orbs, faster, and more of them the bigger the boost (1 orb per ~6 points, up to 5) */
     sysO.forEach(function (x, i) { orb(x[0], x[1], 7, 3.2, Math.max(1, Math.min(5, Math.ceil(x[2] / 6))), false, i * 0.37); });
