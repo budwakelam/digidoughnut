@@ -128,6 +128,9 @@
   ＋ Add food is the main button, and "From a photo" is the first choice inside it.
   DigiBot's tip at the bottom is a soft tint of the Look colour instead of black.
   Add to today: the ways-to-add buttons wrap onto a second row instead of being cut off at the edge.
+  0.5.8p (Bud, Oran, 2026-10-17): on PC the top bar keeps only DigiBot (water glass and ＋ Add food removed;
+  both live in the page already), DigiBot gets the Profit Calculator's animated circle, the top bar sticks while
+  scrolling, and the fuel map column is wider (520px) to match the balance chart's size.
   Fuel in says "Drinking ·" for a drink and "Taking ·" for a supplement (it said "Eating · Beer").
   PLATFORM CHANGE (2026-10-17 perf): dd.menu.mount uses program.iconHtml when the program gives one.
   To make a new app, change only the parts marked PROGRAM-SPECIFIC (styles, markup, script)
@@ -1277,7 +1280,7 @@ button.ik-fm-fed.on{border-color:#6fe7ff;box-shadow:0 0 12px rgba(111,231,255,.3
   .ik-fm-dockglow,.ik-fm-dockin{opacity:0}.ik-fm-port,.ik-fm-tr.up,.ik-fm-wline,.ik-fm-warea,.ik-fm-wnow{animation:none}}
 @media (prefers-reduced-motion:reduce){.ik-fm-halo,.ik-fm-drawer,.ik-fm-drawer.opening{animation:none}}
 @media (min-width:900px){
-  .ik-fm-cols{display:grid;grid-template-columns:minmax(0,430px) minmax(0,1fr);gap:20px;align-items:start}
+  .ik-fm-cols{display:grid;grid-template-columns:minmax(0,520px) minmax(0,1fr);gap:20px;align-items:start}   /* 0.5.8p (Oran): bigger fuel map on PC, to match the balance chart */
   .ik-fm-below,.ik-fm-below[data-closed]{display:block;margin-top:0}
   .ik-fm-stage{max-width:none}
   .ik-fm-switch{display:none}   /* 0.5.8o: no Fuel map / Balance chart toggle on desktop (both show) */
@@ -1350,7 +1353,7 @@ button.ik-fm-fed.on{border-color:#6fe7ff;box-shadow:0 0 12px rgba(111,231,255,.3
 .ik-topnav .ik-seg{grid-template-columns:repeat(3,minmax(0,1fr));min-width:330px}
 @media (min-width:900px){
   .ik-tabbar{display:none}
-  .ik-topnav{display:flex}
+  .ik-topnav{display:flex;position:sticky;top:0;z-index:60;background:var(--dd-bg);margin:0;padding:8px 0}   /* 0.5.8p (Oran): DigiBot stays visible while scrolling on PC */
   .ik h1.ik-h1{font-size:40px}
   .ik .ik-head1 h1.ik-h1{font-size:28px}
   .ik .ik-head1 h1.ik-h1.sm{font-size:17px}
@@ -1694,9 +1697,7 @@ input[type=time].ik-input::-webkit-date-and-time-value,input[type=date].ik-input
       <button role="tab" data-go="advice" aria-selected="false">Advice</button>
     </div>
     <span class="ik-grow"></span>
-    <button class="ik-glass" data-act="water1" aria-label="Log a glass of water, 250 mL" title="Log a glass of water (250 mL)"><svg width="20" height="22" viewBox="0 0 20 22" aria-hidden="true"><path d="M3 2h14l-1.6 16.2a2 2 0 0 1-2 1.8H6.6a2 2 0 0 1-2-1.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M4.3 9h11.4l-.9 9.1a1.2 1.2 0 0 1-1.2 1H6.4a1.2 1.2 0 0 1-1.2-1z" fill="currentColor" opacity=".35"/></svg></button>
-    <button class="ik-btn" data-act="add">＋ Add food</button>
-    <button class="ik-btn ghost" data-act="helper" data-dd-helper-toggle>💬 <span data-helper-name>DigiBot</span></button>
+    <button class="ik-btn ghost" data-act="helper" data-dd-helper-toggle><span class="dd-orb" aria-hidden="true"><span class="dd-orb-sheen"></span><span class="dd-orb-spark"></span></span> <span data-helper-name>DigiBot</span></button>   <!-- 0.5.8p (Oran): desktop keeps only DigiBot up here, with the Profit Calculator's circle animation -->
   </nav>
 
   <section class="ik-view on" id="ikToday" data-view="today" aria-label="Today"></section>
