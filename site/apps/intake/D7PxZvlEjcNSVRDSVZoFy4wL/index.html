@@ -10622,10 +10622,19 @@ function ikEstFallback(name) {
 }
 var IK_FILL_MEMO = {};
 function ikFillEstimate(per, name) {
-  if (!per || !(per.kcal > 0)) return null;
-  if (per.protein != null && per.carb != null && per.fat != null) return null;
   var key = name + "|" + JSON.stringify(per);
   if (IK_FILL_MEMO[key]) return IK_FILL_MEMO[key];
+  if (!per || !(per.kcal > 0)) {
+    /* V5.7 (0-kcal bug, 2026-10-16): the AI gave no usable energy number for an estimate.
+       Use the closest known food's whole profile instead of a 0-kcal estimate; the item is
+       still marked "estimated" everywhere, and ikResolve heals already-saved broken foods. */
+    var f0 = ikEstFallback(name); if (!f0 || !(f0.n.kcal > 0)) return null;
+    var out0 = {};
+    IK_N.forEach(function (n) { out0[n.k] = f0.n[n.k] == null ? null : f0.n[n.k]; });
+    out0._from = f0.label;
+    return (IK_FILL_MEMO[key] = out0);
+  }
+  if (per.protein != null && per.carb != null && per.fat != null) return null;
   var f = ikEstFallback(name); if (!f || !(f.n.kcal > 0)) return null;
   var k = per.kcal / f.n.kcal, out = {};
   IK_N.forEach(function (n) {
@@ -11015,7 +11024,8 @@ function ikPhotoAdd() {
       items.push({ ref: "c:" + cid0, g: Math.round(it.g), name: it.name });
     } else if (it.ref) items.push(it.method && ikCookable(it.ref) ? { ref: it.ref, g: Math.round(it.g), name: it.name, method: it.method } : { ref: it.ref, g: Math.round(it.g), name: it.name });
     else {
-      var cid = ctx.ui.uid("c"); newFoods.push({ id: cid, name: it.name, per100: it.per100, est: true, src: "photo", kind: it.drink ? "drink" : "food" });
+      var cid = ctx.ui.uid("c"), pfill = ikFillEstimate(it.per100, it.name);   /* V5.7: never save a 0-kcal estimate */
+      newFoods.push({ id: cid, name: it.name, per100: pfill || it.per100, est: true, src: "photo", kind: it.drink ? "drink" : "food" });
       items.push({ ref: "c:" + cid, g: Math.round(it.g), name: it.name, est: true });
     }
   });
