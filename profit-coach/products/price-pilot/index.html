@@ -4885,6 +4885,11 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
       '<h3 class="dd-sub">Your shop</h3>' +
       '<label class="dd-brand-field"><span>Shop name <small>shown in the banner instead of "' + esc(p.name) + '"</small></span>' +
         '<input class="dd-input" id="dd-b-shop" maxlength="60" autocomplete="off" placeholder="e.g. Clay &amp; Co. Pottery" value="' + esc(L.shop) + '"></label>' +
+      '<label class="dd-brand-field"><span>Shop banner picture <small>a link to the picture</small></span>' +
+        '<input class="dd-input" id="dd-b-banner" autocomplete="off" placeholder="https://i.etsystatic.com/…" value="' + esc(L.banner) + '"></label>' +
+      '<details class="dd-wiz-more"><summary>How do I get the link to my Etsy banner?</summary>' +
+        '<ol class="dd-home-steps"><li>Open your Etsy shop page on a computer.</li><li>Right-click your shop banner (the wide picture at the top) and choose <b>Copy image address</b> (Safari: <b>Copy Image Address</b>).</li>' +
+        '<li>Paste it in the box above.</li></ol><p class="dd-note">The same works for your shop icon. The picture stays on Etsy; ' + esc(p.name) + ' only keeps the link.</p></details>' +
       '<label class="dd-check"><input type="checkbox" id="dd-b-text"' + (L.text ? " checked" : "") + '> Show the name on the banner <small>(untick if your banner already has your shop name on it)</small></label>' +
       '<label class="dd-brand-field"><span>Shop icon or logo <small>a link to the picture, shown next to the name</small></span>' +
         '<input class="dd-input" id="dd-b-logo" autocomplete="off" placeholder="https://i.etsystatic.com/…" value="' + esc(L.logo) + '"></label>' +
@@ -4925,6 +4930,7 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
         if (u) { var t = new Image(); t.referrerPolicy = "no-referrer"; t.onerror = function () { if (q(id) && q(id).value.trim() === raw) dd.ui.status(st, "warn", "That " + what + " picture didn't load.", "Check the link opens a picture in your browser. Etsy picture links start with https://i.etsystatic.com/."); }; t.src = u; }
       });
     }
+    linkBox("#dd-b-banner", "banner", "banner");
     linkBox("#dd-b-logo", "logo", "shop icon");
     q("#dd-b-text").addEventListener("change", function (e) { brand.set({ text: e.target.checked }); preview(); });
     q("#dd-b-editbtn").addEventListener("change", function (e) { brand.set({ hideEdit: e.target.checked ? null : true }); preview(); });
