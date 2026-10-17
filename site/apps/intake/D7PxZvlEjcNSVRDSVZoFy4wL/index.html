@@ -128,6 +128,19 @@
   ＋ Add food is the main button, and "From a photo" is the first choice inside it.
   DigiBot's tip at the bottom is a soft tint of the Look colour instead of black.
   Add to today: the ways-to-add buttons wrap onto a second row instead of being cut off at the edge.
+  0.5.8x (Claude, Oran, 2026-10-17: "a long delay when you open it"): a speed pass. Nothing looks or works differently.
+  The slowness grew with the log: every photo saves its foods, and each meal looked its foods up by reading the whole
+  list, so a year of photos took seconds to open and redraw (2 years of photos on a simulated slower phone: the first draw took 4.4 s, now 0.3 s).
+  (1) Your foods and recipes are found by id from an index (ikById). (2) The check "did your foods change?" compared the
+  whole food list text once per meal; now once per redraw, and that text is only rebuilt after a change (IK_REV).
+  (3) Opening finds the last meal by walking back from the newest entry instead of counting every meal ever logged.
+  (4) Each entry's date and each meal's balance score are worked out once and kept (ikEntryMs, IK_DC.ms).
+  (5) Live sync remembers fingerprints of text it has already seen. (6) The camera button's first-run pulse grows and
+  fades a ring instead of animating a shadow (it repainted the page every frame). (7) Safari: the database is nudged
+  so its first open doesn't hang; once your log is known to be in the database, a slow one gets 20 s, not 4, before
+  the app carries on without it (it used to open with example data, and the next save could replace the real log).
+  Rules that keep it fast: never look an id up with list.filter in code that runs per meal; keep per-meal results in
+  IK_DC (checked against the meal's items), not IK_MEMO (cleared every redraw).
   0.5.8w (Bud, Oran, 2026-10-17): "Now fueling" becomes "Fueling", slightly smaller, and the badge selector is
   strengthened so it looks identical on every element (the nutrient rows were picking up the wrong size/colour).
   On food entries the badge sits beside Balance instead of the name, clear of the bars.
@@ -941,9 +954,13 @@ details.ik-more summary{cursor:pointer;font-weight:700;padding:6px 0;min-height:
 .ik-holdtip b{font-weight:700}
 .ik-holdtip small{display:block;color:var(--ik-ink2);font-size:12px;margin-top:1px}
 .ik-holdtip.ik-bye{opacity:0;transform:translateY(-4px);transition:opacity .3s,transform .3s}
-.ik-cam.ik-hint{animation:ikHint 2.4s ease-out 1.2s 3}
-@keyframes ikHint{0%{box-shadow:0 8px 20px rgba(0,0,0,.25),0 0 0 0 rgba(255,45,85,.45)}70%,100%{box-shadow:0 8px 20px rgba(0,0,0,.25),0 0 0 14px rgba(255,45,85,0)}}
-@media (prefers-reduced-motion:reduce){.ik-cam.ik-hint{animation:none}.ik-holdtip.ik-bye{transition:none}}
+/* 0.5.8x perf: the same widening pink ring, drawn as a layer that grows and fades (transform + opacity) instead of an
+   animated box-shadow, which repainted the whole tab bar and page every frame for the first 8 seconds. */
+.ik-cam.ik-hint{position:relative}
+.ik-cam.ik-hint::after{content:"";position:absolute;left:-4px;top:-4px;width:64px;height:64px;border-radius:50%;background:rgba(255,45,85,.45);
+  z-index:-1;pointer-events:none;opacity:0;animation:ikHint 2.4s ease-out 1.2s 3}
+@keyframes ikHint{0%{opacity:1;transform:scale(1)}70%,100%{opacity:0;transform:scale(1.4375)}}
+@media (prefers-reduced-motion:reduce){.ik-cam.ik-hint::after{animation:none}.ik-holdtip.ik-bye{transition:none}}
 /* V5.4 (Oran, 2026-10-16): nutrient icons */
 .ik-ni{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:6px;flex:none;vertical-align:-5px;margin-right:7px;background:var(--ni-soft,#f2f2f7);color:var(--ni,#6e6e73);font-style:normal}
 .ik-ni svg{width:13px!important;height:13px!important;display:block;flex:none}
@@ -2003,11 +2020,14 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
       catch (e) { rej(e); }
     });
   }
+  var HELD = "dd_idb_holds_data_v1";   // 0.5.8x: "this device's saved data is in the database" (see store.ready)
+  function markHeld() { var s = ls(); if (s) try { if (s.getItem(HELD) !== "1") s.setItem(HELD, "1"); } catch (e) {} }
   function flush(k) {
     if (writing[k] || !(k in pendingW) || !idb) return;
     var v = pendingW[k]; delete pendingW[k]; writing[k] = true;
     idbReq(function (st) { if (v == null) st.delete(k); else st.put(v, k); }).then(function () {
       writing[k] = false; var s = ls(); if (s) try { s.removeItem(k); } catch (e) {}
+      if (v != null && /_data_v1$/.test(k)) markHeld();
       flush(k);
     }, function (e) {
       writing[k] = false; dd.errors.record("store.idb", e); store.idbState = "on, a write failed";
@@ -2033,13 +2053,21 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
       });
     }).then(function (x) {
       if (settled) { try { x.db.close(); } catch (e) {} return; }
-      settled = true; idb = x.db; cache = x.all; store.idbState = "on";
+      settled = true; idb = x.db; cache = x.all; store.idbState = "on"; clearInterval(kick);
+      if (Object.keys(cache).some(function (k) { return /_data_v1$/.test(k); })) markHeld();
       var s = ls(), ks = [];
       if (s) { try { for (var i = 0; i < s.length; i++) { var k = s.key(i); if (BIG.test(k)) ks.push(k); } } catch (e) {} }
       ks.forEach(function (k) { var v = s.getItem(k); if (v != null) { cache[k] = v; pendingW[k] = v; flush(k); } });   // the old place wins: it's newer
       if (ks.length) store.moved = ks.length;
-    }, function (e) { if (!settled) { settled = true; store.idbState = "not available"; dd.errors.record("store.idb", e); } });
-    var wait = new Promise(function (res) { setTimeout(function () { if (!settled) { settled = true; store.idbState = "too slow, using browser storage"; } res(); }, 4000); });
+    }, function (e) { clearInterval(kick); if (!settled) { settled = true; store.idbState = "not available"; dd.errors.record("store.idb", e); } });
+    /* 0.5.8x: Safari on iPhone can leave the database's first open hanging until something else asks it a question
+       (a WebKit bug); asking for the list of databases now and then wakes it, so it no longer waits out the timer. */
+    var kick = indexedDB.databases ? setInterval(function () { try { indexedDB.databases().catch(function () {}); } catch (e) { clearInterval(kick); } }, 100) : null;
+    /* 0.5.8x (data safety): once the food log lives in the database, starting without it would show example or empty
+       data, and the next save would put that in place of the real log. So when this device's log is known to be in the
+       database, give a slow database up to 20 seconds before carrying on without it (4 seconds otherwise, as before). */
+    var held = false; try { held = ls() && ls().getItem(HELD) === "1"; } catch (e) {}
+    var wait = new Promise(function (res) { setTimeout(function () { clearInterval(kick); if (!settled) { settled = true; store.idbState = "too slow, using browser storage"; } res(); }, held ? 20000 : 4000); });
     return Promise.race([open, wait]);
   };
 
@@ -6286,9 +6314,17 @@ var qrcode=function(){function i(t,r){function a(t,r){g=function(t){for(var r=ne
   /* PLATFORM CHANGE (2026-10-13 V4): the working copy keeps a short fingerprint of each item instead of a
      second full copy of the data. Merging only ever asks "is this the same as before?", which a fingerprint
      answers, so the result is identical and the saved copy is a fraction of the size. Old copies convert on load. */
+  /* 0.5.8x perf: every change and every update from the other device fingerprints every item (thousands of meals and
+     foods); most are the same text as last time, so the answer is remembered (same text in, same fingerprint out). */
+  var HMEMO = typeof Map === "function" ? new Map() : null;
   function H(v) {
     if (v == null) return v;
-    v = String(v); var h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+    v = String(v);
+    if (HMEMO) { var got = HMEMO.get(v); if (got !== undefined) return got; if (HMEMO.size > 60000) HMEMO.clear(); }
+    var out = Hraw(v); if (HMEMO) HMEMO.set(v, out); return out;
+  }
+  function Hraw(v) {
+    var h1 = 0xdeadbeef, h2 = 0x41c6ce57;
     for (var i = 0, ch; i < v.length; i++) { ch = v.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
     h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
     h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
@@ -8033,16 +8069,32 @@ function ikLc(s) { s = String(s || ""); return /^[A-Z][a-z]/.test(s) ? s.charAt(
 /* ---------- what each thing in an entry is worth: code counts ---------- */
 /* An item: {ref, g?, n?, name, est?}. ref: "t:<table key>" (built-in table), "r:<id>" (my recipe),
    "c:<id>" (my food), "s:<key>" (supplement preset). g = grams, n = servings (supplements). */
+/* 0.5.8x perf: find one of the person's foods or recipes by id without reading the whole list each time (a year of
+   photos is thousands of foods, and every meal looks its foods up). Same answer as list.filter(id)[0]: the first one
+   with that id. The index is checked on every use and rebuilt when the list changed, so it can never be stale. */
+var IK_IDX = typeof WeakMap === "function" ? new WeakMap() : null;
+function ikById(list, id) {
+  if (!list || !list.length) return undefined;
+  if (!IK_IDX) return list.filter(function (x) { return x.id === id; })[0];
+  var ix = IK_IDX.get(list);
+  if (ix) { var at = ix[id]; if (at !== undefined && list[at] && list[at].id === id) return list[at]; }
+  var fresh = Object.create(null), found;
+  for (var i = 0; i < list.length; i++) { var x = list[i]; if (x && !(x.id in fresh)) fresh[x.id] = i; }
+  IK_IDX.set(list, fresh);
+  at = fresh[id];
+  if (at !== undefined) found = list[at];
+  return found;
+}
 function ikResolve(ref, d) {
   var kind = String(ref || "").slice(0, 2), id = String(ref || "").slice(2);
   if (kind === "t:") { var f = IK_FOODS[id]; return f ? { type: "table", food: f, label: f.label, per100: f.n, plant: f.plant, kind: f.kind } : null; }
   if (kind === "r:") {
-    var r = (d.recipes || []).filter(function (x) { return x.id === id; })[0]; if (!r) return null;
+    var r = ikById(d.recipes, id); if (!r) return null;
     var rfix = ikHealRecipe(r, d);   // 0.5.8: a recipe with no energy number is worked out again from its ingredients
     return { type: "recipe", recipe: r, label: r.name, per100: rfix || r.per100 || {}, filled: !!rfix, plantKeys: r.plants || [] };
   }
   if (kind === "c:") {
-    var c = (d.customFoods || []).filter(function (x) { return x.id === id; })[0];
+    var c = ikById(d.customFoods, id);
     if (!c) return null;
     var heal = ikHealCustom(c);   // V5 calories-only estimates; 0.5.8: any food (not a supplement) with no energy number
     return { type: "custom", custom: c, label: c.name, per100: (heal && heal.per100) || c.per100 || null, filled: !!heal, perServing: (heal && heal.perServing) || c.perServing || null,
@@ -8248,9 +8300,18 @@ function ikEntriesOn(d, day) { return (ikByDay(d)[day] || []).slice(); }
    history stay as quick as a week. Anything that changes the numbers (your foods, recipes, how you cook)
    starts the totals over. */
 var IK_DC = { key: null, days: {}, kcal: {} };
+var IK_REV = 0, IK_FOODKEY = null;   // 0.5.8x perf: IK_REV goes up on every change to the data (dd "change")
 function ikDCReset(d) {
-  var k = ikMemo("foodkey", function () { return JSON.stringify([d.customFoods || [], d.recipes || [], (d.settings && d.settings.cooking) || null]); });
+  var k = ikMemo("foodkey", function () {
+    /* 0.5.8x perf: the same text as before, but only rebuilt after a change (or a new data set), not on every redraw */
+    var cf = d.customFoods, rc = d.recipes, ck = d.settings && d.settings.cooking, F = IK_FOODKEY;
+    if (F && F.rev === IK_REV && F.d === d && F.cf === cf && F.rc === rc && F.ck === ck) return F.k;
+    var out = JSON.stringify([cf || [], rc || [], ck || null]);
+    IK_FOODKEY = { rev: IK_REV, d: d, cf: cf, rc: rc, ck: ck, k: out };
+    return out;
+  });
   if (IK_DC.key !== k) IK_DC = { key: k, days: {}, kcal: {} };
+  else IK_DC.key = k;   // 0.5.8x perf: same text, now the same string, so the next check is instant (it was a full compare of every food, once per meal)
 }
 function ikDayTotals(d, day, es) {
   ikDCReset(d);
@@ -9362,7 +9423,18 @@ function ikAvail(d, id) { var g = IK_GBY[id]; return !!g && (!g.when || g.when(d
 function ikShow(d, id) { return ikAvail(d, id) && !(ikSet(d).hidden || {})[id]; }
 
 /* ---------- time: when things were eaten ---------- */
-function ikEntryDate(e) { var p = String(e.day).split("-"), t = String(e.time || "12:00").split(":"); return new Date(+p[0], +p[1] - 1, +p[2], +t[0] || 0, +t[1] || 0); }
+function ikEntryMs(e) {   // 0.5.8x perf: each day + time is worked out once (the fuel map asks for every entry's time several times a redraw)
+  var key = e.day + " " + (e.time || "12:00"), ms = IK_ED[key];
+  if (ms === undefined) {
+    var p = String(e.day).split("-"), t = String(e.time || "12:00").split(":");
+    ms = new Date(+p[0], +p[1] - 1, +p[2], +t[0] || 0, +t[1] || 0).getTime();
+    if (IK_EDN++ > 20000) { IK_ED = Object.create(null); IK_EDN = 0; }
+    IK_ED[key] = ms;
+  }
+  return ms;
+}
+function ikEntryDate(e) { return new Date(ikEntryMs(e)); }
+var IK_ED = Object.create(null), IK_EDN = 0;
 function ikEntryKcalM(e, d) {
   if (!e.id) return ikEntryKcal(e, d);
   ikDCReset(d);
@@ -9378,7 +9450,7 @@ function ikBreaksFast(e, d) { var k = ikEntryKcalM(e, d); return e.kind !== "sup
 function ikEatEvents(d) {
   return ikMemo("ev", function () {
     return (d.entries || []).filter(function (e) { return ikBreaksFast(e, d); }).map(function (e) {
-      var s = ikEntryDate(e).getTime(); return { start: s, end: s + IK_FINISH_MIN * 60000, e: e };
+      var s = ikEntryMs(e); return { start: s, end: s + IK_FINISH_MIN * 60000, e: e };
     }).sort(function (a, b) { return a.start - b.start; });
   });
 }
@@ -9388,11 +9460,23 @@ function ikHM(ms) {
   return h ? h + " h " + (m % 60) + " m" : m + " m";
 }
 function ikFastState(d) {
-  var now = Date.now(), past = ikEatEvents(d).filter(function (x) { return x.start <= now; });
-  if (!past.length) return { none: true };
-  var lm = past[past.length - 1], since = Math.max(0, now - lm.end), hrs = since / 3600000;
+  var now = Date.now(), lm = null;
+  if ("ev" in IK_MEMO) {
+    var past = ikEatEvents(d).filter(function (x) { return x.start <= now; });
+    if (past.length) lm = past[past.length - 1];
+  } else {
+    /* 0.5.8x perf: the same last meal, found by walking back from the newest entry, so opening the app doesn't
+       count the calories of every meal ever logged first. Ties (same minute) go to the later one in the list,
+       as before. */
+    var es = d.entries || [], at = [];
+    for (var i = 0; i < es.length; i++) { var s0 = ikEntryMs(es[i]); if (s0 <= now) at.push([s0, i]); }
+    at.sort(function (a, b) { return b[0] - a[0] || b[1] - a[1]; });
+    for (var j = 0; j < at.length && !lm; j++) { var e0 = es[at[j][1]]; if (ikBreaksFast(e0, d)) lm = { start: at[j][0], end: at[j][0] + IK_FINISH_MIN * 60000, e: e0 }; }
+  }
+  if (!lm) return { none: true };
+  var since = Math.max(0, now - lm.end), hrs = since / 3600000;
   // A long gap only counts as a fast when something (water, coffee, tea) was logged in the last day.
-  var recent = (d.entries || []).some(function (e) { var t = ikEntryDate(e).getTime(); return t <= now && now - t < 24 * 3600000; });
+  var recent = (d.entries || []).some(function (e) { var t = ikEntryMs(e); return t <= now && now - t < 24 * 3600000; });
   var tracking = hrs < 24 || recent;
   return { last: lm, since: since, hrs: hrs, tracking: tracking, fasting: tracking && hrs >= 12 };
 }
@@ -9452,7 +9536,7 @@ function ikKetosis(d) {
     var fs = ikFastState(d); if (fs.none) return null;
     var end = fs.last.end, L = 0;
     (d.entries || []).forEach(function (e) {
-      var t = ikEntryDate(e).getTime();
+      var t = ikEntryMs(e);
       if (t > end - 24 * 3600000 && t <= end) { var v = ikTotals([e], d).v; L += Math.max(0, (v.carb || 0) - (v.fibre || 0)); }
     });
     var lowDays = 0;
@@ -9495,7 +9579,15 @@ function ikMealStats(e, d) {
   }
   return out;
 }
-function ikMealStatsM(e, d) { return e.id ? ikMemo("ms:" + e.id, function () { return ikMealStats(e, d); }) : ikMealStats(e, d); }
+function ikMealStatsM(e, d) {
+  if (!e.id) return ikMealStats(e, d);
+  return ikMemo("ms:" + e.id, function () {   // 0.5.8x perf: kept between redraws like each meal's energy (IK_DC), until the meal or your foods change
+    ikDCReset(d);
+    var ms = IK_DC.ms || (IK_DC.ms = {}), sig = e.kind + "|" + JSON.stringify(e.items), c = ms[e.id];
+    if (c && c.sig === sig) return c.v;
+    var v = ikMealStats(e, d); ms[e.id] = { sig: sig, v: v }; return v;
+  });
+}
 function ikDayMeals(d, day) {
   return ikMemo("dm:" + day, function () {
     var load = 0, sc = [], spikes = [];
@@ -10370,7 +10462,7 @@ function ikFmFuel(d) {
     var p = (d.settings && d.settings.profile) || {};
     var E = (ikProfileReady(p) ? ikEnergy(p).tdee : (ikTarget(d, "kcal") || 2000)) / 24;
     var meals = (d.entries || []).map(function (e) {
-      var at = ikEntryDate(e).getTime(); if (at < from || at > now) return null;
+      var at = ikEntryMs(e); if (at < from || at > now) return null;
       var v = ikTotals([e], d).v;
       return { at: (at - from) / H, e: e, carb: v.carb || 0, fibre: v.fibre || 0, sugar: v.sugar || 0, fat: v.fat || 0, protein: v.protein || 0,
         alc: v.alcohol || 0, kcal: v.kcal || 0, liquid: e.kind === "drink" ? 0.6 : 0 };
@@ -10642,7 +10734,7 @@ function ikFmHydration(d) {
     var now = Date.now(), H = 3600000, tg = ikTarget(d, "drinks") || 2200, p = ikSet(d).profile || {}, kg = p.weightKg || 70;
     var from = now - 24 * H, intakes = [], last = null, sum6 = 0, any = false;
     (d.entries || []).forEach(function (e) {
-      if (ikEntryDate(e).getTime() < from - 3 * H && !e.sips) return;
+      if (ikEntryMs(e) < from - 3 * H && !e.sips) return;
       var x = ikTotals([e], d), mlAll = Math.max(x.drinksMl || 0, x.v.water || 0); if (mlAll < 5) return;
       ikEntryPieces(e).forEach(function (pc) {   // 0.5.8: each glass at its own time
         var at = pc.at, ml = mlAll * pc.f, dml = (x.drinksMl || 0) * pc.f; if (at < from - H || at > now || ml < 1) return;
@@ -10847,9 +10939,9 @@ function ikFmBody(d) { var s = ikSet(d), b = s.fmBody; if (b === "f" || b === "m
 var IK_FM_LIVE = null;
 /* 0.5.8: an entry as timed pieces: a water entry with sips is one piece per glass; anything else is one piece. */
 function ikEntryPieces(e) {
-  if (!e.sips || !e.sips.length) return [{ at: ikEntryDate(e).getTime(), f: 1 }];
+  if (!e.sips || !e.sips.length) return [{ at: ikEntryMs(e), f: 1 }];
   var tot = e.sips.reduce(function (a, x) { return a + (Number(x.ml) || 0); }, 0) || 1;
-  return e.sips.map(function (x) { return { at: ikEntryDate({ day: e.day, time: x.time }).getTime(), f: (Number(x.ml) || 0) / tot }; });
+  return e.sips.map(function (x) { return { at: ikEntryMs({ day: e.day, time: x.time }), f: (Number(x.ml) || 0) / tot }; });
 }
 function ikAbsorbFrac(h) { if (h <= 0.1) return 0; var f = 1 - Math.exp(-(h - 0.1) / 1.3); return h > 20 ? f * Math.max(0, (24 - h) / 4) : f; }
 function ikFmRecent(d, at, full) {
@@ -13704,7 +13796,7 @@ function ikMount(ctx) {
   app.addEventListener("mouseleave", function () { var tt = document.getElementById("ikTT"); if (tt) tt.remove(); });
   dd.on("helper:open", function (on) { app.querySelectorAll('[data-act="helper"]').forEach(function (b) { b.classList.toggle("on", !!on); }); });
   // a new day while the page is open: keep "Today" meaning today
-  dd.on("change", function () { IK_MEMO = {}; });
+  dd.on("change", function () { IK_MEMO = {}; IK_REV++; });
   /* V3: the "since you last ate" and ketosis gauges move with the clock: redraw Today once a minute,
      unless the person is typing or has a sheet open. */
   setInterval(function () {
