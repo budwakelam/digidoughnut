@@ -24,5 +24,14 @@
       "link": "https://digidoughnut.com",
       "linkLabel": "Visit DigiDoughnut"
     }
-  ]
+  ],
+  "notice": {
+    "id": "test-2026-10-24-legacy",
+    "apps": [
+      "pricing"
+    ],
+    "text": "Test notice from Bud: the DigiDoughnut noticeboard works. If you can read this in the app, the test passed. This is only a test.",
+    "until": "2026-10-31T07:00:00Z",
+    "link": "https://digidoughnut.com"
+  }
 }
